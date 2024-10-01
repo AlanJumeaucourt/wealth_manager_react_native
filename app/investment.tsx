@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { VictoryPie, VictoryLine, VictoryChart, VictoryTheme, VictoryAxis, VictoryScatter } from 'victory-native';
 import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { createStackNavigator } from '@react-navigation/stack';
+import { useNavigation } from '@react-navigation/native';
 
 // Types
 type Asset = {
@@ -102,14 +105,12 @@ const stockHistoricalData: { [key: string]: StockHistoricalData[] } = {
   ],
 };
 
-const StockDetailModal = ({ isVisible, onClose, position }: { isVisible: boolean, onClose: () => void, position: StockPosition | null }) => {
-  if (!position) {
-    return null;
-  }
+const Stack = createStackNavigator();
 
+const StockDetail = ({ route }) => {
+  const { position } = route.params;
   const historicalData = stockHistoricalData[position.symbol] || [];
 
-  // Combine all data points
   const allDataPoints = [
     ...historicalData.map(point => ({ ...point, type: 'price' })),
     ...position.purchases.map(purchase => ({ date: purchase.date, price: purchase.price, type: 'purchase' })),
@@ -117,89 +118,87 @@ const StockDetailModal = ({ isVisible, onClose, position }: { isVisible: boolean
   ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   return (
-    <Modal visible={isVisible} animationType="slide" transparent={false}>
-      <View style={styles.modalContainer}>
-        <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-          <Ionicons name="close" size={24} color="black" />
-        </TouchableOpacity>
+    <ScrollView contentContainerStyle={styles.modalContent}>
+      <View style={styles.modalHeader}>
         <Text style={styles.modalTitle}>{position.name} ({position.symbol})</Text>
-        <VictoryChart 
-          theme={VictoryTheme.material} 
-          domainPadding={20}
-          scale={{ x: "time" }}
-        >
-          <VictoryLine
-            data={allDataPoints}
-            x="date"
-            y="price"
-            style={{
-              data: { stroke: "#c43a31" },
-            }}
-          />
-          <VictoryScatter
-            data={allDataPoints}
-            x="date"
-            y="price"
-            size={5}
-            style={{
-              data: {
-                fill: ({ datum }) => {
-                  switch (datum.type) {
-                    case 'purchase': return "green";
-                    case 'sell': return "red";
-                    default: return "transparent";
-                  }
+      </View>
+      <VictoryChart 
+        theme={VictoryTheme.material} 
+        domainPadding={20}
+        scale={{ x: "time" }}
+      >
+        <VictoryLine
+          data={allDataPoints}
+          x="date"
+          y="price"
+          style={{
+            data: { stroke: "#c43a31" },
+          }}
+        />
+        <VictoryScatter
+          data={allDataPoints}
+          x="date"
+          y="price"
+          size={5}
+          style={{
+            data: {
+              fill: ({ datum }) => {
+                switch (datum.type) {
+                  case 'purchase': return "green";
+                  case 'sell': return "red";
+                  default: return "transparent";
                 }
               }
-            }}
-          />
-          <VictoryAxis
-            tickFormat={(date) => {
-              const d = new Date(date);
-              return `${d.getMonth() + 1}/${d.getFullYear().toString().substr(-2)}`;
-            }}
-            style={{
-              tickLabels: { fontSize: 10, padding: 5, angle: -45, textAnchor: 'end' }
-            }}
-          />
-          <VictoryAxis dependentAxis
-            tickFormat={(t) => `${t}€`}
-            style={{
-              tickLabels: { fontSize: 10, padding: 5 }
-            }}
-          />
-        </VictoryChart>
-        <View style={styles.legendContainer}>
-          <Text style={styles.legendText}>
-            <View style={[styles.legendDot, { backgroundColor: "#c43a31" }]} /> Stock Price
-          </Text>
-          <Text style={styles.legendText}>
-            <View style={[styles.legendDot, { backgroundColor: "green" }]} /> Purchase Points
-          </Text>
-          <Text style={styles.legendText}>
-            <View style={[styles.legendDot, { backgroundColor: "red" }]} /> Sell Points
-          </Text>
-        </View>
-        <ScrollView style={styles.transactionList}>
-          <Text style={styles.transactionTitle}>Purchases:</Text>
-          {position.purchases.map((purchase, index) => (
-            <Text key={`purchase-${index}`} style={styles.transactionItem}>
-              {purchase.date}: {purchase.quantity} shares at {purchase.price}€
-            </Text>
-          ))}
-          <Text style={styles.transactionTitle}>Sells:</Text>
-          {position.sells.map((sell, index) => (
-            <Text key={`sell-${index}`} style={styles.transactionItem}>
-              {sell.date}: {sell.quantity} shares at {sell.price}€
-            </Text>
-          ))}
-        </ScrollView>
+            }
+          }}
+        />
+        <VictoryAxis
+          tickFormat={(date) => {
+            const d = new Date(date);
+            return `${d.getMonth() + 1}/${d.getFullYear().toString().substr(-2)}`;
+          }}
+          style={{
+            tickLabels: { fontSize: 10, padding: 5, angle: -45, textAnchor: 'end' }
+          }}
+        />
+        <VictoryAxis dependentAxis
+          tickFormat={(t) => `${t}€`}
+          style={{
+            tickLabels: { fontSize: 10, padding: 5 }
+          }}
+        />
+      </VictoryChart>
+      <View style={styles.legendContainer}>
+        <Text style={styles.legendText}>
+          <View style={[styles.legendDot, { backgroundColor: "#c43a31" }]} /> Stock Price
+        </Text>
+        <Text style={styles.legendText}>
+          <View style={[styles.legendDot, { backgroundColor: "green" }]} /> Purchase Points
+        </Text>
+        <Text style={styles.legendText}>
+          <View style={[styles.legendDot, { backgroundColor: "red" }]} /> Sell Points
+        </Text>
       </View>
-    </Modal>
+      <View style={styles.transactionList}>
+        <Text style={styles.transactionTitle}>Purchases:</Text>
+        {position.purchases.map((purchase, index) => (
+          <Text key={`purchase-${index}`} style={styles.transactionItem}>
+            {purchase.date}: {purchase.quantity} shares at {purchase.price}€
+          </Text>
+        ))}
+        <Text style={styles.transactionTitle}>Sells:</Text>
+        {position.sells.map((sell, index) => (
+          <Text key={`sell-${index}`} style={styles.transactionItem}>
+            {sell.date}: {sell.quantity} shares at {sell.price}€
+          </Text>
+        ))}
+      </View>
+    </ScrollView>
   );
 };
 
-const StockPositionItem = ({ position, onPress }: { position: StockPosition, onPress: () => void }) => {
+const StockPositionItem = ({ position }) => {
+  const navigation = useNavigation();
   const totalQuantity = position.purchases.reduce((sum, purchase) => sum + purchase.quantity, 0);
   const averagePurchasePrice = position.purchases.reduce((sum, purchase) => sum + purchase.price * purchase.quantity, 0) / totalQuantity;
   const totalInvestment = averagePurchasePrice * totalQuantity;
@@ -207,7 +206,7 @@ const StockPositionItem = ({ position, onPress }: { position: StockPosition, onP
   const performancePercentage = ((currentValue - totalInvestment) / totalInvestment) * 100;
 
   return (
-    <TouchableOpacity onPress={onPress} style={styles.stockPositionItem}>
+    <Pressable onPress={() => navigation.navigate('StockDetail', { position })} style={styles.stockPositionItem}>
       <Text style={styles.stockSymbol}>{position.symbol}</Text>
       <Text style={styles.stockName}>{position.name}</Text>
       <Text style={styles.stockDetails}>Quantité totale: {totalQuantity}</Text>
@@ -217,13 +216,12 @@ const StockPositionItem = ({ position, onPress }: { position: StockPosition, onP
         Performance: {performancePercentage.toFixed(2)}%
       </Text>
       <Text style={styles.stockValue}>Valeur actuelle: {currentValue.toFixed(2)} €</Text>
-    </TouchableOpacity>
+    </Pressable>
   );
 };
 
-export default function InvestmentScreen() {
+const InvestmentOverview = () => {
   const [selectedPeriod, setSelectedPeriod] = useState('1M');
-  const [selectedStock, setSelectedStock] = useState<StockPosition | null>(null);
 
   const totalValue = investmentAssets.reduce((sum, asset) => sum + asset.value, 0);
   const overallPerformance = investmentAssets.reduce((sum, asset) => sum + (asset.performance * asset.allocation / 100), 0);
@@ -253,7 +251,7 @@ export default function InvestmentScreen() {
 
       <View style={styles.periodSelector}>
         {['1M', '3M', '6M', '1A', 'Max'].map((period) => (
-          <TouchableOpacity
+          <Pressable
             key={period}
             style={[styles.periodButton, selectedPeriod === period && styles.selectedPeriod]}
             onPress={() => setSelectedPeriod(period)}
@@ -261,7 +259,7 @@ export default function InvestmentScreen() {
             <Text style={[styles.periodButtonText, selectedPeriod === period && styles.selectedPeriodText]}>
               {period}
             </Text>
-          </TouchableOpacity>
+          </Pressable>
         ))}
       </View>
 
@@ -314,25 +312,40 @@ export default function InvestmentScreen() {
         {stockPositions.map((position, index) => (
           <StockPositionItem 
             key={index} 
-            position={position} 
-            onPress={() => setSelectedStock(position)}
+            position={position}
           />
         ))}
       </View>
-
-      <StockDetailModal 
-        isVisible={selectedStock !== null}
-        onClose={() => setSelectedStock(null)}
-        position={selectedStock}
-      />
     </ScrollView>
+  );
+};
+
+export default function InvestmentScreen() {
+  return (
+    <SafeAreaView style={styles.safeArea}>
+      <Stack.Navigator>
+        <Stack.Screen 
+          name="InvestmentOverview" 
+          component={InvestmentOverview} 
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen 
+          name="StockDetail" 
+          component={StockDetail}
+          options={({ route }) => ({ title: route.params.position.symbol })}
+        />
+      </Stack.Navigator>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
     backgroundColor: '#f5f5f5',
+  },
+  container: {
+    flex: 1,
   },
   header: {
     padding: 20,
@@ -458,20 +471,19 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginTop: 5,
   },
-  modalContainer: {
-    flex: 1,
-    padding: 20,
+  modalContent: {
+    padding: 16,
     backgroundColor: '#fff',
   },
-  closeButton: {
-    alignSelf: 'flex-end',
-    padding: 10,
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
   },
   modalTitle: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 20,
-    textAlign: 'center',
   },
   legendContainer: {
     flexDirection: 'row',
@@ -490,7 +502,6 @@ const styles = StyleSheet.create({
   },
   transactionList: {
     marginTop: 20,
-    maxHeight: 200,
   },
   transactionTitle: {
     fontSize: 18,

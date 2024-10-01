@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Dimensions, Pressable } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Switch } from 'react-native-paper';
-import { VictoryPie, VictoryLabel, VictoryTooltip } from 'victory-native';
+import { VictoryPie, VictoryLabel, VictoryTooltip, VictoryBar, VictoryChart, VictoryAxis, VictoryStack } from 'victory-native';
 
 // Définition de la structure des catégories
 type SubCategory = string;
@@ -233,6 +234,15 @@ const mockIncomeData = [
   { x: "Autres", y: 200, color: '#66ff66' },
 ];
 
+// Mock data for budget categories over months
+const budgetCategoriesOverMonths = [
+  { month: 'Jan', Housing: 1000, Food: 500, Transportation: 300, Entertainment: 200 },
+  { month: 'Feb', Housing: 1000, Food: 550, Transportation: 280, Entertainment: 220 },
+  { month: 'Mar', Housing: 1000, Food: 480, Transportation: 310, Entertainment: 190 },
+  { month: 'Apr', Housing: 1000, Food: 520, Transportation: 290, Entertainment: 210 },
+  // Add more months as needed
+];
+
 export default function BudgetScreen() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [periodType, setPeriodType] = useState<PeriodType>('month');
@@ -273,111 +283,146 @@ export default function BudgetScreen() {
   const totalAmount = chartData.reduce((sum, item) => sum + item.y, 0);
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.periodSelector}>
-        <TouchableOpacity onPress={() => changePeriod(-1)} style={styles.arrowButton}>
-          <Ionicons name="chevron-back" size={24} color="#333" />
-        </TouchableOpacity>
-        <View>
-          <Text style={styles.periodText}>{formatPeriod(currentDate, periodType)}</Text>
-          <View style={styles.periodTypeSelector}>
-            <TouchableOpacity
-              onPress={() => setPeriodType('month')}
-              style={[styles.periodTypeButton, periodType === 'month' && styles.activePeriodType]}
-            >
-              <Text style={[styles.periodTypeText, periodType === 'month' && styles.activePeriodTypeText]}>Mois</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => setPeriodType('quarter')}
-              style={[styles.periodTypeButton, periodType === 'quarter' && styles.activePeriodType]}
-            >
-              <Text style={[styles.periodTypeText, periodType === 'quarter' && styles.activePeriodTypeText]}>Trimestre</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => setPeriodType('year')}
-              style={[styles.periodTypeButton, periodType === 'year' && styles.activePeriodType]}
-            >
-              <Text style={[styles.periodTypeText, periodType === 'year' && styles.activePeriodTypeText]}>Année</Text>
-            </TouchableOpacity>
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView style={styles.container}>
+        <View style={styles.periodSelector}>
+          <Pressable onPress={() => changePeriod(-1)} style={styles.arrowButton}>
+            <Ionicons name="chevron-back" size={24} color="#333" />
+          </Pressable>
+          <View>
+            <Text style={styles.periodText}>{formatPeriod(currentDate, periodType)}</Text>
+            <View style={styles.periodTypeSelector}>
+              <Pressable
+                onPress={() => setPeriodType('month')}
+                style={[styles.periodTypeButton, periodType === 'month' && styles.activePeriodType]}
+              >
+                <Text style={[styles.periodTypeText, periodType === 'month' && styles.activePeriodTypeText]}>Mois</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => setPeriodType('quarter')}
+                style={[styles.periodTypeButton, periodType === 'quarter' && styles.activePeriodType]}
+              >
+                <Text style={[styles.periodTypeText, periodType === 'quarter' && styles.activePeriodTypeText]}>Trimestre</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => setPeriodType('year')}
+                style={[styles.periodTypeButton, periodType === 'year' && styles.activePeriodType]}
+              >
+                <Text style={[styles.periodTypeText, periodType === 'year' && styles.activePeriodTypeText]}>Année</Text>
+              </Pressable>
+            </View>
+          </View>
+          <Pressable onPress={() => changePeriod(1)} style={styles.arrowButton}>
+            <Ionicons name="chevron-forward" size={24} color="#333" />
+          </Pressable>
+        </View>
+
+        <View style={styles.budgetTypeSelector}>
+          <Text style={[styles.budgetTypeText, budgetType === 'income' ? styles.activeBudgetType : {}]}>Income</Text>
+          <Switch
+            value={budgetType === 'income'}
+            onValueChange={(value) => setBudgetType(value ? 'income' : 'expense')}
+            color="#007AFF"
+          />
+          <Text style={[styles.budgetTypeText, budgetType === 'expense' ? styles.activeBudgetType : {}]}>Expense</Text>
+        </View>
+
+        {/* budget pie chart */}
+        <View style={styles.chartContainer}>
+          <VictoryPie
+            data={chartData}
+            colorScale={chartData.map(item => item.color)}
+            radius={({ datum }) => 100 + datum.y / 20}
+            innerRadius={80}
+            labelRadius={({ innerRadius }) => (innerRadius as number) + 30 }
+            style={{ labels: { fill: "white", fontSize: 14, fontWeight: "bold" } }}
+            width={300} height={300}
+            labelComponent={
+              <VictoryTooltip
+                renderInPortal={false}
+                flyoutStyle={{ fill: "black", stroke: "none" }}
+              />
+            }
+          />
+          <View style={styles.chartCenter}>
+            <Text style={styles.chartCenterAmount}>{totalAmount.toLocaleString()} €</Text>
+            <Text style={styles.chartCenterLabel}>{budgetType === 'expense' ? 'Dépenses' : 'Revenus'}</Text>
           </View>
         </View>
-        <TouchableOpacity onPress={() => changePeriod(1)} style={styles.arrowButton}>
-          <Ionicons name="chevron-forward" size={24} color="#333" />
-        </TouchableOpacity>
-      </View>
 
-      <View style={styles.budgetTypeSelector}>
-        <Text style={[styles.budgetTypeText, budgetType === 'income' ? styles.activeBudgetType : {}]}>Income</Text>
-        <Switch
-          value={budgetType === 'income'}
-          onValueChange={(value) => setBudgetType(value ? 'income' : 'expense')}
-          color="#007AFF"
-        />
-        <Text style={[styles.budgetTypeText, budgetType === 'expense' ? styles.activeBudgetType : {}]}>Expense</Text>
-      </View>
+        {/* Légende du graphique */}
+        <View style={styles.chartLegend}>
+          {chartData.map((item, index) => (
+            <View key={index} style={styles.legendItem}>
+              <View style={[styles.legendColor, { backgroundColor: item.color }]} />
+              <Text style={styles.legendLabel}>{item.x}</Text>
+              <Text style={styles.legendValue}>{item.y.toLocaleString()} €</Text>
+            </View>
+          ))}
+        </View>
 
-      {/* budget pie chart */}
-      <View style={styles.chartContainer}>
-        <VictoryPie
-          data={chartData}
-          colorScale={chartData.map(item => item.color)}
-          radius={({ datum }) => 100 + datum.y / 20}
-          innerRadius={80}
-          labelRadius={({ innerRadius }) => (innerRadius as number) + 30 }
-          style={{ labels: { fill: "white", fontSize: 14, fontWeight: "bold" } }}
-          width={300} height={300}
-          labelComponent={
-            <VictoryTooltip
-              renderInPortal={false}
-              flyoutStyle={{ fill: "black", stroke: "none" }}
+        {/* New stacked bar chart for budget categories over months */}
+        <View style={styles.chartContainer}>
+          <Text style={styles.chartTitle}>Budget Categories Over Months</Text>
+          <VictoryChart
+            domainPadding={{ x: 25 }}
+            width={350}
+            height={300}
+          >
+            <VictoryAxis
+              tickValues={budgetCategoriesOverMonths.map(d => d.month)}
+              style={{ tickLabels: { fontSize: 12, padding: 5 } }}
             />
-          }
-        />
-        <View style={styles.chartCenter}>
-          <Text style={styles.chartCenterAmount}>{totalAmount.toLocaleString()} €</Text>
-          <Text style={styles.chartCenterLabel}>{budgetType === 'expense' ? 'Dépenses' : 'Revenus'}</Text>
+            <VictoryAxis
+              dependentAxis
+              tickFormat={(t) => `${t / 1000}k€`}
+              style={{ tickLabels: { fontSize: 12, padding: 5 } }}
+            />
+            <VictoryStack colorScale={["#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0"]}>
+              {["Housing", "Food", "Transportation", "Entertainment"].map((category, index) => (
+                <VictoryBar
+                  key={index}
+                  data={budgetCategoriesOverMonths}
+                  x="month"
+                  y={category}
+                />
+              ))}
+            </VictoryStack>
+          </VictoryChart>
         </View>
-      </View>
 
-      {/* Légende du graphique */}
-      <View style={styles.chartLegend}>
-        {chartData.map((item, index) => (
-          <View key={index} style={styles.legendItem}>
-            <View style={[styles.legendColor, { backgroundColor: item.color }]} />
-            <Text style={styles.legendLabel}>{item.x}</Text>
-            <Text style={styles.legendValue}>{item.y.toLocaleString()} €</Text>
-          </View>
-        ))}
-      </View>
-
-      {/* <Text style={styles.title}>Catégories de Budget</Text>
-      {budgetType === 'expense' ? (
-        budgetExpensesCategories.map((category, index) => (
-          <View key={index} style={styles.categoryContainer}>
-            <Text style={styles.categoryName}>{category.name}</Text>
-            {category.subCategories.map((subCategory, subIndex) => (
-              <Text key={subIndex} style={styles.subCategory}>
-                • {subCategory}
-              </Text>
-            ))}
-          </View>
-        ))
-      ) : (
-        budgetIncomesCategories.map((category, index) => (
-          <View key={index} style={styles.categoryContainer}>
-            <Text style={styles.categoryName}>{category}</Text>
-          </View>
-        ))
-      )} */}
-    </ScrollView>
+        {/* <Text style={styles.title}>Catégories de Budget</Text>
+        {budgetType === 'expense' ? (
+          budgetExpensesCategories.map((category, index) => (
+            <View key={index} style={styles.categoryContainer}>
+              <Text style={styles.categoryName}>{category.name}</Text>
+              {category.subCategories.map((subCategory, subIndex) => (
+                <Text key={subIndex} style={styles.subCategory}>
+                  • {subCategory}
+                </Text>
+              ))}
+            </View>
+          ))
+        ) : (
+          budgetIncomesCategories.map((category, index) => (
+            <View key={index} style={styles.categoryContainer}>
+              <Text style={styles.categoryName}>{category}</Text>
+            </View>
+          ))
+        )} */}
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#f5f5f5',
+  },
   container: {
     flex: 1,
     padding: 16,
-    backgroundColor: '#f5f5f5',
   },
   title: {
     fontSize: 24,
@@ -471,14 +516,16 @@ const styles = StyleSheet.create({
   },
   chartContainer: {
     alignItems: 'center',
-    justifyContent: 'center',
     marginVertical: 20,
-    position: 'relative',
+    backgroundColor: '#fff',
+    padding: 15,
+    borderRadius: 10,
   },
   chartCenter: {
     position: 'absolute',
     alignItems: 'center',
     justifyContent: 'center',
+    top: '50%',
   },
   chartCenterAmount: {
     fontSize: 24,
@@ -513,5 +560,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
     color: '#333',
+  },
+  chartTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
   },
 });
