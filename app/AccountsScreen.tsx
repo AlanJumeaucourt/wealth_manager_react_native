@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useCallback, useEffect } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView, SafeAreaView, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, SafeAreaView, Dimensions, FlatList } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { VictoryArea, VictoryChart, VictoryAxis, VictoryTheme } from 'victory-native';
 import { Provider as PaperProvider, TextInput, Button as PaperButton } from 'react-native-paper';
@@ -50,6 +50,7 @@ export default function AccountsScreen() {
   const router = useRouter();
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [wealthData, setWealthData] = useState([]);
+  const [bottomSheetIndex, setBottomSheetIndex] = useState(-1);
 
   const screenWidth = Dimensions.get('window').width;
   const containerPadding = 40; // 20 de chaque côté
@@ -114,21 +115,20 @@ export default function AccountsScreen() {
     }
   };
 
-  // These snapPoints define the height of the bottom sheet at different stages
-  const snapPoints = useMemo(() => ['75%'], []);
+  // Update the snapPoints to include a closed state
+  const snapPoints = useMemo(() => [1, '75%'], []);
 
   const handleSheetChanges = useCallback((index: number) => {
     console.log('handleSheetChanges', index);
+    setBottomSheetIndex(index);
   }, []);
 
   const openBottomSheet = useCallback(() => {
-    bottomSheetRef.current?.expand();
-    setIsBottomSheetVisible(true);
+    setBottomSheetIndex(1);
   }, []);
 
   const closeBottomSheet = useCallback(() => {
-    bottomSheetRef.current?.close();
-    setIsBottomSheetVisible(false);
+    setBottomSheetIndex(0);
   }, []);
 
   const handleBankSelection = (itemValue: string) => {
@@ -152,6 +152,20 @@ export default function AccountsScreen() {
 
   // Créez un tableau de banques uniques à partir des comptes existants
   const uniqueBanks = Array.from(new Set(accounts.map(account => account.bank.name)));
+
+  const renderFilterItem = ({ item }) => (
+    <Pressable
+      style={[
+        styles.filterButton,
+        selectedFilter === item && styles.selectedFilter,
+      ]}
+      onPress={() => setSelectedFilter(item)}
+    >
+      <Text style={[styles.filterText, selectedFilter === item && styles.selectedFilterText]}>
+        {item}
+      </Text>
+    </Pressable>
+  );
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -196,27 +210,15 @@ export default function AccountsScreen() {
 
             {/* Filters */}
             <View style={styles.filtersContainer}>
-              <ScrollView
+              <FlatList
+                data={filters}
+                renderItem={renderFilterItem}
+                keyExtractor={(item) => item}
                 horizontal
                 showsHorizontalScrollIndicator={false}
+                scrollEnabled={false}
                 contentContainerStyle={styles.filtersScrollViewContent}
-              >
-                {filters.map((filter, index) => (
-                  <Pressable
-                    key={filter}
-                    style={[
-                      styles.filterButton,
-                      { width: filterButtonWidth },
-                      selectedFilter === filter && styles.selectedFilter,
-                    ]}
-                    onPress={() => setSelectedFilter(filter)}
-                  >
-                    <Text style={[styles.filterText, selectedFilter === filter && styles.selectedFilterText]}>
-                      {filter}
-                    </Text>
-                  </Pressable>
-                ))}
-              </ScrollView>
+              />
             </View>
 
             {/* Grouped Accounts List */}
@@ -259,7 +261,7 @@ export default function AccountsScreen() {
           {/* Add the BottomSheet component */}
           <BottomSheet
             ref={bottomSheetRef}
-            index={-1}
+            index={bottomSheetIndex}
             snapPoints={snapPoints}
             onChange={handleSheetChanges}
             enablePanDownToClose={true}
@@ -352,6 +354,7 @@ const styles = StyleSheet.create({
   },
   filterButton: {
     paddingVertical: 8,
+    paddingHorizontal: 16,
     borderRadius: 16,
     backgroundColor: colors.lightGray,
     alignItems: 'center',
@@ -365,7 +368,6 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontWeight: '600',
     fontSize: 14,
-    textAlign: 'center',
   },
   selectedFilterText: {
     color: colors.white,

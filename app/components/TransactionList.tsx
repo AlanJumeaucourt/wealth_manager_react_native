@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { format, parseISO } from 'date-fns';
 import { Transaction } from '../../types/transaction';
+import { mockAccounts } from '../api/mockApi';
 
 interface TransactionListProps {
   transactions: Transaction[];
@@ -51,6 +52,11 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, account
       return total;
     }, 0);
   };
+  
+  const accountNameFromId = (accountId: number) => {
+    const account = mockAccounts.find(a => a.id === accountId);
+    return account ? account.name : accountId.toString();
+  };
 
   const handlePress = (transaction: Transaction) => {
     navigation.navigate('TransactionDetails', { transaction });
@@ -83,8 +89,14 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, account
                     <Text style={styles.transactionDescription}>{item.description}</Text>
                     {item.type === 'transfer' && (
                       <Text style={styles.transferDetails}>
-                        Transfer: {item.fromAccountId} → {item.toAccountId}
+                        {accountNameFromId(item.fromAccountId)} → {accountNameFromId(item.toAccountId)}
                       </Text>
+                    )}
+                    {item.type === 'expense' && (
+                        <Text style={styles.expenseDetails}>{accountNameFromId(item.fromAccountId)}</Text>
+                    )}
+                    {item.type === 'income' && (
+                        <Text style={styles.incomeDetails}>{accountNameFromId(item.toAccountId)}</Text>
                     )}
                   </View>
                   <Text style={[
@@ -185,6 +197,17 @@ const styles = StyleSheet.create({
   transferDetails: {
     fontSize: 14,
     color: '#2196F3',
+    fontWeight: '300',
+  },
+  expenseDetails: {
+    fontSize: 14,
+    color: '#000000',
+    fontWeight: '300',
+  },
+  incomeDetails: {
+    fontSize: 14,
+    color: '#000000',
+    fontWeight: '300',
   },
 });
 
