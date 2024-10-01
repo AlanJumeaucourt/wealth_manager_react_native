@@ -1,27 +1,22 @@
 import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { format, parseISO } from 'date-fns';
-import { formatAmount } from './CommonTransactionComponents';
-
-interface Transaction {
-  id: string;
-  date: string;
-  description: string;
-  amount: number;
-  type: string;
-  fromAccountId: string;
-  toAccountId: string;
-}
+import { Transaction } from '../../types/transaction';
 
 interface TransactionListProps {
   transactions: Transaction[];
-  accountId: string;
+  accountId: number;
 }
 
 const TransactionList: React.FC<TransactionListProps> = ({ transactions, accountId }) => {
+  if (accountId) {
+    transactions = transactions.filter(transaction => transaction.fromAccountId === accountId || transaction.toAccountId === accountId);
+  }
+  const navigation = useNavigation();
   const groupedTransactions = useMemo(() => {
     const groups: Record<string, Transaction[]> = {};
-    transactions.forEach(transaction => {
+    (transactions || []).forEach(transaction => {
       if (!groups[transaction.date]) {
         groups[transaction.date] = [];
       }
@@ -29,6 +24,11 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, account
     });
     return Object.entries(groups).sort((a, b) => new Date(b[0]).getTime() - new Date(a[0]).getTime());
   }, [transactions]);
+
+  const formatAmount = (amount: number, type: string) => {
+    const formattedAmount = amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return type === 'expense' ? `-${formattedAmount} €` : `${formattedAmount} €`;
+  };
 
   const formatDate = (dateString: string) => {
     const date = parseISO(dateString);
@@ -52,6 +52,10 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, account
     }, 0);
   };
 
+  const handlePress = (transaction: Transaction) => {
+    navigation.navigate('TransactionDetails', { transaction });
+  };
+
   return (
     <ScrollView style={styles.transactionList}>
       {groupedTransactions.map(([date, transactions]) => {
@@ -66,8 +70,9 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, account
             </View>
             <View style={styles.transactionsContainer}>
               {transactions.map((item, index) => (
-                <View 
+                <Pressable 
                   key={item.id} 
+                  onPress={() => handlePress(item)}
                   style={[
                     styles.transactionItem,
                     index === 0 && styles.firstTransaction,
@@ -89,7 +94,7 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, account
                   ]}>
                     {formatAmount(item.amount, item.type)}
                   </Text>
-                </View>
+                </Pressable>
               ))}
             </View>
           </View>
@@ -173,6 +178,13 @@ const styles = StyleSheet.create({
   transfer: {
     color: '#2196F3',
     fontWeight: 'normal',
+  },
+  transactionDetails: {
+    flex: 1,
+  },
+  transferDetails: {
+    fontSize: 14,
+    color: '#2196F3',
   },
 });
 

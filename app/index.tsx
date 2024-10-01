@@ -8,9 +8,9 @@ import { CommonActions } from '@react-navigation/native';
 
 import AccountsScreen from './AccountsScreen';
 import TransactionsScreen from './TransactionsScreen';
-import InvestmentScreen from './investment';
-import BudgetScreen from './budgetScreen';
-import WealthDashboard from './wealthDashboard';
+import InvestmentScreen from './InvestmentScreen';
+import BudgetScreen from './BudgetScreen';
+import WealthDashboard from './WealthScreen';
 
 const Tab = createBottomTabNavigator();
 

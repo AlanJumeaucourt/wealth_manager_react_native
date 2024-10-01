@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, useCallback } from 'react';
+import React, { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView, SafeAreaView, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { VictoryArea, VictoryChart, VictoryAxis, VictoryTheme } from 'victory-native';
@@ -12,6 +12,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Button } from 'react-native-paper';
+import { Account } from '@/types/account';
+import { fetchAccounts, fetchWealthOverTime } from './api/mockApi';
 
 // Define the navigation param list
 type RootStackParamList = {
@@ -20,37 +22,6 @@ type RootStackParamList = {
 
 // Define the navigation prop type
 type AccountsScreenNavigationProp = StackNavigationProp<RootStackParamList, 'TransactionsScreen'>;
-
-type AccountType = 'checking' | 'saving' | 'investment';
-
-type Bank = {
-  id: number;
-  name: string;
-}
-
-// Define the Account type
-type Account = {
-  id: number;
-  name: string;
-  balance: number;
-  bank: Bank;
-  type: AccountType;
-};
-
-// Mock data for demonstration
-const mockAccounts: Account[] = [
-  { id: 1, name: 'Compte Courant', balance: 1500, bank: { id: 1, name: 'BNP Paribas' }, type: 'checking' },
-  { id: 2, name: 'Livret A', balance: 5000, bank: { id: 1, name: 'BNP Paribas' }, type: 'saving' },
-  { id: 3, name: 'PEL', balance: 7000, bank: { id: 2, name: 'Société Générale' }, type: 'investment' },
-  { id: 4, name: 'Compte Joint', balance: 3000, bank: { id: 3, name: 'Crédit Agricole' }, type: 'checking' },
-  { id: 5, name: 'PEA', balance: 10000, bank: { id: 4, name: 'Société Générale' }, type: 'investment' },
-  { id: 6, name: 'CTO', balance: 12000, bank: { id: 4, name: 'Société Générale' }, type: 'investment' },
-];
-
-const wealthOverTimeData = Array.from({ length: 60 }, (_, index) => ({
-  x: index + 1,
-  y: 37000 + (index * 100)
-}));
 
 const filters = ['All', 'Checking', 'Saving', 'Investment'];
 
@@ -66,9 +37,6 @@ const colors = {
   darkGray: '#bdc3c7',
 };
 
-// Créez un tableau de banques uniques à partir des comptes existants
-const uniqueBanks = Array.from(new Set(mockAccounts.map(account => account.bank.name)));
-
 export default function AccountsScreen() {
   const navigation = useNavigation<AccountsScreenNavigationProp>();
   const [selectedFilter, setSelectedFilter] = useState('All');
@@ -80,19 +48,33 @@ export default function AccountsScreen() {
   const [newBankName, setNewBankName] = useState('');
   const [isAddingNewBank, setIsAddingNewBank] = useState(false);
   const router = useRouter();
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [wealthData, setWealthData] = useState([]);
 
   const screenWidth = Dimensions.get('window').width;
   const containerPadding = 40; // 20 de chaque côté
   const totalGapWidth = 30; // Espace total entre les boutons (10 * 3)
-  const filterButtonWidth = (screenWidth - containerPadding - 32 - totalGapWidth) / filters.length;
+  const filterButtonWidth = (screenWidth - containerPadding - totalGapWidth) / filters.length;
+
+  useEffect(() => {
+    const loadData = async () => {
+      const fetchedAccounts = await fetchAccounts();
+      setAccounts(fetchedAccounts);
+
+      const fetchedWealthData = await fetchWealthOverTime();
+      setWealthData(fetchedWealthData);
+    };
+
+    loadData();
+  }, []);
 
   // Filter accounts based on the selected filter
   const filteredAccounts = useMemo(() => {
     if (selectedFilter === 'All') {
-      return mockAccounts;
+      return accounts.filter(account => account.type != 'income' && account.type != 'expense');
     }
-    return mockAccounts.filter(account => account.type === selectedFilter.toLowerCase());
-  }, [selectedFilter]);
+    return accounts.filter(account => account.type === selectedFilter.toLowerCase());
+  }, [selectedFilter, accounts]);
 
   // Group accounts by bank
   const groupedAccounts = useMemo(() => {
@@ -165,8 +147,11 @@ export default function AccountsScreen() {
   };
 
   const totalBalance = useMemo(() => {
-    return mockAccounts.reduce((sum, account) => sum + account.balance, 0);
-  }, []);
+    return accounts.reduce((sum, account) => sum + account.balance, 0);
+  }, [accounts]);
+
+  // Créez un tableau de banques uniques à partir des comptes existants
+  const uniqueBanks = Array.from(new Set(accounts.map(account => account.bank.name)));
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -201,7 +186,7 @@ export default function AccountsScreen() {
                   }}
                 />
                 <VictoryArea
-                  data={wealthOverTimeData}
+                  data={wealthData}
                   x="x"
                   y="y"
                   style={{ data: { fill: colors.primary } }}
@@ -221,9 +206,8 @@ export default function AccountsScreen() {
                     key={filter}
                     style={[
                       styles.filterButton,
-                      selectedFilter === filter && styles.selectedFilter,
                       { width: filterButtonWidth },
-                      index < filters.length - 1 && { marginRight: 10 }
+                      selectedFilter === filter && styles.selectedFilter,
                     ]}
                     onPress={() => setSelectedFilter(filter)}
                   >
@@ -372,6 +356,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.lightGray,
     alignItems: 'center',
     justifyContent: 'center',
+    marginRight: 10,
   },
   selectedFilter: {
     backgroundColor: colors.primary,

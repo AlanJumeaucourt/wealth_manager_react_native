@@ -4,7 +4,7 @@ import { setupAxiosInterceptors, setAuthToken } from '@/utils/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ThemeProvider, DefaultTheme } from '@react-navigation/native';
 import { Stack } from 'expo-router';
-import InvestmentScreen from './investment';
+import InvestmentScreen from './InvestmentScreen';
 
 const theme = {
   ...DefaultTheme,
