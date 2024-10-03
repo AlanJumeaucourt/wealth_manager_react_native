@@ -5,21 +5,17 @@ import { VictoryArea, VictoryChart, VictoryAxis, VictoryTheme } from 'victory-na
 import { Provider as PaperProvider, TextInput, Button as PaperButton } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
-import BottomSheet from '@gorhom/bottom-sheet';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { Picker } from '@react-native-picker/picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Button } from 'react-native-paper';
 import { Account } from '@/types/account';
-import { createBank, createAccount } from './api/bankApi';
-import { ScrollView as GestureHandlerScrollView } from 'react-native-gesture-handler';
 import { Bank } from '@/types/bank';
-import { Transaction } from '@/types/transaction'; // Import the Transaction type if needed
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchAccounts } from '../actions/accountActions';
 import { fetchBanks } from '../actions/bankActions';
+import { colors } from '../constants/colors';
 
 // Define the navigation param list
 type RootStackParamList = {
@@ -32,17 +28,6 @@ type AccountsScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Tra
 
 const filters = ['All', 'Checking', 'Savings', 'Investment'];
 
-// Définissez une palette de couleurs cohérente
-const colors = {
-    primary: '#3498db',
-    secondary: '#2ecc71',
-    background: '#f5f5f5',
-    text: '#2c3e50',
-    lightText: '#7f8c8d',
-    white: '#ffffff',
-    lightGray: '#ecf0f1',
-    darkGray: '#bdc3c7',
-};
 
 export default function AccountsScreen() {
     const dispatch = useDispatch();
@@ -79,7 +64,7 @@ export default function AccountsScreen() {
             groups[bankName as string].push(account);
             return groups;
         }, {} as Record<string, Account[]>);
-    }, [filteredAccounts, banks]);
+    }, [filteredAccounts, banks, accounts]);
 
     const handleAccountPress = (account: Account) => {
         if (account.type === 'checking' || account.type === 'savings') {
