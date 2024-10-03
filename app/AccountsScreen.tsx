@@ -59,11 +59,8 @@ export default function AccountsScreen() {
     };
 
     useEffect(() => {
-        const loadData = async () => {
-            dispatch(fetchAccounts());
-            dispatch(fetchBanks());
-        };
-        loadData();
+        dispatch(fetchAccounts());
+        dispatch(fetchBanks());
     }, []);
 
     const filteredAccounts = useMemo(() => {

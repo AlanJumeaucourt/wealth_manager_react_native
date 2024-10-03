@@ -3,10 +3,12 @@ import { StyleSheet, ScrollView, SafeAreaView, View, Platform, TouchableOpacity 
 import { TextInput, Button, Text } from 'react-native-paper';
 import { Picker } from '@react-native-picker/picker';
 import { useRouter } from 'expo-router';
-import { fetchBanks, createBank, createAccount } from './api/bankApi';
+import { createBank, createAccount } from './api/bankApi';
 import { Bank } from '@/types/bank';
 import { ActionSheetIOS } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
+import { fetchBanks } from '../actions/bankActions';
+import { fetchAccounts } from '../actions/accountActions';
 
 const colors = {
     primary: '#3498db',
@@ -56,7 +58,6 @@ export default function AddAccountScreen() {
         if (isAddingNewBank) {
             try {
                 const newBank = await createBank(newBankName);
-                setBanks([...banks, newBank]);
                 bankId = newBank.id;
             } catch (error) {
                 console.error('Error adding bank:', error);
@@ -74,12 +75,9 @@ export default function AddAccountScreen() {
         try {
             await createAccount(newAccountData);
             router.back();
-            if (refreshAccounts) { // Check if refreshAccounts is defined
-                refreshAccounts(); // Call the refresh function
-                console.log('refreshAccounts');
-                
-            }
-        } catch (error) {
+            dispatch(fetchAccounts());       
+        }
+        catch (error) {
             console.error('Error adding account:', error);
         }
     };
