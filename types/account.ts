@@ -1,9 +1,7 @@
-import { Bank } from './bank';
-
 export interface Account {
   id: number;
   name: string;
-  type: 'checking' | 'saving' | 'investment' | 'expense' | 'income';
+  type: 'checking' | 'savings' | 'investment' | 'expense' | 'income';
   balance: number;
-  bank: Bank;
+  bankId: number;
 }

@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, Pressable } from 'react-native';
 import { TextInput, Button, Text } from 'react-native-paper';
-import { useRouter } from 'expo-router';
+import { useNavigation, useRouter } from 'expo-router';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-const API_URL = 'http://100.80.185.72:5000/api';
+const API_URL = 'http://100.80.185.72:5000';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -13,6 +12,7 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
+  const navigation = useNavigation();
 
   const handleLogin = async () => {
     setLoading(true);
@@ -35,7 +35,7 @@ export default function LoginScreen() {
         await AsyncStorage.setItem('accessToken', response.data.access_token);
         await AsyncStorage.setItem('refreshToken', response.data.refresh_token);
         console.log('Tokens stored, redirecting to home');
-        router.replace('/');
+        router.replace('/AccountsScreen');
       } else {
         console.log('Invalid response data:', response);
         setError('Invalid response from server');

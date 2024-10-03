@@ -4,7 +4,7 @@ import { TextInput, Button, Text } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import axios from 'axios';
 
-const API_URL = 'http://100.80.185.72:5000/api';
+const API_URL = 'http://100.80.185.72:5000';
 
 export default function RegisterScreen() {
   const [name, setName] = useState('');

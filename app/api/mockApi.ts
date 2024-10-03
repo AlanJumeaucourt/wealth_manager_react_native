@@ -4,7 +4,7 @@ import { Transaction } from '@/types/transaction';
 // Mock data
 export const mockAccounts: Account[] = [
   { id: 1, name: 'Courant BNP', balance: 1500, bank: { id: 1, name: 'BNP Paribas' }, type: 'checking' },
-  { id: 2, name: 'Livret A', balance: 5000, bank: { id: 1, name: 'BNP Paribas' }, type: 'saving' },
+  { id: 2, name: 'Livret A', balance: 5000, bank: { id: 1, name: 'BNP Paribas' }, type: 'savings' },
   { id: 3, name: 'PEL', balance: 7000, bank: { id: 2, name: 'Société Générale' }, type: 'investment' },
   { id: 4, name: 'Compte Joint', balance: 3000, bank: { id: 3, name: 'Crédit Agricole' }, type: 'checking' },
   { id: 5, name: 'PEA', balance: 10000, bank: { id: 4, name: 'Société Générale' }, type: 'investment' },
