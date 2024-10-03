@@ -4,7 +4,7 @@ import { TextInput, Button, Text } from 'react-native-paper';
 import { useNavigation, useRouter } from 'expo-router';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-const API_URL = 'http://100.80.185.72:5000';
+import { API_URL } from '../../config';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');

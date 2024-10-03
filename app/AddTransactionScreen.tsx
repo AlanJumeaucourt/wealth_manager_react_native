@@ -60,6 +60,8 @@ const AddTransactionScreen = () => {
             };
 
             createTransaction(newTransaction);
+            console.log('Transaction submitted:', newTransaction);
+
         } else {
             console.error('Invalid account selection');
             console.error('fromAccountId:', fromAccountId);
@@ -68,7 +70,6 @@ const AddTransactionScreen = () => {
         }
 
 
-        console.log('Transaction submitted:', newTransaction);
         // router.back();
     };
 

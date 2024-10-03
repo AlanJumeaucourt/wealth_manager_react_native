@@ -1,118 +1,91 @@
-import React, { useState, useMemo, useRef, useCallback } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView, Button, SafeAreaView } from 'react-native';
-import { Provider as PaperProvider, TextInput, Button as PaperButton, BottomNavigation } from 'react-native-paper';
-import { StackNavigationProp } from '@react-navigation/stack';
+import React from 'react';
+import { Provider } from 'react-redux';
+import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { CommonActions } from '@react-navigation/native';
 
+import store from '../store'; // Ensure the correct path to your store
 import AccountsScreen from './AccountsScreen';
 import TransactionsScreen from './TransactionsScreen';
 import InvestmentScreen from './InvestmentScreen';
 import BudgetScreen from './BudgetScreen';
 import WealthDashboard from './WealthScreen';
-
+import AddAccountScreen from './AddAccountScreen';
+import AddTransactionScreen from './AddTransactionScreen';
+import AccountList from '../components/AccountList';
 const Tab = createBottomTabNavigator();
 
-export default function MyComponent() {
+export default function TabNavigator() {
   return (
-    <Tab.Navigator
-      initialRouteName="Accounts"
-      screenOptions={{
-        headerShown: false,
-      }}
-      tabBar={({ navigation, state, descriptors, insets }) => (
-        <BottomNavigation.Bar
-          navigationState={state}
-          safeAreaInsets={insets}
-          onTabPress={({ route, preventDefault }) => {
-            const event = navigation.emit({
-              type: 'tabPress',
-              target: route.key,
-              canPreventDefault: true,
-            });
-
-            if (event.defaultPrevented) {
-              preventDefault();
-            } else {
-              navigation.dispatch({
-                ...CommonActions.navigate(route.name, route.params),
-                target: state.key,
-              });
-            }
-          }}
-          renderIcon={({ route, focused, color }) => {
-            const { options } = descriptors[route.key];
-            if (options.tabBarIcon) {
-              return options.tabBarIcon({ focused, color, size: 24 });
-            }
-
-            return null;
-          }}
-          getLabelText={({ route }) => {
-            const { options } = descriptors[route.key];
-            const label =
-              options.tabBarLabel !== undefined
-                ? options.tabBarLabel
-                : options.title !== undefined
-                ? options.title
-                : route.title;
-
-            return label;
+    <Provider store={store}>
+      <Tab.Navigator
+        initialRouteName="Accounts"
+        screenOptions={{
+          headerShown: false,
+        }}
+      >
+        <Tab.Screen
+          name="Accounts"
+          component={AccountsScreen}
+          options={{
+            tabBarLabel: 'Accounts',
+            tabBarIcon: ({ color, size }) => (
+              <Icon name="account" size={size} color={color} />
+            ),
           }}
         />
-      )}
-    >
-      <Tab.Screen
-        name="Home"
-        component={AccountsScreen}
-        options={{
-          tabBarLabel: 'Home',
-          tabBarIcon: ({ color, size }) => {
-            return <Icon name="home" size={size} color={color} />;
-          },
-        }}
-      />
-      <Tab.Screen
-        name="Budget"
-        component={BudgetScreen}
-        options={{
-          tabBarLabel: 'Budget',
-          tabBarIcon: ({ color, size }) => {
-            return <Icon name="finance" size={size} color={color} />;
-          },
-        }}
-      />
-      <Tab.Screen
-        name="Transactions"
-        component={TransactionsScreen}
-        options={{
-          tabBarLabel: 'Transactions',
-          tabBarIcon: ({ color, size }) => {
-            return <Icon name="file-document-outline" size={size} color={color} />;
-          },
-        }}
-      />
-      <Tab.Screen
-        name="Investment"
-        component={InvestmentScreen}
-        options={{
-          tabBarLabel: 'Investment',
-          tabBarIcon: ({ color, size }) => {
-            return <Icon name="chart-bar" size={size} color={color} />;
-          },
-        }}
-      />
-      <Tab.Screen
-        name="Wealth"
-        component={WealthDashboard}
-        options={{
-          tabBarLabel: 'Wealth',
-          tabBarIcon: ({ color, size }) => {
-            return <Icon name="chart-bar" size={size} color={color} />;
-          },
-        }}
-      />
-    </Tab.Navigator>
+        <Tab.Screen
+          name="Transactions"
+          component={TransactionsScreen}
+          options={{
+            tabBarLabel: 'Transactions',
+            tabBarIcon: ({ color, size }) => (
+              <Icon name="file-document-outline" size={size} color={color} />
+            ),
+          }}
+        />
+        <Tab.Screen
+          name="Investment"
+          component={InvestmentScreen}
+          options={{
+            tabBarLabel: 'Investment',
+            tabBarIcon: ({ color, size }) => (
+              <Icon name="chart-bar" size={size} color={color} />
+            ),
+          }}
+        />
+        <Tab.Screen
+          name="Budget"
+          component={BudgetScreen}
+          options={{
+            tabBarLabel: 'Budget',
+            tabBarIcon: ({ color, size }) => (
+              <Icon name="finance" size={size} color={color} />
+            ),
+          }}
+        />
+        <Tab.Screen
+          name="Wealth"
+          component={WealthDashboard}
+          options={{
+            tabBarLabel: 'Wealth',
+            tabBarIcon: ({ color, size }) => (
+              <Icon name="chart-bar" size={size} color={color} />
+            ),
+          }}
+        />
+        <Tab.Screen
+          name="AddAccount"
+          component={AddAccountScreen}
+          options={{
+            tabBarLabel: 'Add Account',
+            tabBarIcon: ({ color, size }) => (
+              <Icon name="plus" size={size} color={color} />
+            ),
+          }}
+        />
+      </Tab.Navigator>
+    </Provider>
   );
 }

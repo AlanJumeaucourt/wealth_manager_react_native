@@ -1,8 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
-
-const API_URL = 'http://100.80.185.72:5000';
-
+import { API_URL } from '../config';
 export const setAuthToken = (token: string) => {
   if (token) {
     axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;

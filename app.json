@@ -1,6 +1,7 @@
 {
   "expo": {
     "name": "wealth_manager",
+    "entryPoint": "App.tsx",
     "slug": "wealth_manager",
     "version": "1.0.0",
     "orientation": "portrait",

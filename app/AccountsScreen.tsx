@@ -13,18 +13,22 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Button } from 'react-native-paper';
 import { Account } from '@/types/account';
-import { fetchBanks, fetchAccounts, createBank, createAccount } from './api/bankApi';
+import { createBank, createAccount } from './api/bankApi';
 import { ScrollView as GestureHandlerScrollView } from 'react-native-gesture-handler';
 import { Bank } from '@/types/bank';
 import { Transaction } from '@/types/transaction'; // Import the Transaction type if needed
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchAccounts } from '../actions/accountActions';
+import { fetchBanks } from '../actions/bankActions';
 
 // Define the navigation param list
 type RootStackParamList = {
     TransactionsScreen: { account: Account };
+    TransactionsScreenAccount: { account: Account };
 };
 
 // Define the navigation prop type
-type AccountsScreenNavigationProp = StackNavigationProp<RootStackParamList, 'TransactionsScreen'>;
+type AccountsScreenNavigationProp = StackNavigationProp<RootStackParamList, 'TransactionsScreen' | 'TransactionsScreenAccount'>;
 
 const filters = ['All', 'Checking', 'Savings', 'Investment'];
 
@@ -41,46 +45,36 @@ const colors = {
 };
 
 export default function AccountsScreen() {
+    const dispatch = useDispatch();
+    const { accounts, accountsLoading, accountsError } = useSelector((state: any) => state.accounts);
+    const { banks, banksLoading, banksError } = useSelector((state: any) => state.banks);
     const navigation = useNavigation<AccountsScreenNavigationProp>();
     const [selectedFilter, setSelectedFilter] = useState('All');
     const router = useRouter();
-    const [accounts, setAccounts] = useState<Account[]>([]);
     const [wealthData, setWealthData] = useState([]);
-    const [banks, setBanks] = useState<Bank[]>([]);
     const [isLogoutModalVisible, setIsLogoutModalVisible] = useState(false);
 
     const foundBankNameById = (bankId: number) => {
-        return banks.find(bank => bank.id === bankId)?.name;
+        return banks.find((bank: Bank) => bank.id === bankId)?.name;
     };
 
     useEffect(() => {
         const loadData = async () => {
-            try {
-                const [fetchedBanks, fetchedAccounts] = await Promise.all([
-                    fetchBanks(),
-                    fetchAccounts()
-                ]);
-                setBanks(fetchedBanks);
-                setAccounts(fetchedAccounts);
-            } catch (error) {
-                console.error('Error loading data:', error);
-                setBanks([]);
-                setAccounts([]);
-            }
+            dispatch(fetchAccounts());
+            dispatch(fetchBanks());
         };
-
         loadData();
     }, []);
 
     const filteredAccounts = useMemo(() => {
         if (selectedFilter === 'All') {
-            return accounts.filter(account => account.type != 'income' && account.type != 'expense');
+            return accounts.filter((account: Account) => account.type != 'income' && account.type != 'expense');
         }
-        return accounts.filter(account => account.type === selectedFilter.toLowerCase());
+        return accounts.filter((account: Account) => account.type === selectedFilter.toLowerCase());
     }, [selectedFilter, accounts]);
 
     const groupedAccounts = useMemo(() => {
-        return filteredAccounts.reduce((groups, account) => {
+        return filteredAccounts.reduce((groups: Record<string, Account[]>, account: Account) => {
             const bankName = foundBankNameById(account.bankId);
             if (!groups[bankName as string]) {
                 groups[bankName as string] = [];
@@ -192,7 +186,7 @@ export default function AccountsScreen() {
                         {/* Wealth over time */}
                         <View style={styles.wealthOverTimeContainer}>
                             <VictoryChart
-                                theme={VictoryTheme.grayscale}
+                                theme={VictoryTheme.material}                                
                                 domainPadding={20}
                                 width={Dimensions.get('window').width - 40}
                                 height={200}
@@ -269,7 +263,7 @@ export default function AccountsScreen() {
                         {/* Add Transaction Button */}
                         <Button
                             mode="contained"
-                            onPress={handleAddTransactionPress} // Add transaction button
+                            onPress={handleAddTransactionPress}
                             style={styles.addButton}
                             icon="plus"
                         >
@@ -277,7 +271,7 @@ export default function AccountsScreen() {
                         </Button>
                     </ScrollView>
 
-                    <LogoutModal />
+                    <LogoutModal/>
                 </SafeAreaView>
             </PaperProvider>
         </GestureHandlerRootView>

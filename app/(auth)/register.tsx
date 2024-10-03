@@ -3,9 +3,7 @@ import { View, StyleSheet, Pressable } from 'react-native';
 import { TextInput, Button, Text } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import axios from 'axios';
-
-const API_URL = 'http://100.80.185.72:5000';
-
+import { API_URL } from '../../config';
 export default function RegisterScreen() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');

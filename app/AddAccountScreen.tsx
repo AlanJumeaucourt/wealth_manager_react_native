@@ -6,6 +6,7 @@ import { useRouter } from 'expo-router';
 import { fetchBanks, createBank, createAccount } from './api/bankApi';
 import { Bank } from '@/types/bank';
 import { ActionSheetIOS } from 'react-native';
+import { useDispatch, useSelector } from 'react-redux';
 
 const colors = {
     primary: '#3498db',
@@ -20,7 +21,8 @@ const colors = {
 const accountTypes = ['Checking', 'Savings', 'Investment'];
 
 export default function AddAccountScreen() {
-    const [banks, setBanks] = useState<Bank[]>([]);
+    const dispatch = useDispatch();
+    const { banks, banksLoading, banksError } = useSelector((state: any) => state.banks);
     const [newAccountName, setNewAccountName] = useState('');
     const [newAccountType, setNewAccountType] = useState('');
     const [selectedBank, setSelectedBank] = useState('');
@@ -28,20 +30,10 @@ export default function AddAccountScreen() {
     const [newBankName, setNewBankName] = useState('');
     const [isAddingNewBank, setIsAddingNewBank] = useState(false);
     const router = useRouter();
-    const { refreshAccounts } = router.params || {}; // Safely access refreshAccounts
 
     useEffect(() => {
-        loadBanks();
+        dispatch(fetchBanks());
     }, []);
-
-    const loadBanks = async () => {
-        try {
-            const fetchedBanks = await fetchBanks();
-            setBanks(fetchedBanks);
-        } catch (error) {
-            console.error('Error loading banks:', error);
-        }
-    };
 
     const handleBankSelection = (itemValue: string) => {
         if (itemValue === 'add_new') {
