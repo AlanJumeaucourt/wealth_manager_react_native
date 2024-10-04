@@ -1,9 +1,11 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { format, parseISO } from 'date-fns';
 import { Transaction } from '../../types/transaction';
-import { mockAccounts } from '../api/mockApi';
+import { useDispatch, useSelector } from 'react-redux';
+import { Account } from '@/types/account';
+import { fetchAccounts } from '../../actions/accountActions';
 
 interface TransactionListProps {
   transactions: Transaction[];
@@ -11,20 +13,31 @@ interface TransactionListProps {
 }
 
 const TransactionList: React.FC<TransactionListProps> = ({ transactions, accountId }) => {
-  if (accountId) {
-    transactions = transactions.filter(transaction => transaction.fromAccountId === accountId || transaction.toAccountId === accountId);
-  }
+  const dispatch = useDispatch();
+  const { accounts, loading: accountsLoading, error: accountsError } = useSelector((state: any) => state.accounts || {});
   const navigation = useNavigation();
+
+  useEffect(() => {
+    dispatch(fetchAccounts());
+  }, [dispatch]);
+
+  const filteredTransactions = useMemo(() => {
+    if (accountId) {
+      return transactions.filter(transaction => transaction.fromAccountId === accountId || transaction.toAccountId === accountId);
+    }
+    return transactions;
+  }, [transactions, accountId]);
+
   const groupedTransactions = useMemo(() => {
     const groups: Record<string, Transaction[]> = {};
-    (transactions || []).forEach(transaction => {
+    (filteredTransactions || []).forEach(transaction => {
       if (!groups[transaction.date]) {
         groups[transaction.date] = [];
       }
       groups[transaction.date].push(transaction);
     });
     return Object.entries(groups).sort((a, b) => new Date(b[0]).getTime() - new Date(a[0]).getTime());
-  }, [transactions]);
+  }, [filteredTransactions]);
 
   const formatAmount = (amount: number, type: string) => {
     const formattedAmount = amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -54,13 +67,24 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, account
   };
   
   const accountNameFromId = (accountId: number) => {
-    const account = mockAccounts.find(a => a.id === accountId);
+    if (!accounts || !Array.isArray(accounts)) {
+      return accountId.toString();
+    }
+    const account = accounts.find(a => a.id === accountId);
     return account ? account.name : accountId.toString();
   };
 
   const handlePress = (transaction: Transaction) => {
     navigation.navigate('TransactionDetails', { transaction });
   };
+
+  if (accountsLoading) {
+    return <Text>Loading accounts...</Text>;
+  }
+
+  if (accountsError) {
+    return <Text>Error loading accounts: {accountsError instanceof Error ? accountsError.message : String(accountsError)}</Text>;
+  }
 
   return (
     <ScrollView style={styles.transactionList}>

@@ -7,5 +7,6 @@ export interface Transaction {
     type: string;
     fromAccountId: number;
     toAccountId: number;
-    category: Category;
-  }
+    category: string;
+    subCategory: string | null;
+}

@@ -1,3 +1,4 @@
+import { Action } from 'redux';
 import { FETCH_BANKS_REQUEST, FETCH_BANKS_SUCCESS, FETCH_BANKS_FAILURE } from '../actions/bankActions';
 
 const initialState = {
@@ -6,7 +7,7 @@ const initialState = {
     error: null,
 };
 
-const bankReducer = (state = initialState, action) => {
+const bankReducer = (state = initialState, action: Action) => {
     switch (action.type) {
         case FETCH_BANKS_REQUEST:
             return { ...state, loading: true, error: null };

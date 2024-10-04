@@ -37,7 +37,7 @@ export const createBank = async (name: string) => {
 
 export const fetchAccounts = async () => {
   try {
-    const response = await api.get('/accounts');
+    const response = await api.get('/accounts?per_page=100&page=1');
     console.log('Accounts response:', response.data); // Add this line for debugging
     return response.data;
   } catch (error) {
@@ -61,6 +61,22 @@ export const createAccount = async (accountData: {
   }
 };
 
+export const deleteAccount = async (accountId: number, onSuccess?: () => void) => {
+  try {
+    const response = await api.delete(`/accounts/${accountId}`);
+    
+    // If deletion is successful and onSuccess callback is provided, call it
+    if (response.status === 200 && onSuccess) {
+      onSuccess();
+    }
+    
+    return response.data;
+  } catch (error) {
+    console.error('Error deleting account:', error);
+    throw error;
+  }
+};
+
 export const createTransaction = async (transactionData: {
   date: string;
   description: string;
@@ -69,7 +85,7 @@ export const createTransaction = async (transactionData: {
   fromAccountId: number;
   toAccountId: number;
   category: string;
-  subCategory: string;
+  subCategory: string | null;
 }) => {
   try {
     const response = await api.post('/transactions', transactionData);
@@ -77,6 +93,19 @@ export const createTransaction = async (transactionData: {
   } catch (error) {
     console.error('Error creating transaction:', error);
     console.error('Error creating transaction:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
+export const deleteTransaction = async (transactionId: number, onSuccess?: () => void) => {
+  try {
+    const response = await api.delete(`/transactions/${transactionId}`);
+    if (response.status === 200 && onSuccess) {
+      onSuccess();
+    }
+    return response.data;
+  } catch (error) {
+    console.error('Error deleting transaction:', error);
     throw error;
   }
 };

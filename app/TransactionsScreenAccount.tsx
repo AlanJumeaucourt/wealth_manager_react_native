@@ -1,51 +1,92 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import TransactionList from './components/TransactionList'; // Import the TransactionList component
 import { Account } from '@/types/account';
-import { mockTransactions } from './api/mockApi';
 import { colors } from '../constants/colors';
-
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchTransactions } from '@/actions/transactionActions';
+import { BackButton } from './components/BackButton';
+import { DeleteButton } from './components/DeleteButton';
+import { deleteAccount } from './api/bankApi';
+import { fetchAccounts } from '@/actions/accountActions';
 type RouteParams = {
   account: Account;
+  refreshAccounts: () => void;
 };
 
 export default function TransactionsScreen() {
+  const dispatch = useDispatch();
+  const { transactions, loading, error } = useSelector((state: any) => state.transactions);
   const navigation = useNavigation();
   const route = useRoute();
-  const { account } = route.params as RouteParams;
+  const { account, refreshAccounts } = route.params as RouteParams;
+
+  useEffect(() => {
+    dispatch(fetchTransactions());
+  }, [dispatch]);
+
+  const handleDeleteAccount = async () => {
+    try {
+      await deleteAccount(account.id);
+      dispatch(fetchAccounts());
+      refreshAccounts(); // Appel de la fonction de rafraîchissement
+      navigation.goBack(); // Retour à l'écran des comptes
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      // Gérer l'erreur (par exemple, afficher un message à l'utilisateur)
+    }
+  };
 
   return (
-    <View style={styles.container}>
-      <Pressable style={styles.backButton} onPress={() => navigation.goBack()}>
-        <Ionicons name="arrow-back" size={24} color="#007AFF" />
-        <Text style={styles.backButtonText}>Back</Text>
-      </Pressable>
+    <View style={styles.mainContainer}>
+      <View style={styles.header}>
+        <BackButton />
+        <DeleteButton
+          deleteText="Delete Account"
+          deleteTextAlert="Are you sure you want to delete this account?"
+          deleteFunction={handleDeleteAccount}
+        />
+      </View>
+      <View style={styles.body}>
+        <View style={styles.accountHeader}>
+          <Text style={styles.accountName}>{account.name}</Text>
+          <Text style={styles.accountBalance}>{account.balance.toLocaleString()} €</Text>
+        </View>
+        <ScrollView>
 
-      <Text style={styles.accountName}>{account.name}</Text>
-      <Text style={styles.accountBalance}>{account.balance.toLocaleString()} €</Text>
+          <View style={styles.container}>
 
-      <TransactionList transactions={mockTransactions} accountId={account.id} />
-
+            <TransactionList transactions={transactions} accountId={account.id} />
+          </View>
+        </ScrollView>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  mainContainer: {
     flex: 1,
-    backgroundColor: '#F0F0F0',
-    paddingTop: 50,
-    paddingHorizontal: 20,
   },
-  backButton: {
+  header: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 20,
   },
+  body: {
+    paddingHorizontal: 20,
+  },
   transactionDetails: {
     flex: 1,
+  },
+  accountHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
   },
   accountInfo: {
     fontSize: 12,
@@ -66,11 +107,6 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 10,
-  },
-  accountHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
   },
   accountBalance: {
     fontSize: 20,
@@ -151,4 +187,5 @@ const styles = StyleSheet.create({
     color: '#2196F3',
     fontWeight: 'normal',
   },
+
 });

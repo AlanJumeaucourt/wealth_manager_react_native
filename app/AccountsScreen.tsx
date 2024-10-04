@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useCallback, useEffect } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView, SafeAreaView, Dimensions, FlatList, Modal } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, Dimensions, FlatList, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { VictoryArea, VictoryChart, VictoryAxis, VictoryTheme } from 'victory-native';
 import { Provider as PaperProvider, TextInput, Button as PaperButton } from 'react-native-paper';
@@ -7,7 +7,7 @@ import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter } from 'expo-router';
+import { router, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Button } from 'react-native-paper';
 import { Account } from '@/types/account';
@@ -16,6 +16,13 @@ import { useDispatch, useSelector } from 'react-redux';
 import { fetchAccounts } from '../actions/accountActions';
 import { fetchBanks } from '../actions/bankActions';
 import { colors } from '../constants/colors';
+import AddTransactionScreen from './AddTransactionScreen';
+import AddAccountScreen from './AddAccountScreen';
+import { BottomSheetModal, BottomSheetModalProvider } from '@gorhom/bottom-sheet';
+import { createStackNavigator } from '@react-navigation/stack';
+import SafeViewAndroid from "./components/SafeViewAndroid";
+import TransactionsScreenAccount from './TransactionsScreenAccount';
+import TransactionDetails from './TransactionDetails';
 
 // Define the navigation param list
 type RootStackParamList = {
@@ -28,6 +35,7 @@ type AccountsScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Tra
 
 const filters = ['All', 'Checking', 'Savings', 'Investment'];
 
+const Stack = createStackNavigator();
 
 export default function AccountsScreen() {
     const dispatch = useDispatch();
@@ -38,6 +46,7 @@ export default function AccountsScreen() {
     const router = useRouter();
     const [wealthData, setWealthData] = useState([]);
     const [isLogoutModalVisible, setIsLogoutModalVisible] = useState(false);
+    const [refreshKey, setRefreshKey] = useState(0); // Ajoutez cet état
 
     const foundBankNameById = (bankId: number) => {
         return banks.find((bank: Bank) => bank.id === bankId)?.name;
@@ -46,14 +55,14 @@ export default function AccountsScreen() {
     useEffect(() => {
         dispatch(fetchAccounts());
         dispatch(fetchBanks());
-    }, []);
+    }, [dispatch, refreshKey]); // Ajoutez refreshKey ici
 
     const filteredAccounts = useMemo(() => {
         if (selectedFilter === 'All') {
             return accounts.filter((account: Account) => account.type != 'income' && account.type != 'expense');
         }
         return accounts.filter((account: Account) => account.type === selectedFilter.toLowerCase());
-    }, [selectedFilter, accounts]);
+    }, [selectedFilter, accounts, dispatch]);
 
     const groupedAccounts = useMemo(() => {
         return filteredAccounts.reduce((groups: Record<string, Account[]>, account: Account) => {
@@ -64,13 +73,17 @@ export default function AccountsScreen() {
             groups[bankName as string].push(account);
             return groups;
         }, {} as Record<string, Account[]>);
-    }, [filteredAccounts, banks, accounts]);
+    }, [filteredAccounts, banks, accounts, dispatch]);
 
+    // Ajoutez cette fonction
+    const refreshAccounts = useCallback(() => {
+        setRefreshKey(prevKey => prevKey + 1);
+    }, []);
+
+    // Modifiez la navigation pour inclure la fonction de rafraîchissement
     const handleAccountPress = (account: Account) => {
         if (account.type === 'checking' || account.type === 'savings') {
-            navigation.navigate('TransactionsScreenAccount', {
-                account: account
-            });
+            navigation.navigate('TransactionsScreenAccount', { account: account, refreshAccounts });
         }
     };
 
@@ -82,7 +95,7 @@ export default function AccountsScreen() {
 
     const totalBalance = useMemo(() => {
         return accounts.reduce((sum, account) => sum + account.balance, 0);
-    }, [accounts]);
+    }, [accounts, dispatch]);
 
     const renderFilterItem = ({ item }) => (
         <Pressable
@@ -139,123 +152,128 @@ export default function AccountsScreen() {
         </Modal>
     );
 
-    const handleAddAccountPress = () => {
-        router.push('/AddAccountScreen', {
-            refreshAccounts: () => loadData() // Pass the callback to refresh accounts
-        });
-    };
-
-    const handleAddTransactionPress = () => {
-        router.push('/AddTransactionScreen'); // Navigate to the Add Transaction screen
-    };
-
     return (
         <GestureHandlerRootView style={{ flex: 1 }}>
-            <PaperProvider>
-                <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-                    <StatusBar style="auto" />
-                    <View style={styles.header}>
-                        <Text style={styles.headerTitle}>Accounts</Text>
-                        <LogoutButton />
-                    </View>
-                    <ScrollView contentContainerStyle={styles.scrollViewContent}>
-                        {/* Total Balance */}
-                        <View style={styles.totalBalanceContainer}>
-                            <Text style={styles.totalBalance}>{totalBalance.toLocaleString()} €</Text>
-                            <Text style={styles.totalBalanceLabel}>total balance</Text>
-                        </View>
-
-                        {/* Wealth over time */}
-                        <View style={styles.wealthOverTimeContainer}>
-                            <VictoryChart
-                                theme={VictoryTheme.material}                                
-                                domainPadding={20}
-                                width={Dimensions.get('window').width - 40}
-                                height={200}
-                            >
-                                <VictoryAxis
-                                    fixLabelOverlap={true}
-                                    tickValues={[1, 10, 20, 30, 40, 50]}
-                                    tickFormat={["Jan", "Feb", "Mar", "Apr", "May", "Jun"]}
-                                />
-                                <VictoryAxis
-                                    dependentAxis
-                                    tickFormat={(t) => `${t}€`}
-                                    style={{
-                                        tickLabels: { padding: 5 }
-                                    }}
-                                />
-                                <VictoryArea
-                                    data={wealthData}
-                                    x="x"
-                                    y="y"
-                                    style={{ data: { fill: colors.primary } }}
-                                />
-                            </VictoryChart>
-                        </View>
-
-                        {/* Filters */}
-                        <View style={styles.filtersContainer}>
-                            <FlatList
-                                data={filters}
-                                renderItem={renderFilterItem}
-                                keyExtractor={(item) => item}
-                                horizontal
-                                showsHorizontalScrollIndicator={false}
-                                scrollEnabled={false}
-                                contentContainerStyle={styles.filtersScrollViewContent}
-                            />
-                        </View>
-
-                        {/* Grouped Accounts List */}
-                        {Object.keys(groupedAccounts).length > 0 ? (
-                            <View>
-                                {Object.keys(groupedAccounts).map((bank) => (
-                                    <View key={bank} style={styles.bankContainer}>
-                                        <Text style={styles.bankName}>{bank}</Text>
-                                        {groupedAccounts[bank].map((account) => (
-                                            <Pressable
-                                                key={account.id}
-                                                style={styles.accountItem}
-                                                onPress={() => handleAccountPress(account)}
-                                            >
-                                                <View style={styles.accountHeader}>
-                                                    <Text style={styles.accountName}>{account.name}</Text>
-                                                    <Text style={styles.accountBalance}>{account.balance.toLocaleString()} €</Text>
-                                                </View>
-                                            </Pressable>
-                                        ))}
+            <BottomSheetModalProvider>
+                <PaperProvider>
+                    <Stack.Navigator
+                        screenOptions={{
+                            headerShown: false,
+                        }}
+                    >
+                        <Stack.Screen name="Accounts" options={{ headerShown: false }}>
+                            {() => (
+                                <View style={[styles.container, { backgroundColor: colors.background }]}>
+                                    <StatusBar style="auto" />
+                                    <View style={styles.header}>
+                                        <Text style={styles.headerTitle}>Accounts</Text>
+                                        <LogoutButton />
                                     </View>
-                                ))}
-                            </View>
-                        ) : (
-                            <Text style={styles.noAccountsText}>No accounts found for this filter.</Text>
-                        )}
+                                    <ScrollView contentContainerStyle={styles.scrollViewContent}>
+                                        {/* Total Balance */}
+                                        <View style={styles.totalBalanceContainer}>
+                                            <Text style={styles.totalBalance}>{totalBalance.toLocaleString()} €</Text>
+                                            <Text style={styles.totalBalanceLabel}>total balance</Text>
+                                        </View>
 
-                        {/* Add Account Button */}
-                        <Button
-                            mode="contained"
-                            onPress={handleAddAccountPress}
-                            style={styles.addButton}
-                            icon="plus"
-                        >
-                            Add Account
-                        </Button>
+                                        {/* Wealth over time */}
+                                        <View style={styles.wealthOverTimeContainer}>
+                                            <VictoryChart
+                                                theme={VictoryTheme.material}
+                                                domainPadding={20}
+                                                width={Dimensions.get('window').width - 40}
+                                                height={200}
+                                            >
+                                                <VictoryAxis
+                                                    fixLabelOverlap={true}
+                                                    tickValues={[1, 10, 20, 30, 40, 50]}
+                                                    tickFormat={["Jan", "Feb", "Mar", "Apr", "May", "Jun"]}
+                                                />
+                                                <VictoryAxis
+                                                    dependentAxis
+                                                    tickFormat={(t) => `${t}€`}
+                                                    style={{
+                                                        tickLabels: { padding: 5 }
+                                                    }}
+                                                />
+                                                <VictoryArea
+                                                    data={wealthData}
+                                                    x="x"
+                                                    y="y"
+                                                    style={{ data: { fill: colors.primary } }}
+                                                />
+                                            </VictoryChart>
+                                        </View>
 
-                        {/* Add Transaction Button */}
-                        <Button
-                            mode="contained"
-                            onPress={handleAddTransactionPress}
-                            style={styles.addButton}
-                            icon="plus"
-                        >
-                            Add Transaction
-                        </Button>
-                    </ScrollView>
+                                        {/* Filters */}
+                                        <View style={styles.filtersContainer}>
+                                            <FlatList
+                                                data={filters}
+                                                renderItem={renderFilterItem}
+                                                keyExtractor={(item) => item}
+                                                horizontal
+                                                showsHorizontalScrollIndicator={false}
+                                                scrollEnabled={false}
+                                                contentContainerStyle={styles.filtersScrollViewContent}
+                                            />
+                                        </View>
 
-                    <LogoutModal/>
-                </SafeAreaView>
-            </PaperProvider>
+                                        {/* Grouped Accounts List */}
+                                        {Object.keys(groupedAccounts).length > 0 ? (
+                                            <View>
+                                                {Object.keys(groupedAccounts).map((bank) => (
+                                                    <View key={bank} style={styles.bankContainer}>
+                                                        <Text style={styles.bankName}>{bank}</Text>
+                                                        {groupedAccounts[bank].map((account) => (
+                                                            <Pressable
+                                                                key={account.id}
+                                                                style={styles.accountItem}
+                                                                onPress={() => handleAccountPress(account)}
+                                                            >
+                                                                <View style={styles.accountHeader}>
+                                                                    <Text style={styles.accountName}>{account.name}</Text>
+                                                                    <Text style={styles.accountBalance}>{account.balance.toLocaleString()} €</Text>
+                                                                </View>
+                                                            </Pressable>
+                                                        ))}
+                                                    </View>
+                                                ))}
+                                            </View>
+                                        ) : (
+                                            <Text style={styles.noAccountsText}>No accounts found for this filter.</Text>
+                                        )}
+
+                                        {/* Add Account Button */}
+                                        <Button
+                                            mode="contained"
+                                            onPress={() => navigation.navigate('AddAccount')}
+                                            style={styles.addButton}
+                                            icon="plus"
+                                        >
+                                            Add Account
+                                        </Button>
+
+                                        {/* Add Transaction Button */}
+                                        <Button
+                                            mode="contained"
+                                            onPress={() => navigation.navigate('AddTransaction')}
+                                            style={styles.addButton}
+                                            icon="plus"
+                                        >
+                                            Add Transaction
+                                        </Button>
+                                    </ScrollView>
+                                    <LogoutModal />
+                                </View>
+                            )}
+                        </Stack.Screen>
+                        <Stack.Screen name="AddAccount" component={AddAccountScreen} />
+                        <Stack.Screen name="AddTransaction" component={AddTransactionScreen} />
+                        <Stack.Screen name="TransactionsScreenAccount" component={TransactionsScreenAccount} />
+                        <Stack.Screen name="TransactionDetails" component={TransactionDetails} />
+                    </Stack.Navigator>
+                </PaperProvider>
+            </BottomSheetModalProvider>
         </GestureHandlerRootView>
     );
 }
@@ -263,8 +281,6 @@ export default function AccountsScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
     },
     scrollViewContent: {
         flexGrow: 1,

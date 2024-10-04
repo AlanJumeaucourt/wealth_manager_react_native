@@ -1,20 +1,50 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
 import TransactionList from './components/TransactionList';
-import { Transaction } from '../types/transaction';
-import { mockTransactions } from './api/mockApi';
+import { fetchTransactions } from '../actions/transactionActions';
+import { useDispatch, useSelector } from 'react-redux';
+import { RootState } from '../store'; // Assuming you have a root state type defined
+
+const TransactionContent = ({ 
+  transactions, 
+  transactionsLoading, 
+  transactionsError 
+}: { 
+  transactions: any[], 
+  transactionsLoading: boolean, 
+  transactionsError: string | null 
+}) => {
+  if (transactionsLoading) {
+    return <Text>Loading...</Text>;
+  }
+
+  if (transactionsError) {
+    return <Text>Error: {transactionsError}</Text>;
+  }
+
+  return (
+    <>
+      <Text style={styles.screenTitle}>All Transactions</Text>
+      {transactions && <TransactionList transactions={transactions} accountId="" />}
+    </>
+  );
+};
 
 export default function TransactionsScreen() {
-  const navigation = useNavigation();
+  const dispatch = useDispatch();
+  const { transactions, transactionsLoading, transactionsError } = useSelector((state: RootState) => state.transactions);
+
+  useEffect(() => {
+    dispatch(fetchTransactions());
+  }, [dispatch]);
 
   return (
     <View style={styles.container}>
-      {/* Removed the back button */}
-      <Text style={styles.screenTitle}>All Transactions</Text>
-
-      <TransactionList transactions={mockTransactions} accountId="" />
+      <TransactionContent 
+        transactions={transactions} 
+        transactionsLoading={transactionsLoading} 
+        transactionsError={transactionsError} 
+      />
     </View>
   );
 }
@@ -26,7 +56,6 @@ const styles = StyleSheet.create({
     paddingTop: 50,
     paddingHorizontal: 20,
   },
-  // Removed backButton and backButtonText styles
   screenTitle: {
     fontSize: 24,
     fontWeight: 'bold',

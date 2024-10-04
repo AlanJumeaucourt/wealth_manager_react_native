@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { VictoryPie, VictoryLine, VictoryChart, VictoryTheme, VictoryAxis, VictoryScatter } from 'victory-native';
 import { Ionicons } from '@expo/vector-icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { createStackNavigator } from '@react-navigation/stack';
 import { useNavigation } from '@react-navigation/native';
 
@@ -322,7 +321,6 @@ const InvestmentOverview = () => {
 
 export default function InvestmentScreen() {
   return (
-    <SafeAreaView style={styles.safeArea}>
       <Stack.Navigator>
         <Stack.Screen 
           name="InvestmentOverview" 
@@ -335,7 +333,6 @@ export default function InvestmentScreen() {
           options={({ route }) => ({ title: route.params.position.symbol })}
         />
       </Stack.Navigator>
-    </SafeAreaView>
   );
 }
 

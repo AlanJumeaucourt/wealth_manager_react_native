@@ -1,22 +1,30 @@
 import React from 'react';
-import { View, StyleSheet, ScrollView, SafeAreaView, Alert, Pressable } from 'react-native';
+import { View, StyleSheet, ScrollView, Alert, Pressable } from 'react-native';
 import { Button, Icon, Card, Text, Divider } from 'react-native-elements';
 import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
 import { format, parseISO } from 'date-fns';
 import { RootStackParamList } from '../types/navigation';
 import { Transaction } from '../types/transaction';
-import { accounts } from '../data/accounts';
-import { mockAccounts } from './api/mockApi';
+import { useDispatch, useSelector } from 'react-redux';
+import { Account } from '@/types/account';
+import { colors } from '@/constants/colors';
+import { BackButton } from '@/app/components/BackButton';
+import { DeleteButton } from '@/app/components/DeleteButton';
+import { fetchTransactions } from '@/actions/transactionActions';
+import { deleteTransaction } from './api/bankApi';
 
 type TransactionDetailsRouteProp = RouteProp<RootStackParamList, 'TransactionDetails'>;
 
-const formatAmount = (amount: number, type: Transaction) => {
+const formatAmount = (amount: number, type: string) => {
   const formattedAmount = amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   return type === 'expense' ? `-${formattedAmount} €` : `${formattedAmount} €`;
 };
 
-const accountNameFromId = (accountId: number) => {
-  const account = mockAccounts.find(a => a.id === accountId);
+const accountNameFromId = (accountId: number, accounts: Account[] | undefined) => {
+  if (!accounts || !Array.isArray(accounts)) {
+    return accountId.toString();
+  }
+  const account = accounts.find(a => a.id === accountId);
   return account ? account.name : accountId.toString();
 };
 
@@ -25,61 +33,82 @@ const handleEdit = (transactionId: string) => {
   Alert.alert('Edit', `Edit transaction with ID: ${transactionId}`);
 };
 
-const handleDelete = (transactionId: string) => {
-  // Confirm and delete the transaction
-  Alert.alert(
-    'Delete',
-    'Are you sure you want to delete this transaction?',
-    [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', onPress: () => console.log(`Deleted transaction with ID: ${transactionId}`) },
-    ],
-    { cancelable: true }
-  );
-};
-
 export default function TransactionDetailsScreen() {
   const route = useRoute<TransactionDetailsRouteProp>();
   const navigation = useNavigation();
-  const transaction = route.params?.transaction;
+  const transaction = route.params?.transaction as Transaction; // Ensure transaction is correctly typed
+  const dispatch = useDispatch();
+  const { accounts, error: accountsError } = useSelector((state: any) => state.accounts || {});
+
+  const handleDelete = async (transactionId: string) => {
+    try {
+      await deleteTransaction(transactionId);
+      dispatch(fetchTransactions());
+      navigation.goBack(); // Retour à l'écran des comptes
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      // Gérer l'erreur (par exemple, afficher un message à l'utilisateur)
+    }
+  };
+
+  if (accountsError) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.errorText}>Error loading accounts: {accountsError instanceof Error ? accountsError.message : String(accountsError)}</Text>
+      </View>
+    );
+  }
 
   if (!transaction) {
     return (
-      <SafeAreaView style={styles.container}>
+      <View style={styles.container}>
         <Text style={styles.errorText}>Transaction details not available.</Text>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Pressable style={styles.backButton} onPress={() => navigation.goBack()}>
-        <Icon name="arrow-back" type="ionicon" color="#007AFF" size={24} />
-        <Text style={styles.backButtonText}>Back</Text>
-      </Pressable>
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <BackButton />
+        <DeleteButton 
+          deleteText="Delete Transaction"
+          deleteTextAlert="Are you sure you want to delete this transaction?"
+          deleteFunction={() => handleDelete(transaction.id)}
+        />
+
+      </View>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Card containerStyle={styles.card}>
+        <View style={styles.card}>
           <View style={styles.headerContainer}>
-            <Icon
-              name={transaction.type === 'income' ? 'arrow-down' : transaction.type === 'expense' ? 'arrow-up' : 'exchange'}
-              type="font-awesome"
-              color={transaction.type === 'income' ? '#4CAF50' : transaction.type === 'expense' ? '#F44336' : '#2196F3'}
-              size={30}
-              containerStyle={styles.headerIcon}
-            />
-            <Text h3 style={styles.title}>{transaction.description}</Text>
+            <View style={[styles.iconContainer, { backgroundColor: getIconBackgroundColor(transaction.type) }]}>
+              <Icon
+                name={getIconName(transaction.type)}
+                type="font-awesome"
+                color="white"
+                size={30}
+              />
+            </View>
+            <View style={styles.headerTextContainer}>
+              <Text style={styles.title}>{transaction.description}</Text>
+              <Text style={styles.date}>{format(parseISO(transaction.date), 'dd MMMM yyyy')}</Text>
+            </View>
           </View>
-          <Text style={styles.amount}>{formatAmount(transaction.amount, transaction.type)}</Text>
-          <Text style={styles.date}>{format(parseISO(transaction.date), 'dd MMMM yyyy')}</Text>
+          <Text style={[styles.amount, { color: getAmountColor(transaction.type) }]}>
+            {formatAmount(transaction.amount, transaction.type)}
+          </Text>
           
-          <Text style={styles.subcategory}>{transaction.category.name}</Text>
+          <View style={styles.categoryContainer}>
+            <Icon name="tag" type="font-awesome" color="#517fa4" size={18} />
+            <Text style={styles.category}>{transaction.category} {transaction.subcategory && (transaction.type !== 'income' && transaction.type !== 'transfer') ? ` - ${transaction.subcategory}` : ''}</Text>
+          </View>
           
-          <Divider style={styles.divider} />
+          <View style={styles.divider} />
           
           <View style={styles.detailsContainer}>
-            <DetailRow icon="exchange" label="Type" value={transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1)} />
-            <DetailRow icon="arrow-right" label="From" value={accountNameFromId(transaction.fromAccountId)} />
-            <DetailRow icon="arrow-left" label="To" value={accountNameFromId(transaction.toAccountId)} />
+            <DetailRow icon="exchange" label="Type" value={capitalizeFirstLetter(transaction.type)} />
+            <DetailRow icon="arrow-right" label="From" value={accountNameFromId(transaction.fromAccountId, accounts)} />
+            <DetailRow icon="arrow-left" label="To" value={accountNameFromId(transaction.toAccountId, accounts)} />
           </View>
           
           <View style={styles.buttonContainer}>
@@ -98,9 +127,9 @@ export default function TransactionDetailsScreen() {
               titleStyle={styles.buttonTitle}
             />
           </View>
-        </Card>
+        </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -120,17 +149,66 @@ const DetailRow: React.FC<DetailRowProps> = ({ icon, label, value }) => (
   </View>
 );
 
+const getIconName = (type: string) => {
+  switch (type) {
+    case 'income':
+      return 'arrow-down';
+    case 'expense':
+      return 'arrow-up';
+    default:
+      return 'exchange';
+  }
+};
+
+const getIconBackgroundColor = (type: string) => {
+  switch (type) {
+    case 'income':
+      return '#4CAF50';
+    case 'expense':
+      return '#F44336';
+    default:
+      return '#2196F3';
+  }
+};
+
+const getAmountColor = (type: string) => {
+  switch (type) {
+    case 'income':
+      return '#4CAF50';
+    case 'expense':
+      return '#F44336';
+    default:
+      return '#2196F3';
+  }
+};
+
+const capitalizeFirstLetter = (string: string) => {
+  return string.charAt(0).toUpperCase() + string.slice(1);
+};
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: colors.background,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+    marginLeft: 16,
   },
   scrollContent: {
     flexGrow: 1,
-    justifyContent: 'center',
     paddingVertical: 20,
   },
   card: {
+    backgroundColor: 'white',
     borderRadius: 15,
     padding: 20,
     marginHorizontal: 16,
@@ -143,31 +221,45 @@ const styles = StyleSheet.create({
   headerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 20,
   },
-  headerIcon: {
-    backgroundColor: '#E8E8E8',
-    borderRadius: 20,
-    padding: 10,
-    marginRight: 10,
+  iconContainer: {
+    borderRadius: 30,
+    padding: 15,
+    marginRight: 15,
+  },
+  headerTextContainer: {
+    flex: 1,
   },
   title: {
-    flex: 1,
     fontSize: 22,
     fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 5,
   },
   amount: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: 'bold',
-    marginBottom: 5,
-    color: '#333',
+    marginBottom: 15,
+    textAlign: 'center',
   },
   date: {
     fontSize: 16,
     color: '#666',
+  },
+  categoryContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 15,
   },
+  category: {
+    fontSize: 18,
+    color: '#517fa4',
+    marginLeft: 10,
+    fontStyle: 'italic',
+  },
   divider: {
+    height: 1,
     backgroundColor: '#E0E0E0',
     marginVertical: 15,
   },
@@ -220,23 +312,5 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 50,
     color: '#666',
-  },
-  subcategory: {
-    fontSize: 18,
-    color: '#666',
-    marginTop: 5,
-    marginBottom: 10,
-    fontStyle: 'italic',
-  },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 10,
-    marginBottom: 10,
-  },
-  backButtonText: {
-    fontSize: 18,
-    color: '#007AFF',
-    marginLeft: 5,
   },
 });
