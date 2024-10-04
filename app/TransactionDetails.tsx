@@ -10,6 +10,7 @@ import { Account } from '@/types/account';
 import { colors } from '@/constants/colors';
 import { BackButton } from '@/app/components/BackButton';
 import { DeleteButton } from '@/app/components/DeleteButton';
+import { EditButton } from '@/app/components/EditButton';
 import { fetchTransactions } from '@/actions/transactionActions';
 import { deleteTransaction } from './api/bankApi';
 import sharedStyles from './styles/sharedStyles'; // Import shared styles
@@ -111,22 +112,7 @@ export default function TransactionDetailsScreen() {
             <DetailRow icon="arrow-left" label="To" value={accountNameFromId(transaction.toAccountId, accounts)} />
           </View>
 
-          <View style={styles.buttonContainer}>
-            <Button
-              title="Edit"
-              onPress={() => handleEdit(transaction.id)}
-              buttonStyle={styles.editButton}
-              icon={<Icon name="edit" type="font-awesome" color="white" size={16} />}
-              titleStyle={styles.buttonTitle}
-            />
-            <Button
-              title="Delete"
-              onPress={() => handleDelete(transaction.id)}
-              buttonStyle={styles.deleteButton}
-              icon={<Icon name="trash" type="font-awesome" color="white" size={16} />}
-              titleStyle={styles.buttonTitle}
-            />
-          </View>
+          <EditButton editText="Edit Transaction" editTextAlert="Are you sure you want to edit this transaction?" editFunction={() => handleEdit(transaction.id)} />
         </View>
       </ScrollView>
     </View>
