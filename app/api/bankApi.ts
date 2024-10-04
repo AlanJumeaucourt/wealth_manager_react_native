@@ -64,12 +64,12 @@ export const createAccount = async (accountData: {
 export const deleteAccount = async (accountId: number, onSuccess?: () => void) => {
   try {
     const response = await api.delete(`/accounts/${accountId}`);
-    
+
     // If deletion is successful and onSuccess callback is provided, call it
     if (response.status === 200 && onSuccess) {
       onSuccess();
     }
-    
+
     return response.data;
   } catch (error) {
     console.error('Error deleting account:', error);

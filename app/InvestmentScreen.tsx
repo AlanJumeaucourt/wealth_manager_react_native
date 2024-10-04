@@ -121,8 +121,8 @@ const StockDetail = ({ route }) => {
       <View style={styles.modalHeader}>
         <Text style={styles.modalTitle}>{position.name} ({position.symbol})</Text>
       </View>
-      <VictoryChart 
-        theme={VictoryTheme.material} 
+      <VictoryChart
+        theme={VictoryTheme.material}
         domainPadding={20}
         scale={{ x: "time" }}
       >
@@ -270,7 +270,7 @@ const InvestmentOverview = () => {
             y="value"
             style={{
               data: { stroke: "#c43a31" },
-              parent: { border: "1px solid #ccc"}
+              parent: { border: "1px solid #ccc" }
             }}
           />
           <VictoryAxis
@@ -309,8 +309,8 @@ const InvestmentOverview = () => {
       <View style={styles.stockPositionsContainer}>
         <Text style={styles.sectionTitle}>Positions sur actions</Text>
         {stockPositions.map((position, index) => (
-          <StockPositionItem 
-            key={index} 
+          <StockPositionItem
+            key={index}
             position={position}
           />
         ))}
@@ -321,18 +321,18 @@ const InvestmentOverview = () => {
 
 export default function InvestmentScreen() {
   return (
-      <Stack.Navigator>
-        <Stack.Screen 
-          name="InvestmentOverview" 
-          component={InvestmentOverview} 
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen 
-          name="StockDetail" 
-          component={StockDetail}
-          options={({ route }) => ({ title: route.params.position.symbol })}
-        />
-      </Stack.Navigator>
+    <Stack.Navigator>
+      <Stack.Screen
+        name="InvestmentOverview"
+        component={InvestmentOverview}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="StockDetail"
+        component={StockDetail}
+        options={({ route }) => ({ title: route.params.position.symbol })}
+      />
+    </Stack.Navigator>
   );
 }
 

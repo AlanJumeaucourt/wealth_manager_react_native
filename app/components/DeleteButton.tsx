@@ -6,9 +6,9 @@ import { Text } from "react-native-paper";
 import { useNavigation } from '@react-navigation/native';
 
 interface DeleteButtonProps {
-  deleteText: string;
-  deleteTextAlert: string;
-  deleteFunction: () => void;
+    deleteText: string;
+    deleteTextAlert: string;
+    deleteFunction: () => void;
 }
 
 export const DeleteButton: React.FC<DeleteButtonProps> = ({ deleteText, deleteTextAlert, deleteFunction }) => {
@@ -19,12 +19,12 @@ export const DeleteButton: React.FC<DeleteButtonProps> = ({ deleteText, deleteTe
             "Confirm Deletion",
             deleteTextAlert,
             [
-                { 
-                    text: "Cancel", 
-                    style: "cancel", 
+                {
+                    text: "Cancel",
+                    style: "cancel",
                 },
-                { 
-                    text: "Delete", 
+                {
+                    text: "Delete",
                     onPress: () => {
                         deleteFunction();
                         Alert.alert("Deletion Status", "Deletion successful.", [
@@ -32,8 +32,8 @@ export const DeleteButton: React.FC<DeleteButtonProps> = ({ deleteText, deleteTe
                                 text: "OK",
                             }
                         ]);
-                    }, 
-                    style: "destructive" 
+                    },
+                    style: "destructive"
                 }
             ]
         );

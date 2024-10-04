@@ -8,11 +8,11 @@ import { Icon } from "react-native-elements";
 
 export const BackButton = () => {
     const navigation = useNavigation();
-    
+
     return (
         <Pressable onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Icon name="arrow-back" type="ionicon" color="#007AFF" size={24} />
-          <Text style={styles.backButtonText}>Back</Text>
+            <Icon name="arrow-back" type="ionicon" color="#007AFF" size={24} />
+            <Text style={styles.backButtonText}>Back</Text>
         </Pressable>
     );
 };

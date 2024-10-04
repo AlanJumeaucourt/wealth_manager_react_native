@@ -72,7 +72,7 @@ export default function TransactionDetailsScreen() {
     <View style={styles.container}>
       <View style={sharedStyles.header}>
         <BackButton />
-        <DeleteButton 
+        <DeleteButton
           deleteText="Delete Transaction"
           deleteTextAlert="Are you sure you want to delete this transaction?"
           deleteFunction={() => handleDelete(transaction.id)}
@@ -97,20 +97,20 @@ export default function TransactionDetailsScreen() {
           <Text style={[styles.amount, { color: getAmountColor(transaction.type) }]}>
             {formatAmount(transaction.amount, transaction.type)}
           </Text>
-          
+
           <View style={styles.categoryContainer}>
             <Icon name="tag" type="font-awesome" color="#517fa4" size={18} />
             <Text style={styles.category}>{transaction.category} {transaction.subcategory && (transaction.type !== 'income' && transaction.type !== 'transfer') ? ` - ${transaction.subcategory}` : ''}</Text>
           </View>
-          
+
           <View style={styles.divider} />
-          
+
           <View style={styles.detailsContainer}>
             <DetailRow icon="exchange" label="Type" value={capitalizeFirstLetter(transaction.type)} />
             <DetailRow icon="arrow-right" label="From" value={accountNameFromId(transaction.fromAccountId, accounts)} />
             <DetailRow icon="arrow-left" label="To" value={accountNameFromId(transaction.toAccountId, accounts)} />
           </View>
-          
+
           <View style={styles.buttonContainer}>
             <Button
               title="Edit"

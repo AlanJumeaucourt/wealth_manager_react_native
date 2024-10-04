@@ -132,7 +132,7 @@ export default function AddTransactionScreen() {
                 console.error('Invalid account selection');
                 console.error('localFromAccountId:', localFromAccountId);
                 console.error('localToAccountId:', localToAccountId);
-                
+
                 showPopup('Invalid account selection. Please try again.', "#F44336");
             }
         } catch (error) {

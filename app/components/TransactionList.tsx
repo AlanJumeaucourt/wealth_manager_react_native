@@ -65,7 +65,7 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, account
       return total;
     }, 0);
   };
-  
+
   const accountNameFromId = (accountId: number) => {
     if (!accounts || !Array.isArray(accounts)) {
       return accountId.toString();
@@ -100,8 +100,8 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, account
             </View>
             <View style={styles.transactionsContainer}>
               {transactions.map((item, index) => (
-                <Pressable 
-                  key={item.id} 
+                <Pressable
+                  key={item.id}
                   onPress={() => handlePress(item)}
                   style={[
                     styles.transactionItem,
@@ -117,16 +117,16 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, account
                       </Text>
                     )}
                     {item.type === 'expense' && (
-                        <Text style={styles.expenseDetails}>{accountNameFromId(item.fromAccountId)}</Text>
+                      <Text style={styles.expenseDetails}>{accountNameFromId(item.fromAccountId)}</Text>
                     )}
                     {item.type === 'income' && (
-                        <Text style={styles.incomeDetails}>{accountNameFromId(item.toAccountId)}</Text>
+                      <Text style={styles.incomeDetails}>{accountNameFromId(item.toAccountId)}</Text>
                     )}
                   </View>
                   <Text style={[
                     styles.transactionAmount,
-                    item.type === 'expense' ? styles.expense : 
-                    item.type === 'income' ? styles.income : styles.transfer
+                    item.type === 'expense' ? styles.expense :
+                      item.type === 'income' ? styles.income : styles.transfer
                   ]}>
                     {formatAmount(item.amount, item.type)}
                   </Text>

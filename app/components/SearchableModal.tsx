@@ -186,7 +186,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         width: '100%',
         marginTop: 16,
-    marginBottom: Platform.OS === 'ios' ? 16 : 0,
+        marginBottom: Platform.OS === 'ios' ? 16 : 0,
     },
     centeredButton: {
         justifyContent: 'center',

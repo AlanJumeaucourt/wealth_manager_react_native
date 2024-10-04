@@ -5,14 +5,14 @@ import { fetchTransactions } from '../actions/transactionActions';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../store'; // Assuming you have a root state type defined
 
-const TransactionContent = ({ 
-  transactions, 
-  transactionsLoading, 
-  transactionsError 
-}: { 
-  transactions: any[], 
-  transactionsLoading: boolean, 
-  transactionsError: string | null 
+const TransactionContent = ({
+  transactions,
+  transactionsLoading,
+  transactionsError
+}: {
+  transactions: any[],
+  transactionsLoading: boolean,
+  transactionsError: string | null
 }) => {
   if (transactionsLoading) {
     return <Text>Loading...</Text>;
@@ -40,10 +40,10 @@ export default function TransactionsScreen() {
 
   return (
     <View style={styles.container}>
-      <TransactionContent 
-        transactions={transactions} 
-        transactionsLoading={transactionsLoading} 
-        transactionsError={transactionsError} 
+      <TransactionContent
+        transactions={transactions}
+        transactionsLoading={transactionsLoading}
+        transactionsError={transactionsError}
       />
     </View>
   );

@@ -73,114 +73,114 @@ export default function BudgetScreen() {
   const totalAmount = chartData.reduce((sum, item) => sum + item.y, 0);
 
   return (
-      <ScrollView style={styles.container}>
-        <View style={styles.periodSelector}>
-          <Pressable onPress={() => changePeriod(-1)} style={styles.arrowButton}>
-            <Ionicons name="chevron-back" size={24} color="#333" />
-          </Pressable>
-          <View>
-            <Text style={styles.periodText}>{formatPeriod(currentDate, periodType)}</Text>
-            <View style={styles.periodTypeSelector}>
-              <Pressable
-                onPress={() => setPeriodType('month')}
-                style={[styles.periodTypeButton, periodType === 'month' && styles.activePeriodType]}
-              >
-                <Text style={[styles.periodTypeText, periodType === 'month' && styles.activePeriodTypeText]}>Mois</Text>
-              </Pressable>
-              <Pressable
-                onPress={() => setPeriodType('quarter')}
-                style={[styles.periodTypeButton, periodType === 'quarter' && styles.activePeriodType]}
-              >
-                <Text style={[styles.periodTypeText, periodType === 'quarter' && styles.activePeriodTypeText]}>Trimestre</Text>
-              </Pressable>
-              <Pressable
-                onPress={() => setPeriodType('year')}
-                style={[styles.periodTypeButton, periodType === 'year' && styles.activePeriodType]}
-              >
-                <Text style={[styles.periodTypeText, periodType === 'year' && styles.activePeriodTypeText]}>Année</Text>
-              </Pressable>
-            </View>
+    <ScrollView style={styles.container}>
+      <View style={styles.periodSelector}>
+        <Pressable onPress={() => changePeriod(-1)} style={styles.arrowButton}>
+          <Ionicons name="chevron-back" size={24} color="#333" />
+        </Pressable>
+        <View>
+          <Text style={styles.periodText}>{formatPeriod(currentDate, periodType)}</Text>
+          <View style={styles.periodTypeSelector}>
+            <Pressable
+              onPress={() => setPeriodType('month')}
+              style={[styles.periodTypeButton, periodType === 'month' && styles.activePeriodType]}
+            >
+              <Text style={[styles.periodTypeText, periodType === 'month' && styles.activePeriodTypeText]}>Mois</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => setPeriodType('quarter')}
+              style={[styles.periodTypeButton, periodType === 'quarter' && styles.activePeriodType]}
+            >
+              <Text style={[styles.periodTypeText, periodType === 'quarter' && styles.activePeriodTypeText]}>Trimestre</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => setPeriodType('year')}
+              style={[styles.periodTypeButton, periodType === 'year' && styles.activePeriodType]}
+            >
+              <Text style={[styles.periodTypeText, periodType === 'year' && styles.activePeriodTypeText]}>Année</Text>
+            </Pressable>
           </View>
-          <Pressable onPress={() => changePeriod(1)} style={styles.arrowButton}>
-            <Ionicons name="chevron-forward" size={24} color="#333" />
-          </Pressable>
         </View>
+        <Pressable onPress={() => changePeriod(1)} style={styles.arrowButton}>
+          <Ionicons name="chevron-forward" size={24} color="#333" />
+        </Pressable>
+      </View>
 
-        <View style={styles.budgetTypeSelector}>
-          <Text style={[styles.budgetTypeText, budgetType === 'income' ? styles.activeBudgetType : {}]}>Income</Text>
-          <Switch
-            value={budgetType === 'income'}
-            onValueChange={(value) => setBudgetType(value ? 'income' : 'expense')}
-            color="#007AFF"
+      <View style={styles.budgetTypeSelector}>
+        <Text style={[styles.budgetTypeText, budgetType === 'income' ? styles.activeBudgetType : {}]}>Income</Text>
+        <Switch
+          value={budgetType === 'income'}
+          onValueChange={(value) => setBudgetType(value ? 'income' : 'expense')}
+          color="#007AFF"
+        />
+        <Text style={[styles.budgetTypeText, budgetType === 'expense' ? styles.activeBudgetType : {}]}>Expense</Text>
+      </View>
+
+      {/* budget pie chart */}
+      <View style={styles.chartContainer}>
+        <VictoryPie
+          data={chartData}
+          colorScale={chartData.map(item => item.color)}
+          radius={({ datum }) => 100 + datum.y / 20}
+          innerRadius={80}
+          labelRadius={({ innerRadius }) => (innerRadius as number) + 30}
+          style={{ labels: { fill: "white", fontSize: 14, fontWeight: "bold" } }}
+          width={300} height={300}
+          labelComponent={
+            <VictoryTooltip
+              renderInPortal={false}
+              flyoutStyle={{ fill: "black", stroke: "none" }}
+            />
+          }
+        />
+        <View style={styles.chartCenter}>
+          <Text style={styles.chartCenterAmount}>{totalAmount.toLocaleString()} €</Text>
+          <Text style={styles.chartCenterLabel}>{budgetType === 'expense' ? 'Dépenses' : 'Revenus'}</Text>
+        </View>
+      </View>
+
+      {/* Légende du graphique */}
+      <View style={styles.chartLegend}>
+        {chartData.map((item, index) => (
+          <View key={index} style={styles.legendItem}>
+            <View style={[styles.legendColor, { backgroundColor: item.color }]} />
+            <Text style={styles.legendLabel}>{item.x}</Text>
+            <Text style={styles.legendValue}>{item.y.toLocaleString()} €</Text>
+          </View>
+        ))}
+      </View>
+
+      {/* New stacked bar chart for budget categories over months */}
+      <View style={styles.chartContainer}>
+        <Text style={styles.chartTitle}>Budget Categories Over Months</Text>
+        <VictoryChart
+          domainPadding={{ x: 25 }}
+          width={350}
+          height={300}
+        >
+          <VictoryAxis
+            tickValues={budgetCategoriesOverMonths.map(d => d.month)}
+            style={{ tickLabels: { fontSize: 12, padding: 5 } }}
           />
-          <Text style={[styles.budgetTypeText, budgetType === 'expense' ? styles.activeBudgetType : {}]}>Expense</Text>
-        </View>
-
-        {/* budget pie chart */}
-        <View style={styles.chartContainer}>
-          <VictoryPie
-            data={chartData}
-            colorScale={chartData.map(item => item.color)}
-            radius={({ datum }) => 100 + datum.y / 20}
-            innerRadius={80}
-            labelRadius={({ innerRadius }) => (innerRadius as number) + 30 }
-            style={{ labels: { fill: "white", fontSize: 14, fontWeight: "bold" } }}
-            width={300} height={300}
-            labelComponent={
-              <VictoryTooltip
-                renderInPortal={false}
-                flyoutStyle={{ fill: "black", stroke: "none" }}
+          <VictoryAxis
+            dependentAxis
+            tickFormat={(t) => `${t / 1000}k€`}
+            style={{ tickLabels: { fontSize: 12, padding: 5 } }}
+          />
+          <VictoryStack colorScale={["#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0"]}>
+            {["Housing", "Food", "Transportation", "Entertainment"].map((category, index) => (
+              <VictoryBar
+                key={index}
+                data={budgetCategoriesOverMonths}
+                x="month"
+                y={category}
               />
-            }
-          />
-          <View style={styles.chartCenter}>
-            <Text style={styles.chartCenterAmount}>{totalAmount.toLocaleString()} €</Text>
-            <Text style={styles.chartCenterLabel}>{budgetType === 'expense' ? 'Dépenses' : 'Revenus'}</Text>
-          </View>
-        </View>
+            ))}
+          </VictoryStack>
+        </VictoryChart>
+      </View>
 
-        {/* Légende du graphique */}
-        <View style={styles.chartLegend}>
-          {chartData.map((item, index) => (
-            <View key={index} style={styles.legendItem}>
-              <View style={[styles.legendColor, { backgroundColor: item.color }]} />
-              <Text style={styles.legendLabel}>{item.x}</Text>
-              <Text style={styles.legendValue}>{item.y.toLocaleString()} €</Text>
-            </View>
-          ))}
-        </View>
-
-        {/* New stacked bar chart for budget categories over months */}
-        <View style={styles.chartContainer}>
-          <Text style={styles.chartTitle}>Budget Categories Over Months</Text>
-          <VictoryChart
-            domainPadding={{ x: 25 }}
-            width={350}
-            height={300}
-          >
-            <VictoryAxis
-              tickValues={budgetCategoriesOverMonths.map(d => d.month)}
-              style={{ tickLabels: { fontSize: 12, padding: 5 } }}
-            />
-            <VictoryAxis
-              dependentAxis
-              tickFormat={(t) => `${t / 1000}k€`}
-              style={{ tickLabels: { fontSize: 12, padding: 5 } }}
-            />
-            <VictoryStack colorScale={["#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0"]}>
-              {["Housing", "Food", "Transportation", "Entertainment"].map((category, index) => (
-                <VictoryBar
-                  key={index}
-                  data={budgetCategoriesOverMonths}
-                  x="month"
-                  y={category}
-                />
-              ))}
-            </VictoryStack>
-          </VictoryChart>
-        </View>
-
-        {/* <Text style={styles.title}>Catégories de Budget</Text>
+      {/* <Text style={styles.title}>Catégories de Budget</Text>
         {budgetType === 'expense' ? (
           budgetExpensesCategories.map((category, index) => (
             <View key={index} style={styles.categoryContainer}>
@@ -199,7 +199,7 @@ export default function BudgetScreen() {
             </View>
           ))
         )} */}
-      </ScrollView>
+    </ScrollView>
   );
 }
 
