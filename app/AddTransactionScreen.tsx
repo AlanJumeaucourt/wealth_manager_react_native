@@ -15,6 +15,7 @@ import { RootState } from '@/store/store';
 import { fetchAccounts } from '@/actions/accountActions';
 import { BackButton } from './components/BackButton';
 import DatePicker from 'react-native-ui-datepicker'; // Import react-native-ui-datepicker
+import { fetchTransactions } from '@/actions/transactionActions';
 
 export default function AddTransactionScreen() {
     const router = useRouter();
@@ -120,7 +121,9 @@ export default function AddTransactionScreen() {
 
                 // Dispatch action to fetch updated accounts and transactions
                 dispatch(fetchAccounts()); // Ensure this action updates the transactions as well
-                showPopup('Transaction created successfully!');
+                showPopup('Transaction created successfully!', "#4CAF50");
+
+                dispatch(fetchTransactions());
 
                 // // Clear form fields
                 // setAmount('');
@@ -146,6 +149,7 @@ export default function AddTransactionScreen() {
 
     useEffect(() => {
         dispatch(fetchAccounts());
+        dispatch(fetchTransactions());
     }, [dispatch]);
 
     const transactionTypes = ['expense', 'income', 'transfer'];
