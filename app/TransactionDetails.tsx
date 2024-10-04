@@ -12,6 +12,7 @@ import { BackButton } from '@/app/components/BackButton';
 import { DeleteButton } from '@/app/components/DeleteButton';
 import { fetchTransactions } from '@/actions/transactionActions';
 import { deleteTransaction } from './api/bankApi';
+import sharedStyles from './styles/sharedStyles'; // Import shared styles
 
 type TransactionDetailsRouteProp = RouteProp<RootStackParamList, 'TransactionDetails'>;
 
@@ -69,14 +70,13 @@ export default function TransactionDetailsScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={sharedStyles.header}>
         <BackButton />
         <DeleteButton 
           deleteText="Delete Transaction"
           deleteTextAlert="Are you sure you want to delete this transaction?"
           deleteFunction={() => handleDelete(transaction.id)}
         />
-
       </View>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.card}>

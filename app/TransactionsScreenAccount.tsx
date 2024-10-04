@@ -11,6 +11,8 @@ import { BackButton } from './components/BackButton';
 import { DeleteButton } from './components/DeleteButton';
 import { deleteAccount } from './api/bankApi';
 import { fetchAccounts } from '@/actions/accountActions';
+import sharedStyles from './styles/sharedStyles'; // Import shared styles
+
 type RouteParams = {
   account: Account;
   refreshAccounts: () => void;
@@ -41,7 +43,7 @@ export default function TransactionsScreen() {
 
   return (
     <View style={styles.mainContainer}>
-      <View style={styles.header}>
+      <View style={sharedStyles.header}>
         <BackButton />
         <DeleteButton
           deleteText="Delete Account"
@@ -49,7 +51,7 @@ export default function TransactionsScreen() {
           deleteFunction={handleDeleteAccount}
         />
       </View>
-      <View style={styles.body}>
+      <View style={sharedStyles.body}>
         <View style={styles.accountHeader}>
           <Text style={styles.accountName}>{account.name}</Text>
           <Text style={styles.accountBalance}>{account.balance.toLocaleString()} €</Text>
@@ -68,18 +70,6 @@ export default function TransactionsScreen() {
 
 const styles = StyleSheet.create({
   mainContainer: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  body: {
-    paddingHorizontal: 20,
-  },
-  transactionDetails: {
     flex: 1,
   },
   accountHeader: {
