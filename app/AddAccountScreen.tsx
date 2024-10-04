@@ -15,6 +15,10 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import SafeViewAndroid from "./components/SafeViewAndroid";
 import { Ionicons } from '@expo/vector-icons';
 import { BackButton } from './components/BackButton';
+import { DeleteButton } from './components/DeleteButton'; // Ensure this import is present
+import { deleteBank } from './api/bankApi';
+import { AddButton } from './components/AddButton'; // Ensure this import is present
+
 
 type RootStackParamList = {
     Accounts: undefined;
@@ -137,22 +141,57 @@ export default function AddAccountScreen() {
         }
     };
 
-    const renderPicker = (label: string, value: string, onPress: () => void) => {
+    const renderPicker = (label: string, value: string, pickerWidth: number = 100, onPress: () => void) => {
+        const pickerStyle = StyleSheet.create({
+            pickerContainer: {
+                marginBottom: 16,
+            },
+            pickerButton: {
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                backgroundColor: colors.white,
+                borderRadius: 10,
+                padding: 16,
+                marginBottom: 16,
+                borderWidth: 1,
+                borderColor: colors.darkGray,
+                width: `${pickerWidth}%`,
+            },
+            pickerLabel: {
+                fontSize: 16,
+                color: colors.lightText,
+            },
+            pickerValue: {
+                fontSize: 16,
+                color: colors.text,
+            },
+            picker: {
+                backgroundColor: colors.white,
+                borderRadius: 10,
+                borderWidth: 1,
+                borderColor: colors.darkGray,
+                marginBottom: 16,
+            },
+
+        })
+
         if (Platform.OS === 'ios') {
             return (
-                <TouchableOpacity onPress={onPress} style={styles.pickerButton}>
-                    <Text style={styles.pickerLabel}>{label}</Text>
-                    <Text style={styles.pickerValue}>{value || 'Select'}</Text>
+                <TouchableOpacity onPress={onPress} style={pickerStyle.pickerButton}>
+                    <Text style={pickerStyle.pickerLabel}>
+                        {value ? value : `Select ${label}`}
+                    </Text>
                 </TouchableOpacity>
             );
         } else {
             return (
                 <View>
-                    <Text style={styles.pickerLabel}>{label}</Text>
+                    <Text style={pickerStyle.pickerLabel}>{label}</Text>
                     <Picker
                         selectedValue={value}
                         onValueChange={onPress}
-                        style={styles.picker}
+                        style={pickerStyle.picker}
                     >
                         {currencies.map((currency, index) => (
                             <Picker.Item key={index} value={currency} label={currency} />
@@ -163,17 +202,36 @@ export default function AddAccountScreen() {
         }
     };
 
-    const [popupVisible, setPopupVisible] = useState(false);
-    const [popupMessage, setPopupMessage] = useState('');
+    const handleDeleteBank = async (bankId: number) => {
+        try {
+            await deleteBank(bankId); // Ensure this returns a promise
+            dispatch(fetchBanks());
+            setSelectedBank('');
+        } catch (error) {
+            console.error('Error deleting bank:', error);
+            throw error; // Rethrow the error to be caught in DeleteButton
+        }
+    };
+
+    const handleAddBank = async () => {
+        if (!newBankName) {
+            console.error('Please enter a bank name');
+            return;
+        }
+
+        try {
+            await createBank(newBankName);
+            dispatch(fetchBanks());
+            setNewBankName(''); // Clear the input after adding
+            setIsAddingNewBank(false);
+        } catch (error) {
+            console.error('Error adding bank:', error);
+        }
+    };
 
     return (
         <View style={styles.container}>
             <BackButton />
-            {popupVisible && (
-                <Animated.View style={[styles.popup, { transform: [{ translateY: popupAnim }] }]}>
-                    <Text style={styles.popupText}>{popupMessage}</Text>
-                </Animated.View>
-            )}
             <ScrollView contentContainerStyle={styles.scrollContainer}>
                 <Text style={styles.title}>Add New Account</Text>
                 <Text style={styles.label}>Account Name</Text>
@@ -189,31 +247,52 @@ export default function AddAccountScreen() {
                 {renderPicker(
                     'Account Type',
                     newAccountType,
+                    100,
                     Platform.OS === 'ios' ? showAccountTypePicker : (itemValue) => setNewAccountType(itemValue)
                 )}
 
                 <Text style={styles.label}>Bank</Text>
-                {!isAddingNewBank && renderPicker(
-                    'Bank',
-                    selectedBank ? banks.find(bank => bank.id.toString() === selectedBank)?.name : '',
-                    Platform.OS === 'ios' ? showBankPicker : handleBankSelection
+                {!isAddingNewBank && (
+                    <View style={styles.bankSelectionContainer}>
+                        {renderPicker(
+                            'Bank',
+                            selectedBank ? banks.find((bank: Bank) => bank.id.toString() === selectedBank)?.name : '',
+                            selectedBank != '' ? 85 : 100,
+                            Platform.OS === 'ios' ? showBankPicker : handleBankSelection
+                        )}
+                        <View style={styles.deleteButtonContainer}>
+                            <DeleteButton
+                                deleteText=""
+                                deleteTextAlert="Are you sure you want to delete this bank?"
+                                deleteFunction={() => handleDeleteBank(parseInt(selectedBank))} // This should return a promise
+                            />
+                        </View>
+                    </View>
                 )}
                 {isAddingNewBank && (
-                    <>
+                    <View style={styles.bankSelectionContainer}>
                         <TextInput
-                            style={styles.input}
+                            style={[styles.input, { width: '85%' }]}
                             placeholder="Enter new bank name"
                             placeholderTextColor={colors.lightText}
                             value={newBankName}
                             onChangeText={setNewBankName}
                         />
-                    </>
+                        <View style={styles.addButtonContainer}>
+                            <AddButton
+                                addText=""
+                                addTextAlert="Are you sure you want to add this bank?"
+                                addFunction={handleAddBank}
+                            />
+                        </View>
+                    </View>
                 )}
 
                 <Text style={styles.label}>Currency</Text>
                 {renderPicker(
                     'Currency',
                     newAccountCurrency,
+                    100,
                     Platform.OS === 'ios' ? showCurrencyPicker : (itemValue) => setNewAccountCurrency(itemValue)
                 )}
 
@@ -248,7 +327,6 @@ const styles = StyleSheet.create({
         marginBottom: 4,
     },
     input: {
-        height: 50,
         borderColor: colors.darkGray,
         borderWidth: 1,
         borderRadius: 10,
@@ -264,35 +342,6 @@ const styles = StyleSheet.create({
         shadowRadius: 2,
         elevation: 1,
     },
-    pickerContainer: {
-        marginBottom: 16,
-    },
-    pickerButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        backgroundColor: colors.white,
-        borderRadius: 10,
-        padding: 16,
-        marginBottom: 16,
-        borderWidth: 1,
-        borderColor: colors.darkGray,
-    },
-    pickerLabel: {
-        fontSize: 16,
-        color: colors.lightText,
-    },
-    pickerValue: {
-        fontSize: 16,
-        color: colors.text,
-    },
-    picker: {
-        backgroundColor: colors.white,
-        borderRadius: 10,
-        borderWidth: 1,
-        borderColor: colors.darkGray,
-        marginBottom: 16,
-    },
     button: {
         marginTop: 16,
         marginBottom: 8,
@@ -301,5 +350,23 @@ const styles = StyleSheet.create({
     closeButton: {
         marginTop: 8,
         marginBottom: 16,
+    },
+    bankSelectionContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
+    deleteButtonContainer: {
+        width: '15%',
+        alignItems: 'flex-end',
+        justifyContent: 'center',
+    },
+    addButtonContainer: {
+        width: '15%', // Set the width to 15%
+        alignItems: 'flex-end', // Align the button to the right
+        justifyContent: 'center', // Center the button vertically
+    },
+    deleteButton: {
+        padding: 5,
     },
 });

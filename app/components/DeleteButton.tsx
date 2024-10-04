@@ -8,7 +8,7 @@ import { useNavigation } from '@react-navigation/native';
 interface DeleteButtonProps {
     deleteText: string;
     deleteTextAlert: string;
-    deleteFunction: () => void;
+    deleteFunction: () => Promise<void>; // Ensure this returns a Promise
 }
 
 export const DeleteButton: React.FC<DeleteButtonProps> = ({ deleteText, deleteTextAlert, deleteFunction }) => {
@@ -25,13 +25,23 @@ export const DeleteButton: React.FC<DeleteButtonProps> = ({ deleteText, deleteTe
                 },
                 {
                     text: "Delete",
-                    onPress: () => {
-                        deleteFunction();
-                        Alert.alert("Deletion Status", "Deletion successful.", [
-                            {
-                                text: "OK",
-                            }
-                        ]);
+                    onPress: async () => {
+                        try {
+                            await deleteFunction(); // Await the delete function
+                            Alert.alert("Deletion Status", "Deletion successful.", [
+                                {
+                                    text: "OK",
+                                }
+                            ]);
+                        } catch (error) {
+                            // Ensure error is caught and has a message
+                            const errorMessage = error instanceof Error ? error.message : "Unknown error occurred.";
+                            Alert.alert("Deletion Status", `Error deleting: ${errorMessage}`, [
+                                {
+                                    text: "OK",
+                                }
+                            ]);
+                        }
                     },
                     style: "destructive"
                 }

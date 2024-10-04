@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TextInput, StyleSheet, FlatList, Pressable, ScrollView, Modal, Animated, StatusBar } from 'react-native';
+import { View, Text, TextInput, StyleSheet, FlatList, Pressable, ScrollView, Modal, Animated } from 'react-native';
 import { Button } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import { Transaction } from '@/types/transaction';
@@ -14,6 +14,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '@/store/store';
 import { fetchAccounts } from '@/actions/accountActions';
 import { BackButton } from './components/BackButton';
+import DatePicker from 'react-native-ui-datepicker'; // Import react-native-ui-datepicker
 
 export default function AddTransactionScreen() {
     const router = useRouter();
@@ -31,6 +32,8 @@ export default function AddTransactionScreen() {
     const [popupVisible, setPopupVisible] = useState(false);
     const [popupMessage, setPopupMessage] = useState('');
     const popupAnim = useRef(new Animated.Value(-50)).current;
+    const [transactionDate, setTransactionDate] = useState(new Date()); // Add state for transaction date
+    const [showDatePicker, setShowDatePicker] = useState(false); // State to control date picker visibility
 
     const accounts = useSelector((state: RootState) => state.accounts.accounts);
 
@@ -102,7 +105,7 @@ export default function AddTransactionScreen() {
             if (localFromAccountId !== null && localToAccountId !== null) {
                 const newTransaction: Transaction = {
                     id: Date.now(),
-                    date: new Date().toISOString().split('T')[0],
+                    date: transactionDate.toISOString().split('T')[0], // Use the selected transaction date
                     description,
                     amount: parseFloat(amount),
                     type: transactionType,
@@ -299,6 +302,11 @@ export default function AddTransactionScreen() {
         setIsCategoryModalVisible(false);
     };
 
+    const handleDateChange = (date: string) => {
+        setTransactionDate(new Date(date)); // Update the transaction date
+        setShowDatePicker(false); // Close the date picker
+    };
+
     return (
         <View style={styles.container}>
             <BackButton />
@@ -405,6 +413,32 @@ export default function AddTransactionScreen() {
                                 onSelectCategory={handleCategorySelect}
                                 onSelectSubCategory={handleSubCategorySelect}
                             />
+                        </View>
+                    </View>
+                </Modal>
+
+                <Text style={styles.label}>Transaction Date</Text>
+                <Pressable onPress={() => setShowDatePicker(true)} style={styles.dateButton}>
+                    <Text style={styles.dateButtonText}>{transactionDate.toLocaleDateString()}</Text>
+                </Pressable>
+
+                {/* Modal for DatePicker */}
+                <Modal
+                    visible={showDatePicker}
+                    animationType="slide"
+                    transparent={true}
+                    onRequestClose={() => setShowDatePicker(false)}
+                >
+                    <View style={styles.modalContainer}>
+                        <View style={styles.modalContent}>
+                            <DatePicker
+                                date={transactionDate}
+                                onChange={(params) => handleDateChange(params.date)}
+                                mode="single"
+                            />
+                            <Button mode="outlined" onPress={() => setShowDatePicker(false)} style={styles.closeButton}>
+                                <Text>Close</Text>
+                            </Button>
                         </View>
                     </View>
                 </Modal>
@@ -585,5 +619,15 @@ const styles = StyleSheet.create({
     popupText: {
         color: 'white',
         textAlign: 'center',
+    },
+    dateButton: {
+        padding: 16,
+        backgroundColor: colors.lightGray,
+        borderRadius: 10,
+        marginBottom: 12,
+    },
+    dateButtonText: {
+        fontSize: 16,
+        color: colors.text,
     },
 });

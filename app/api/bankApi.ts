@@ -35,6 +35,17 @@ export const createBank = async (name: string) => {
   }
 };
 
+export const deleteBank = async (bankId: number) => {
+  try {
+    const response = await api.delete(`/banks/${bankId}`);
+    console.log('Bank deleted:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error deleting bank:', error);
+    throw error;
+  }
+};
+
 export const fetchAccounts = async () => {
   try {
     const response = await api.get('/accounts?per_page=100&page=1');
