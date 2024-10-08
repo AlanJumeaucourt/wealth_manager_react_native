@@ -1,6 +1,6 @@
 import { StyleSheet } from 'react-native';
 
-const sharedStyles = StyleSheet.create({
+export const sharedStyles = StyleSheet.create({
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',

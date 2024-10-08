@@ -5,6 +5,8 @@ import { useNavigation, useRouter } from 'expo-router';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '../../config';
+import * as Sentry from "@sentry/browser";
+import { useAuth } from '../../context/AuthContext'; // Correct import
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -13,13 +15,14 @@ export default function LoginScreen() {
   const [error, setError] = useState('');
   const router = useRouter();
   const navigation = useNavigation();
+  const { login } = useAuth(); // Use the useAuth hook to get login
 
   const handleLogin = async () => {
     setLoading(true);
     setError('');
     try {
-      console.log(`Sending login request to ${API_URL}/login:`, { email, password });
-      const response = await axios.post(`${API_URL}/login`, {
+      console.log(`Sending login request to ${API_URL}/users/login:`, { email, password });
+      const response = await axios.post(`${API_URL}/users/login`, {
         email,
         password,
       }, {
@@ -31,10 +34,10 @@ export default function LoginScreen() {
 
       console.log('Login response:', response);
 
-      if (response && response.data && response.data.access_token && response.data.refresh_token) {
-        await AsyncStorage.setItem('accessToken', response.data.access_token);
-        await AsyncStorage.setItem('refreshToken', response.data.refresh_token);
-        console.log('Tokens stored, redirecting to home');
+      if (response && response.data) {
+        await login(response.data.access_token); // Use the login method from context
+        console.log('Token stored, redirecting to home');
+        Sentry.setUser({ email: email });
         router.replace('/AccountsScreen');
       } else {
         console.log('Invalid response data:', response);

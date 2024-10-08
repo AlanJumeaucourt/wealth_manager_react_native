@@ -1,6 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { API_URL } from '../config';
+import { useRouter } from 'expo-router'; // Import useRouter
+
 export const setAuthToken = (token: string) => {
   if (token) {
     axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
@@ -33,7 +35,7 @@ export const refreshAccessToken = async () => {
   }
 };
 
-export const setupAxiosInterceptors = () => {
+export const setupAxiosInterceptors = (router: any) => { // Accept router as a parameter
   axios.interceptors.response.use(
     (response) => response,
     async (error) => {
@@ -45,7 +47,9 @@ export const setupAxiosInterceptors = () => {
           originalRequest.headers['Authorization'] = `Bearer ${access_token}`;
           return axios(originalRequest);
         } catch (refreshError) {
-          // Handle refresh error (e.g., redirect to login)
+          // Redirect to login on refresh error
+          console.error('Redirecting to login due to refresh error:', refreshError);
+          router.replace('/login'); // Redirect to login page
           return Promise.reject(refreshError);
         }
       }

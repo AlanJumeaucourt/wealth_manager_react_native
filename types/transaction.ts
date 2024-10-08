@@ -5,8 +5,8 @@ export interface Transaction {
   description: string;
   amount: number;
   type: string;
-  fromAccountId: number;
-  toAccountId: number;
+  from_account_id: number;
+  to_account_id: number;
   category: string;
-  subCategory: string | null;
+  subcategory: string | null;
 }

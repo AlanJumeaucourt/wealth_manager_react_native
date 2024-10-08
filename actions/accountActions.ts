@@ -1,7 +1,5 @@
-import axios from 'axios';
-import { API_URL } from '../config';
+import apiClient from '@/app/api/axiosConfig';
 import { Dispatch } from 'redux';
-import { Account } from '@/types/account';
 
 export const FETCH_ACCOUNTS_REQUEST = 'FETCH_ACCOUNTS_REQUEST';
 export const FETCH_ACCOUNTS_SUCCESS = 'FETCH_ACCOUNTS_SUCCESS';
@@ -14,8 +12,8 @@ export const CREATE_ACCOUNT_FAILURE = 'CREATE_ACCOUNT_FAILURE';
 export const fetchAccounts = () => async (dispatch: Dispatch) => {
     dispatch({ type: FETCH_ACCOUNTS_REQUEST });
     try {
-        const response = await axios.get(`${API_URL}/accounts?per_page=100&page=1`);
-        console.log("fetchAccounts response", response.data);
+        const response = await apiClient.get('/accounts?per_page=1000&page=1');
+        // console.log("fetchAccounts response", response.data);
         dispatch({ type: FETCH_ACCOUNTS_SUCCESS, payload: response.data });
     } catch (error) {
         console.log("fetchAccounts error", error);

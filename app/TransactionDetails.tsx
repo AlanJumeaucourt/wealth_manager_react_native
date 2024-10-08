@@ -108,8 +108,12 @@ export default function TransactionDetailsScreen() {
 
           <View style={styles.detailsContainer}>
             <DetailRow icon="exchange" label="Type" value={capitalizeFirstLetter(transaction.type)} />
-            <DetailRow icon="arrow-right" label="From" value={accountNameFromId(transaction.fromAccountId, accounts)} />
-            <DetailRow icon="arrow-left" label="To" value={accountNameFromId(transaction.toAccountId, accounts)} />
+            <Pressable onPress={() => navigation.navigate('TransactionsScreenAccount', { account: accounts.find(account => account.id === transaction.from_account_id) })}>
+              <DetailRow icon="arrow-right" label="From" value={accountNameFromId(transaction.from_account_id, accounts)} />
+            </Pressable>
+            <Pressable onPress={() => navigation.navigate('TransactionsScreenAccount', { account: accounts.find(account => account.id === transaction.to_account_id) })}>
+              <DetailRow icon="arrow-left" label="To" value={accountNameFromId(transaction.to_account_id, accounts)} />
+            </Pressable>
           </View>
 
           <EditButton editText="Edit Transaction" editTextAlert="Are you sure you want to edit this transaction?" editFunction={() => handleEdit(transaction.id)} />

@@ -110,8 +110,8 @@ export default function AddTransactionScreen() {
                     description,
                     amount: parseFloat(amount),
                     type: transactionType,
-                    fromAccountId: localFromAccountId,
-                    toAccountId: localToAccountId,
+                    from_account_id: localFromAccountId,
+                    to_account_id: localToAccountId,
                     category: category,
                     subCategory: subCategory || null,
                 };

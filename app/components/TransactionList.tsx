@@ -1,29 +1,68 @@
-import React, { useMemo, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
+import React, { useMemo, useEffect, useState } from 'react';
+import { View, Text, StyleSheet, Pressable, FlatList, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { format, parseISO } from 'date-fns';
 import { Transaction } from '../../types/transaction';
 import { useDispatch, useSelector } from 'react-redux';
 import { Account } from '@/types/account';
 import { fetchAccounts } from '../../actions/accountActions';
+import { fetchTransactions } from '../api/bankApi';
 
 interface TransactionListProps {
-  transactions: Transaction[];
-  accountId: number;
+  accountId?: number;
 }
 
-const TransactionList: React.FC<TransactionListProps> = ({ transactions, accountId }) => {
-  const dispatch = useDispatch();
+const TransactionList: React.FC<TransactionListProps> = ({ accountId }) => {
   const { accounts, loading: accountsLoading, error: accountsError } = useSelector((state: any) => state.accounts || {});
   const navigation = useNavigation();
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [page, setPage] = useState(1);
+  const [isLoadingMore, setIsLoadingMore] = useState(false); // Add loading state
+
 
   useEffect(() => {
-    dispatch(fetchAccounts());
-  }, [dispatch]);
+    const fetchData = async () => {
+      if (accountId) {
+        const newTransactions = await fetchTransactions(50, page, accountId);
+        setTransactions(prevTransactions => [...prevTransactions, ...newTransactions]);
+      } else {
+        const newTransactions = await fetchTransactions(50, page);
+        setTransactions(prevTransactions => [...prevTransactions, ...newTransactions]);
+      }
+      setIsLoadingMore(false); // Reset loading state after fetching
+    };
+
+    fetchData();
+  }, []);
+
+
+  console.log(accountId);
+
+  const loadMoreTransactions = () => {
+    if (!isLoadingMore) { // Prevent multiple calls
+      setIsLoadingMore(true);
+      setPage(prevPage => prevPage + 1);
+    }
+  };
+
+  useEffect(() => {
+    const fetchData = async () => {
+      if (accountId) {
+        const newTransactions = await fetchTransactions(50, page, accountId);
+        setTransactions(prevTransactions => [...prevTransactions, ...newTransactions]);
+      } else {
+        const newTransactions = await fetchTransactions(50, page);
+        setTransactions(prevTransactions => [...prevTransactions, ...newTransactions]);
+      }
+      setIsLoadingMore(false); // Reset loading state after fetching
+    };
+
+    fetchData();
+  }, [page, accountId]);
 
   const filteredTransactions = useMemo(() => {
     if (accountId) {
-      return transactions.filter(transaction => transaction.fromAccountId === accountId || transaction.toAccountId === accountId);
+      return transactions.filter(transaction => transaction.from_account_id === accountId || transaction.to_account_id === accountId);
     }
     return transactions;
   }, [transactions, accountId]);
@@ -55,9 +94,9 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, account
       if (transaction.type === 'income') return total + transaction.amount;
       if (transaction.type === 'transfer') {
         if (accountId) {
-          if (transaction.fromAccountId === accountId) {
+          if (transaction.from_account_id === accountId) {
             return total - transaction.amount;
-          } else if (transaction.toAccountId === accountId) {
+          } else if (transaction.to_account_id === accountId) {
             return total + transaction.amount;
           }
         }
@@ -86,9 +125,22 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, account
     return <Text>Error loading accounts: {accountsError instanceof Error ? accountsError.message : String(accountsError)}</Text>;
   }
 
+  // Footer component for loading indicator
+  const renderFooter = () => {
+    if (!isLoadingMore) return null;
+    return (
+      <View style={styles.footer}>
+        <ActivityIndicator size="small" color="#0000ff" />
+      </View>
+    );
+  };
+
   return (
-    <ScrollView style={styles.transactionList}>
-      {groupedTransactions.map(([date, transactions]) => {
+    <FlatList
+      data={groupedTransactions}
+      keyExtractor={([date]) => date}
+      style={{ flex: 1, paddingBottom: 150 }}
+      renderItem={({ item: [date, transactions] }) => {
         const dayTotal = calculateDayTotal(transactions);
         return (
           <View key={date} style={styles.dateGroup}>
@@ -101,7 +153,7 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, account
             <View style={styles.transactionsContainer}>
               {transactions.map((item, index) => (
                 <Pressable
-                  key={item.id}
+                  key={`${item.id}-${date}`}
                   onPress={() => handlePress(item)}
                   style={[
                     styles.transactionItem,
@@ -113,14 +165,14 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, account
                     <Text style={styles.transactionDescription}>{item.description}</Text>
                     {item.type === 'transfer' && (
                       <Text style={styles.transferDetails}>
-                        {accountNameFromId(item.fromAccountId)} → {accountNameFromId(item.toAccountId)}
+                        {accountNameFromId(item.from_account_id)} → {accountNameFromId(item.to_account_id)}
                       </Text>
                     )}
                     {item.type === 'expense' && (
-                      <Text style={styles.expenseDetails}>{accountNameFromId(item.fromAccountId)}</Text>
+                      <Text style={styles.expenseDetails}>{accountNameFromId(item.from_account_id)}</Text>
                     )}
                     {item.type === 'income' && (
-                      <Text style={styles.incomeDetails}>{accountNameFromId(item.toAccountId)}</Text>
+                      <Text style={styles.incomeDetails}>{accountNameFromId(item.to_account_id)}</Text>
                     )}
                   </View>
                   <Text style={[
@@ -135,14 +187,23 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, account
             </View>
           </View>
         );
-      })}
-    </ScrollView>
+      }}
+      onEndReached={loadMoreTransactions} // Load more transactions when reaching the end
+      onEndReachedThreshold={0.5} // Adjust threshold to prevent premature triggering
+      contentContainerStyle={styles.contentTransactionList}
+      ListFooterComponent={renderFooter}
+    />
   );
 };
 
 const styles = StyleSheet.create({
-  transactionList: {
-    flex: 1,
+
+  contentTransactionList: {
+    flexGrow: 1,
+  },
+  footer: {
+    padding: 10,
+    alignItems: 'center',
   },
   dateGroup: {
     marginBottom: 20,

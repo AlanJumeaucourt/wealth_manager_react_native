@@ -5,6 +5,14 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ThemeProvider, DefaultTheme } from '@react-navigation/native';
 import { Stack } from 'expo-router';
 import InvestmentScreen from './InvestmentScreen';
+import * as Sentry from '@sentry/react-native';
+
+Sentry.init({
+  dsn: 'https://d12d7aa6d6edf166709997c29591227d@o4508077260996608.ingest.de.sentry.io/4508077266239568',
+
+  // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+  // enableSpotlight: __DEV__,
+});
 
 const theme = {
   ...DefaultTheme,
@@ -37,9 +45,10 @@ function useProtectedRoute(isLoggedIn: boolean | null) {
 
 export default function RootLayout() {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
+  const router = useRouter(); // Get the router instance
 
   useEffect(() => {
-    setupAxiosInterceptors();
+    setupAxiosInterceptors(router); // Pass the router to the interceptor setup
     AsyncStorage.getItem('accessToken').then(token => {
       if (token) {
         setAuthToken(token);

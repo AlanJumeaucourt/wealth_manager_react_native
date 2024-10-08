@@ -3,5 +3,6 @@ export interface Account {
   name: string;
   type: 'checking' | 'savings' | 'investment' | 'expense' | 'income';
   balance: number;
-  bankId: number;
+  bank_id: number;
+  currency: string;
 }

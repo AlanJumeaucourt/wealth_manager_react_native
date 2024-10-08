@@ -10,38 +10,41 @@ import { fetchBanks } from '../actions/bankActions';
 import { fetchAccounts } from '../actions/accountActions';
 import { colors } from '../constants/colors';
 import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
-import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import SafeViewAndroid from "./components/SafeViewAndroid";
 import { Ionicons } from '@expo/vector-icons';
 import { BackButton } from './components/BackButton';
 import { DeleteButton } from './components/DeleteButton'; // Ensure this import is present
 import { deleteBank } from './api/bankApi';
+import { updateAccount } from './api/bankApi';
 import { AddButton } from './components/AddButton'; // Ensure this import is present
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { Account } from '@/types/account';
 
 
 type RootStackParamList = {
     Accounts: undefined;
-    AddAccount: undefined;
 };
 
-type AddAccountScreenNavigationProp = StackNavigationProp<RootStackParamList, 'AddAccount'>;
-
 export default function AddAccountScreen() {
-    const navigation = useNavigation<AddAccountScreenNavigationProp>();
+    const navigation = useNavigation();
+    const route = useRoute();
     const dispatch = useDispatch();
-    const { banks, banksLoading, banksError } = useSelector((state: any) => state.banks);
-    const [newAccountName, setNewAccountName] = useState('');
-    const [newAccountType, setNewAccountType] = useState('');
-    const [selectedBank, setSelectedBank] = useState('');
-    const [newAccountCurrency, setNewAccountCurrency] = useState('');
+    const { banks } = useSelector((state: any) => state.banks);
+    
+    const account = route.params?.account as Account;
+    const [newAccountName, setNewAccountName] = useState(account ? account.name : '');
+    const [newAccountType, setNewAccountType] = useState(account ? account.type : '');
+    const [selectedBank, setSelectedBank] = useState(account ? account.bank_id : '');
+    const [newAccountCurrency, setNewAccountCurrency] = useState(account ? account.currency : 'EUR');
     const [newBankName, setNewBankName] = useState('');
     const [isAddingNewBank, setIsAddingNewBank] = useState(false);
 
     const accountTypes = ['Checking', 'Savings', 'Investment'];
+
     useEffect(() => {
         dispatch(fetchBanks());
-    }, []);
+    }, [dispatch]);
 
     const handleBankSelection = (itemValue: string) => {
         if (itemValue === 'add_new') {
@@ -53,7 +56,7 @@ export default function AddAccountScreen() {
         }
     };
 
-    const handleAddAccount = async () => {
+    const handleAddOrUpdateAccount = async () => {
         if (!newAccountName || !newAccountType || (!selectedBank && !newBankName) || !newAccountCurrency) {
             console.error('Please fill in all fields');
             return;
@@ -71,7 +74,7 @@ export default function AddAccountScreen() {
             }
         }
 
-        const newAccountData = {
+        const accountData = {
             name: newAccountName,
             type: newAccountType,
             bankId: bankId,
@@ -79,7 +82,12 @@ export default function AddAccountScreen() {
         };
 
         try {
-            await createAccount(newAccountData);
+            if (account) {
+                // Update existing account logic here
+                await updateAccount(account.id, accountData); 
+            } else {
+                await createAccount(accountData);
+            }
             dispatch(fetchAccounts());
             navigation.goBack();
         } catch (error) {
@@ -124,17 +132,17 @@ export default function AddAccountScreen() {
         }
     };
 
-    const currencies = ['USD', 'EUR', 'GBP', 'JPY', 'CAD'];
+    const options = ['USD', 'EUR', 'GBP', 'JPY', 'CAD'];
     const showCurrencyPicker = () => {
         if (Platform.OS === 'ios') {
             ActionSheetIOS.showActionSheetWithOptions(
                 {
-                    options: ['Cancel', ...currencies],
+                    options: ['Cancel', ...options],
                     cancelButtonIndex: 0,
                 },
                 (buttonIndex) => {
                     if (buttonIndex !== 0) {
-                        setNewAccountCurrency(currencies[buttonIndex - 1]);
+                        setNewAccountCurrency(options[buttonIndex - 1]);
                     }
                 }
             );
@@ -187,14 +195,13 @@ export default function AddAccountScreen() {
         } else {
             return (
                 <View>
-                    <Text style={pickerStyle.pickerLabel}>{label}</Text>
                     <Picker
                         selectedValue={value}
                         onValueChange={onPress}
                         style={pickerStyle.picker}
                     >
-                        {currencies.map((currency, index) => (
-                            <Picker.Item key={index} value={currency} label={currency} />
+                        {options.map((option, index) => (
+                            <Picker.Item key={index} value={option} label={option} />
                         ))}
                     </Picker>
                 </View>
@@ -233,8 +240,8 @@ export default function AddAccountScreen() {
         <View style={styles.container}>
             <BackButton />
             <ScrollView contentContainerStyle={styles.scrollContainer}>
-                <Text style={styles.title}>Add New Account</Text>
-                <Text style={styles.label}>Account Name</Text>
+            <Text style={styles.title}>{account ? `Edit Account` : 'Add New Account'}</Text>
+            <Text style={styles.label}>Account Name</Text>
                 <TextInput
                     style={styles.input}
                     placeholder="Enter account name"
@@ -296,8 +303,8 @@ export default function AddAccountScreen() {
                     Platform.OS === 'ios' ? showCurrencyPicker : (itemValue) => setNewAccountCurrency(itemValue)
                 )}
 
-                <Button mode="contained" onPress={handleAddAccount} style={styles.button}>
-                    Add Account
+                <Button mode="contained" onPress={handleAddOrUpdateAccount} style={styles.button}>
+                    {account ? 'Update Account' : 'Add Account'}
                 </Button>
                 <Button mode="outlined" onPress={() => navigation.goBack()} style={styles.closeButton}>
                     Close
