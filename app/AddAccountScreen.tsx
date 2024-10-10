@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, Text, ScrollView, View, Platform, TouchableOpacity, Animated, Pressable } from 'react-native';
+import { StyleSheet, Text, ScrollView, View, Platform, TouchableOpacity, Animated, Pressable, Alert } from 'react-native';
 import { TextInput, Button } from 'react-native-paper';
 import { Picker } from '@react-native-picker/picker';
 import { createBank, createAccount } from './api/bankApi';
@@ -9,10 +9,6 @@ import { useDispatch, useSelector } from 'react-redux';
 import { fetchBanks } from '../actions/bankActions';
 import { fetchAccounts } from '../actions/accountActions';
 import { colors } from '../constants/colors';
-import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
-import { StackNavigationProp } from '@react-navigation/stack';
-import SafeViewAndroid from "./components/SafeViewAndroid";
-import { Ionicons } from '@expo/vector-icons';
 import { BackButton } from './components/BackButton';
 import { DeleteButton } from './components/DeleteButton'; // Ensure this import is present
 import { deleteBank } from './api/bankApi';
@@ -21,23 +17,21 @@ import { AddButton } from './components/AddButton'; // Ensure this import is pre
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Account } from '@/types/account';
 
-
-type RootStackParamList = {
-    Accounts: undefined;
-};
-
 export default function AddAccountScreen() {
     const navigation = useNavigation();
     const route = useRoute();
     const dispatch = useDispatch();
     const { banks } = useSelector((state: any) => state.banks);
+    console.log('banks in AddAccountScreen : ', banks);
     
     const account = route.params?.account as Account;
-    const [newAccountName, setNewAccountName] = useState(account ? account.name : '');
-    const [newAccountType, setNewAccountType] = useState(account ? account.type : '');
-    const [selectedBank, setSelectedBank] = useState(account ? account.bank_id : '');
-    const [newAccountCurrency, setNewAccountCurrency] = useState(account ? account.currency : 'EUR');
-    const [newBankName, setNewBankName] = useState('');
+    const [formData, setFormData] = useState({
+        AccountName: account ? account.name : '',
+        AccountType: account ? account.type : '',
+        AccountBankId: account ? account.bank_id : '',
+        AccountCurrency: account ? account.currency : 'EUR',
+        newBankName: '',
+    });
     const [isAddingNewBank, setIsAddingNewBank] = useState(false);
 
     const accountTypes = ['Checking', 'Savings', 'Investment'];
@@ -46,18 +40,33 @@ export default function AddAccountScreen() {
         dispatch(fetchBanks());
     }, [dispatch]);
 
+    const handleChange = (name: string, value: string) => {
+        setFormData(prevState => ({
+            ...prevState,
+            [name]: value,
+        }));
+    };
+
     const handleBankSelection = (itemValue: string) => {
         if (itemValue === 'add_new') {
             setIsAddingNewBank(true);
-            setNewBankName('');
+            setFormData(prevState => ({
+                ...prevState,
+                AccountBankId: '',
+            }));
         } else {
             setIsAddingNewBank(false);
-            setSelectedBank(itemValue);
+            setFormData(prevState => ({
+                ...prevState,
+                AccountBankId: parseInt(itemValue),
+            }));
         }
     };
 
     const handleAddOrUpdateAccount = async () => {
-        if (!newAccountName || !newAccountType || (!selectedBank && !newBankName) || !newAccountCurrency) {
+        const { AccountName, AccountType, AccountBankId: selectedBank, AccountCurrency, newBankName } = formData;
+
+        if (!AccountName || !AccountType || (!selectedBank && !newBankName) || !AccountCurrency) {
             console.error('Please fill in all fields');
             return;
         }
@@ -75,10 +84,10 @@ export default function AddAccountScreen() {
         }
 
         const accountData = {
-            name: newAccountName,
-            type: newAccountType,
+            name: AccountName,
+            type: AccountType,
             bankId: bankId,
-            currency: newAccountCurrency,
+            currency: AccountCurrency,
         };
 
         try {
@@ -89,9 +98,11 @@ export default function AddAccountScreen() {
                 await createAccount(accountData);
             }
             dispatch(fetchAccounts());
+            Alert.alert('Account created successfully!');
             navigation.goBack();
         } catch (error) {
             console.error('Error adding account:', error);
+            Alert.alert('An error occurred. Please try again.');
         }
     };
 
@@ -104,7 +115,10 @@ export default function AddAccountScreen() {
                 },
                 (buttonIndex) => {
                     if (buttonIndex !== 0) {
-                        setNewAccountType(accountTypes[buttonIndex - 1].toLowerCase());
+                        setFormData(prevState => ({
+                            ...prevState,
+                            AccountType: accountTypes[buttonIndex - 1],
+                        }));
                     }
                 }
             );
@@ -142,7 +156,10 @@ export default function AddAccountScreen() {
                 },
                 (buttonIndex) => {
                     if (buttonIndex !== 0) {
-                        setNewAccountCurrency(options[buttonIndex - 1]);
+                        setFormData(prevState => ({
+                            ...prevState,
+                            AccountCurrency: options[buttonIndex - 1],
+                        }));
                     }
                 }
             );
@@ -229,10 +246,12 @@ export default function AddAccountScreen() {
         try {
             await createBank(newBankName);
             dispatch(fetchBanks());
-            setNewBankName(''); // Clear the input after adding
+            setNewBankName('');
             setIsAddingNewBank(false);
+            Alert.alert('Bank created successfully!');
         } catch (error) {
             console.error('Error adding bank:', error);
+            Alert.alert('An error occurred. Please try again.');
         }
     };
 
@@ -246,14 +265,14 @@ export default function AddAccountScreen() {
                     style={styles.input}
                     placeholder="Enter account name"
                     placeholderTextColor={colors.lightText}
-                    value={newAccountName}
-                    onChangeText={setNewAccountName}
+                    value={formData.AccountName}
+                    onChangeText={value => handleChange('AccountName', value)}
                 />
 
                 <Text style={styles.label}>Account Type</Text>
                 {renderPicker(
                     'Account Type',
-                    newAccountType,
+                    formData.AccountType,
                     100,
                     Platform.OS === 'ios' ? showAccountTypePicker : (itemValue) => setNewAccountType(itemValue)
                 )}
@@ -263,15 +282,15 @@ export default function AddAccountScreen() {
                     <View style={styles.bankSelectionContainer}>
                         {renderPicker(
                             'Bank',
-                            selectedBank ? banks.find((bank: Bank) => bank.id.toString() === selectedBank)?.name : '',
-                            selectedBank != '' ? 85 : 100,
-                            Platform.OS === 'ios' ? showBankPicker : handleBankSelection
+                            formData.AccountBankId ? banks.find((bank: Bank) => bank.id === formData.AccountBankId)?.name : '',
+                            isAddingNewBank ? 85 : 100,
+                            Platform.OS === 'ios' ? showBankPicker : () => handleBankSelection(itemValue)
                         )}
                         <View style={styles.deleteButtonContainer}>
                             <DeleteButton
                                 deleteText=""
                                 deleteTextAlert="Are you sure you want to delete this bank?"
-                                deleteFunction={() => handleDeleteBank(parseInt(selectedBank))} // This should return a promise
+                                deleteFunction={() => handleDeleteBank(parseInt(formData.AccountBankId))} // This should return a promise
                             />
                         </View>
                     </View>
@@ -282,8 +301,8 @@ export default function AddAccountScreen() {
                             style={[styles.input, { width: '85%' }]}
                             placeholder="Enter new bank name"
                             placeholderTextColor={colors.lightText}
-                            value={newBankName}
-                            onChangeText={setNewBankName}
+                            value={formData.newBankName}
+                            onChangeText={value => handleChange('newBankName', value)}
                         />
                         <View style={styles.addButtonContainer}>
                             <AddButton
@@ -298,7 +317,7 @@ export default function AddAccountScreen() {
                 <Text style={styles.label}>Currency</Text>
                 {renderPicker(
                     'Currency',
-                    newAccountCurrency,
+                    formData.AccountCurrency,
                     100,
                     Platform.OS === 'ios' ? showCurrencyPicker : (itemValue) => setNewAccountCurrency(itemValue)
                 )}

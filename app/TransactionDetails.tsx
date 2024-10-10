@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView, Alert, Pressable } from 'react-native';
 import { Button, Icon, Card, Text, Divider } from 'react-native-elements';
 import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
@@ -14,6 +14,8 @@ import { EditButton } from '@/app/components/EditButton';
 import { fetchTransactions } from '@/actions/transactionActions';
 import { deleteTransaction } from './api/bankApi';
 import sharedStyles from './styles/sharedStyles'; // Import shared styles
+import { Menu } from 'react-native-paper';
+import { Ionicons } from '@expo/vector-icons';
 
 type TransactionDetailsRouteProp = RouteProp<RootStackParamList, 'TransactionDetails'>;
 
@@ -30,27 +32,22 @@ const accountNameFromId = (accountId: number, accounts: Account[] | undefined) =
   return account ? account.name : accountId.toString();
 };
 
-const handleEdit = (transactionId: string) => {
-  // Navigate to the edit screen or open a modal
-  Alert.alert('Edit', `Edit transaction with ID: ${transactionId}`);
-};
-
 export default function TransactionDetailsScreen() {
   const route = useRoute<TransactionDetailsRouteProp>();
   const navigation = useNavigation();
   const transaction = route.params?.transaction as Transaction; // Ensure transaction is correctly typed
+  console.log('route.params in TransactionDetailsScreen : ', route.params);
   const dispatch = useDispatch();
   const { accounts, error: accountsError } = useSelector((state: any) => state.accounts || {});
 
-  const handleDelete = async (transactionId: string) => {
-    try {
-      await deleteTransaction(transactionId);
-      dispatch(fetchTransactions());
-      navigation.goBack(); // Retour à l'écran des comptes
-    } catch (error) {
-      console.error('Error deleting account:', error);
-      // Gérer l'erreur (par exemple, afficher un message à l'utilisateur)
-    }
+  const [NewTransaction, setNewTransaction] = useState(transaction);
+
+
+  const handleEdit = () => { // Change parameter type to Transaction
+    // Navigate to the edit screen or open a modal
+    console.log('transaction in handleEdit : ', transaction);
+    navigation.navigate('AddTransaction', { transaction: transaction }); // Pass the entire transaction object
+    closeMenu();
   };
 
   if (accountsError) {
@@ -69,15 +66,44 @@ export default function TransactionDetailsScreen() {
     );
   }
 
+  const [visible, setVisible] = React.useState(false);
+  const openMenu = () => setVisible(true);
+  const closeMenu = () => setVisible(false);
+
+  const handleDeleteTransaction = async () => {
+    try {
+      Alert.alert('Are you sure you want to delete this transaction?', '', [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            await deleteTransaction(transaction.id);
+            dispatch(fetchTransactions());
+            navigation.goBack();
+          },
+        },
+      ]);
+    } catch (error) {
+      console.error('Error deleting account:', error);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <View style={sharedStyles.header}>
         <BackButton />
-        <DeleteButton
-          deleteText="Delete Transaction"
-          deleteTextAlert="Are you sure you want to delete this transaction?"
-          deleteFunction={() => handleDelete(transaction.id)}
-        />
+        <Menu
+            visible={visible}
+            onDismiss={closeMenu}
+            anchor={<Pressable style={styles.menuButton} onPress={openMenu}><Ionicons name="ellipsis-vertical" size={24} /></Pressable>}
+          >
+            <Menu.Item onPress={handleEdit} title="Edit Transaction" />
+            <Menu.Item onPress={handleDeleteTransaction} title="Delete Transaction" />
+          </Menu>
       </View>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.card}>
@@ -115,8 +141,6 @@ export default function TransactionDetailsScreen() {
               <DetailRow icon="arrow-left" label="To" value={accountNameFromId(transaction.to_account_id, accounts)} />
             </Pressable>
           </View>
-
-          <EditButton editText="Edit Transaction" editTextAlert="Are you sure you want to edit this transaction?" editFunction={() => handleEdit(transaction.id)} />
         </View>
       </ScrollView>
     </View>
@@ -180,6 +204,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  menuButton: {
+    marginRight: 16,
   },
   header: {
     flexDirection: 'row',

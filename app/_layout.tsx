@@ -9,10 +9,24 @@ import * as Sentry from '@sentry/react-native';
 
 Sentry.init({
   dsn: 'https://d12d7aa6d6edf166709997c29591227d@o4508077260996608.ingest.de.sentry.io/4508077266239568',
+  _experiments: {
+    replaysSessionSampleRate: 1.0,
+    replaysOnErrorSampleRate: 1.0,
+  },
+  integrations: [
+    Sentry.mobileReplayIntegration(),
+  ],
 
   // uncomment the line below to enable Spotlight (https://spotlightjs.com)
   // enableSpotlight: __DEV__,
 });
+
+Sentry.mobileReplayIntegration({
+  maskAllText: true,
+  maskAllImages: true,
+  maskAllVectors: true,
+});
+
 
 const theme = {
   ...DefaultTheme,

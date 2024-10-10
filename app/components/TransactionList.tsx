@@ -19,46 +19,23 @@ const TransactionList: React.FC<TransactionListProps> = ({ accountId }) => {
   const [page, setPage] = useState(1);
   const [isLoadingMore, setIsLoadingMore] = useState(false); // Add loading state
 
-
+  // Fetch transactions when the component mounts or when the page changes
   useEffect(() => {
     const fetchData = async () => {
-      if (accountId) {
-        const newTransactions = await fetchTransactions(50, page, accountId);
-        setTransactions(prevTransactions => [...prevTransactions, ...newTransactions]);
-      } else {
-        const newTransactions = await fetchTransactions(50, page);
-        setTransactions(prevTransactions => [...prevTransactions, ...newTransactions]);
-      }
+      setIsLoadingMore(true); // Set loading state before fetching
+      const newTransactions = await fetchTransactions(50, page, accountId);
+      setTransactions(prevTransactions => [...prevTransactions, ...newTransactions]);
       setIsLoadingMore(false); // Reset loading state after fetching
     };
 
     fetchData();
-  }, []);
-
-
-  console.log(accountId);
+  }, [page, accountId]); // Only run when page or accountId changes
 
   const loadMoreTransactions = () => {
     if (!isLoadingMore) { // Prevent multiple calls
-      setIsLoadingMore(true);
       setPage(prevPage => prevPage + 1);
     }
   };
-
-  useEffect(() => {
-    const fetchData = async () => {
-      if (accountId) {
-        const newTransactions = await fetchTransactions(50, page, accountId);
-        setTransactions(prevTransactions => [...prevTransactions, ...newTransactions]);
-      } else {
-        const newTransactions = await fetchTransactions(50, page);
-        setTransactions(prevTransactions => [...prevTransactions, ...newTransactions]);
-      }
-      setIsLoadingMore(false); // Reset loading state after fetching
-    };
-
-    fetchData();
-  }, [page, accountId]);
 
   const filteredTransactions = useMemo(() => {
     if (accountId) {

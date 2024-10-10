@@ -1,20 +1,19 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, Pressable } from 'react-native';
 import { TextInput, Button, Text } from 'react-native-paper';
-import { useNavigation, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router'; // Use only useRouter
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '../../config';
 import * as Sentry from "@sentry/browser";
-import { useAuth } from '../../context/AuthContext'; // Correct import
+import { useAuth } from '../../context/AuthContext'; // Ensure this does not import components that depend on it
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const router = useRouter();
-  const navigation = useNavigation();
+  const router = useRouter(); // Use useRouter for navigation
   const { login } = useAuth(); // Use the useAuth hook to get login
 
   const handleLogin = async () => {
@@ -38,7 +37,7 @@ export default function LoginScreen() {
         await login(response.data.access_token); // Use the login method from context
         console.log('Token stored, redirecting to home');
         Sentry.setUser({ email: email });
-        router.replace('/AccountsScreen');
+        router.replace('/AccountsScreen'); // Use router for navigation
       } else {
         console.log('Invalid response data:', response);
         setError('Invalid response from server');

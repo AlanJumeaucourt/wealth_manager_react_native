@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TextInput, StyleSheet, FlatList, Pressable, ScrollView, Modal, Animated } from 'react-native';
+import { View, Text, TextInput, StyleSheet, FlatList, Pressable, ScrollView, Modal, Animated, Alert } from 'react-native';
 import { Button } from 'react-native-paper';
-import { useRouter } from 'expo-router';
 import { Transaction } from '@/types/transaction';
 import { colors } from '@/constants/colors';
 import { Account } from '@/types/account';
@@ -16,23 +15,25 @@ import { fetchAccounts } from '@/actions/accountActions';
 import { BackButton } from './components/BackButton';
 import DatePicker from 'react-native-ui-datepicker'; // Import react-native-ui-datepicker
 import { fetchTransactions } from '@/actions/transactionActions';
+import { useRoute } from '@react-navigation/native';
+import { RouteParams } from 'expo-router';
 
 export default function AddTransactionScreen() {
-    const router = useRouter();
+    const route = useRoute();
     const dispatch = useDispatch();
-    const [amount, setAmount] = useState('');
-    const [description, setDescription] = useState('');
-    const [transactionType, setTransactionType] = useState('expense');
-    const [fromAccountId, setFromAccountId] = useState<number | null>(null);
-    const [selectedFromAccountName, setSelectedFromAccountName] = useState<string>('');
-    const [toAccountId, setToAccountId] = useState<number | null>(null);
-    const [selectedToAccountName, setSelectedToAccountName] = useState<string>('');
-    const [category, setCategory] = useState('');
-    const [subCategory, setSubCategory] = useState<string | null>(null);
+    const transaction = route.params?.transaction as RouteParams;
+    console.log('route.params : ', route.params);
+    
+    const [amount, setAmount] = useState(transaction ? transaction.amount : '');
+    const [description, setDescription] = useState(transaction ? transaction.description : '');
+    const [transactionType, setTransactionType] = useState(transaction ? transaction.type : 'expense');
+    const [fromAccountId, setFromAccountId] = useState<number | null>(transaction ? transaction.from_account_id : null);
+    const [selectedFromAccountName, setSelectedFromAccountName] = useState<string>(transaction ? transaction.from_account_name : '');
+    const [toAccountId, setToAccountId] = useState<number | null>(transaction ? transaction.to_account_id : null);
+    const [selectedToAccountName, setSelectedToAccountName] = useState<string>(transaction ? transaction.to_account_name : '');
+    const [category, setCategory] = useState(transaction ? transaction.category : '');
+    const [subcategory, setSubcategory] = useState<string | null>(transaction ? transaction.subcategory : null);
     const [isCategoryModalVisible, setIsCategoryModalVisible] = useState(false);
-    const [popupVisible, setPopupVisible] = useState(false);
-    const [popupMessage, setPopupMessage] = useState('');
-    const popupAnim = useRef(new Animated.Value(-50)).current;
     const [transactionDate, setTransactionDate] = useState(new Date()); // Add state for transaction date
     const [showDatePicker, setShowDatePicker] = useState(false); // State to control date picker visibility
 
@@ -41,10 +42,10 @@ export default function AddTransactionScreen() {
     useEffect(() => {
         if (transactionType === 'transfer') {
             setCategory("Virements internes");
-            setSubCategory(null);
+            setSubcategory(null);
         } else {
             setCategory('');
-            setSubCategory(null);
+            setSubcategory(null);
         }
     }, [transactionType]);
 
@@ -60,90 +61,57 @@ export default function AddTransactionScreen() {
         console.log('newAccountResponse', newAccountResponse);
         const createdAccount = { ...newAccount, id: newAccountResponse.id };
 
-        setAccounts(prevAccounts => [...prevAccounts, createdAccount]);
         setAccountId(createdAccount.id);
         console.log('Creating new account with name:', accountName);
 
         return createdAccount;
     };
 
-    const showPopup = (message: string, color: string) => {
-        setPopupMessage(message);
-        setPopupVisible(true);
-        Animated.sequence([
-            Animated.timing(popupAnim, {
-                toValue: 0,
-                duration: 300,
-                useNativeDriver: true,
-            }),
-            Animated.delay(2000),
-            Animated.timing(popupAnim, {
-                toValue: -50,
-                duration: 300,
-                useNativeDriver: true,
-            }),
-        ]).start(() => setPopupVisible(false));
-    };
-
-    const handleSubmit = async () => {
+    const handleAddOrUpdateTransaction = async () => {
+        const transactionData: Transaction = {
+            date: transactionDate.toISOString().split('T')[0],
+            description,
+            amount: parseFloat(amount),
+            type: transactionType,
+            from_account_id: fromAccountId,
+            to_account_id: toAccountId,
+            category,
+            subcategory: subcategory || null,
+        };
+        
         try {
-            let localFromAccountId = fromAccountId;
-            let localToAccountId = toAccountId;
 
-            if (selectedFromAccountName && !localFromAccountId && transactionType === 'income') {
+            if (selectedFromAccountName && !fromAccountId && transactionType === 'income') {
                 const newAccount = await createNewAccount(selectedFromAccountName, 'income', setFromAccountId);
-                localFromAccountId = newAccount.id;
+                setFromAccountId(newAccount.id);
             }
 
-            if (selectedToAccountName && !localToAccountId && transactionType === 'expense') {
+            if (selectedToAccountName && !toAccountId && transactionType === 'expense') {
                 const newAccount = await createNewAccount(selectedToAccountName, 'expense', setToAccountId);
-                localToAccountId = newAccount.id;
+                setToAccountId(newAccount.id);
             }
 
-            console.log('localFromAccountId', localFromAccountId);
-            console.log('localToAccountId', localToAccountId);
+            if (fromAccountId !== null && toAccountId !== null) {
 
-            if (localFromAccountId !== null && localToAccountId !== null) {
-                const newTransaction: Transaction = {
-                    id: Date.now(),
-                    date: transactionDate.toISOString().split('T')[0], // Use the selected transaction date
-                    description,
-                    amount: parseFloat(amount),
-                    type: transactionType,
-                    from_account_id: localFromAccountId,
-                    to_account_id: localToAccountId,
-                    category: category,
-                    subCategory: subCategory || null,
-                };
-
-                await createTransaction(newTransaction);
-                console.log('Transaction submitted:', newTransaction);
-
-                // Dispatch action to fetch updated accounts and transactions
-                dispatch(fetchAccounts()); // Ensure this action updates the transactions as well
-                showPopup('Transaction created successfully!', "#4CAF50");
+                if (transaction) {
+                    await updateTransaction(transaction.id, transactionData);
+                } else {
+                    await createTransaction(transactionData);
+                }
+                dispatch(fetchAccounts());
+                Alert.alert('Transaction created successfully!');
 
                 dispatch(fetchTransactions());
-
-                // // Clear form fields
-                // setAmount('');
-                // setDescription('');
-                // setCategory('');
-                // setSubCategory(null);
-                // setSelectedFromAccountName('');
-                // setSelectedToAccountName('');
-                // setFromAccountId(null);
-                // setToAccountId(null);
             } else {
                 console.error('Invalid account selection');
-                console.error('localFromAccountId:', localFromAccountId);
-                console.error('localToAccountId:', localToAccountId);
+                console.error('localFromAccountId:', fromAccountId);
+                console.error('localToAccountId:', toAccountId);
 
-                showPopup('Invalid account selection. Please try again.', "#F44336");
+                Alert.alert('Invalid account selection. Please try again.');
             }
         } catch (error) {
             console.error('Error submitting transaction:', error);
-            showPopup('An error occurred. Please try again.', "#F44336");
+            Alert.alert('An error occurred. Please try again.');
         }
     };
 
@@ -211,7 +179,7 @@ export default function AddTransactionScreen() {
         }
     };
 
-    const CategorySelector = ({ transactionType, onSelectCategory, onSelectSubCategory }) => {
+    const CategorySelector = ({ transactionType, onSelectCategory, onSelectSubcategory }) => {
         const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
         const [showSubCategories, setShowSubCategories] = useState(false);
 
@@ -223,14 +191,14 @@ export default function AddTransactionScreen() {
                 setShowSubCategories(true);
             } else {
                 onSelectCategory(category.name);
-                onSelectSubCategory(null);
+                onSelectSubcategory(null);
                 setIsCategoryModalVisible(false);
             }
         };
 
-        const handleSubCategorySelect = (subCategory: { name: string }) => {
+        const handleSubcategorySelect = (subcategory: { name: string }) => {
             onSelectCategory(selectedCategory!.name);
-            onSelectSubCategory(subCategory.name);
+            onSelectSubcategory(subcategory.name);
             setIsCategoryModalVisible(false);
         };
 
@@ -252,12 +220,12 @@ export default function AddTransactionScreen() {
             </Pressable>
         );
 
-        const renderSubCategoryItem = ({ item }: { item: { name: string } }) => (
+        const renderSubcategoryItem = ({ item }: { item: { name: string } }) => (
             <Pressable
-                style={styles.subCategoryItem}
-                onPress={() => handleSubCategorySelect(item)}
+                style={styles.subcategoryItem}
+                onPress={() => handleSubcategorySelect(item)}
             >
-                <Text style={styles.subCategoryText}>{item.name}</Text>
+                <Text style={styles.subcategoryText}>{item.name}</Text>
             </Pressable>
         );
 
@@ -276,10 +244,10 @@ export default function AddTransactionScreen() {
                         <Text style={styles.selectedCategoryText}>{selectedCategory?.name}</Text>
                         <FlatList
                             data={selectedCategory?.subCategories}
-                            renderItem={renderSubCategoryItem}
+                            renderItem={renderSubcategoryItem}
                             keyExtractor={(item) => item.name}
                             numColumns={2}
-                            contentContainerStyle={styles.subCategoryGrid}
+                            contentContainerStyle={styles.subcategoryGrid}
                         />
                     </View>
                 )}
@@ -301,8 +269,8 @@ export default function AddTransactionScreen() {
         setIsCategoryModalVisible(false);
     };
 
-    const handleSubCategorySelect = (selectedSubCategory: string | null) => {
-        setSubCategory(selectedSubCategory);
+    const handleSubcategorySelect = (selectedSubcategory: string | null) => {
+        setSubcategory(selectedSubcategory);
         setIsCategoryModalVisible(false);
     };
 
@@ -314,13 +282,8 @@ export default function AddTransactionScreen() {
     return (
         <View style={styles.container}>
             <BackButton />
-            {popupVisible && (
-                <Animated.View style={[styles.popup, { transform: [{ translateY: popupAnim }] }]}>
-                    <Text style={styles.popupText}>{popupMessage}</Text>
-                </Animated.View>
-            )}
             <ScrollView contentContainerStyle={styles.scrollContainer}>
-                <Text style={styles.title}>Add Transaction</Text>
+                <Text style={styles.title}>{transaction ? `Edit Transaction` : 'Add New Transaction'}</Text>
                 <View style={styles.filtersContainer}>
                     <FlatList
                         data={transactionTypes}
@@ -397,7 +360,7 @@ export default function AddTransactionScreen() {
                         onPress={() => setIsCategoryModalVisible(true)}
                     >
                         <Text style={styles.categoryButtonText}>
-                            {category ? `${category}${subCategory ? ` - ${subCategory}` : ''}` : 'Select Category'}
+                            {category ? `${category}${subcategory ? ` - ${subcategory}` : ''}` : 'Select Category'}
                         </Text>
                         <Ionicons name="chevron-forward" size={24} color={colors.primary} />
                     </Pressable>
@@ -415,7 +378,7 @@ export default function AddTransactionScreen() {
                             <CategorySelector
                                 transactionType={transactionType}
                                 onSelectCategory={handleCategorySelect}
-                                onSelectSubCategory={handleSubCategorySelect}
+                                onSelectSubcategory={handleSubcategorySelect}
                             />
                         </View>
                     </View>
@@ -447,7 +410,7 @@ export default function AddTransactionScreen() {
                     </View>
                 </Modal>
 
-                <Button mode="contained" onPress={handleSubmit} style={styles.button}>
+                <Button mode="contained" onPress={handleAddOrUpdateTransaction} style={styles.button}>
                     <Text style={styles.buttonText}>Add Transaction</Text>
                 </Button>
             </ScrollView>
@@ -552,10 +515,10 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         fontSize: 12,
     },
-    subCategoryGrid: {
+    subcategoryGrid: {
         justifyContent: 'space-between',
     },
-    subCategoryItem: {
+    subcategoryItem: {
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
@@ -565,7 +528,7 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         minWidth: '45%',
     },
-    subCategoryText: {
+    subcategoryText: {
         textAlign: 'center',
         fontSize: 14,
     },

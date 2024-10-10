@@ -1,5 +1,5 @@
-export const API_URL = 'http://100.80.185.72:5000';
+export const API_URL = 'http://100.121.97.42:5000';
 
 module.exports = {
-    API_URL: 'http://100.80.185.72:5000',
+    API_URL: 'http://100.121.97.42:5000',
 };

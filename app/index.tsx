@@ -36,8 +36,20 @@ Sentry.init({
     // profilesSampleRate is relative to tracesSampleRate.
     // Here, we'll capture profiles for 100% of transactions.
     profilesSampleRate: 1.0,
+    replaysSessionSampleRate: 1.0,
+    replaysOnErrorSampleRate: 1.0,
   },
+  integrations: [
+    Sentry.mobileReplayIntegration(),
+  ],
 });
+
+Sentry.mobileReplayIntegration({
+  maskAllText: true,
+  maskAllImages: true,
+  maskAllVectors: true,
+});
+
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
@@ -87,78 +99,78 @@ export function AuthNavigator() {
 export function MainNavigator() {
   return (
     <NavigationContainer independent={true}>
-    <Tab.Navigator
-      initialRouteName="Accounts"
-      screenOptions={{
-        headerShown: false,
-      }}
-    >
-      <Tab.Screen
-        name="Accounts"
-        component={AccountsScreenNavigator}
-        options={{
-          tabBarLabel: 'Accounts',
-          tabBarIcon: ({ color, size }) => (
-            <Icon name="account" size={size} color={color} />
-          ),
+      <Tab.Navigator
+        initialRouteName="Accounts"
+        screenOptions={{
+          headerShown: false,
         }}
-      />
-      <Tab.Screen
-        name="Transactions"
-        component={TransactionsScreenNavigator}
-        options={{
-          tabBarLabel: 'Transactions',
-          tabBarIcon: ({ color, size }) => (
-            <Icon name="file-document-outline" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tab.Screen
-        name="Investment"
-        component={InvestmentScreen}
-        options={{
-          tabBarLabel: 'Investment',
-          tabBarIcon: ({ color, size }) => (
-            <Icon name="chart-bar" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tab.Screen
-        name="Budget"
-        component={BudgetScreen}
-        options={{
-          tabBarLabel: 'Budget',
-          tabBarIcon: ({ color, size }) => (
-            <Icon name="finance" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tab.Screen
-        name="Wealth"
-        component={WealthDashboard}
-        options={{
-          tabBarLabel: 'Wealth',
-          tabBarIcon: ({ color, size }) => (
-            <Icon name="chart-bar" size={size} color={color} />
-          ),
-        }}
-      />
-    </Tab.Navigator>
+      >
+        <Tab.Screen
+          name="Accounts"
+          component={AccountsScreenNavigator}
+          options={{
+            tabBarLabel: 'Accounts',
+            tabBarIcon: ({ color, size }) => (
+              <Icon name="account" size={size} color={color} />
+            ),
+          }}
+        />
+        <Tab.Screen
+          name="Transactions"
+          component={TransactionsScreenNavigator}
+          options={{
+            tabBarLabel: 'Transactions',
+            tabBarIcon: ({ color, size }) => (
+              <Icon name="file-document-outline" size={size} color={color} />
+            ),
+          }}
+        />
+        <Tab.Screen
+          name="Investment"
+          component={InvestmentScreen}
+          options={{
+            tabBarLabel: 'Investment',
+            tabBarIcon: ({ color, size }) => (
+              <Icon name="chart-bar" size={size} color={color} />
+            ),
+          }}
+        />
+        <Tab.Screen
+          name="Budget"
+          component={BudgetScreen}
+          options={{
+            tabBarLabel: 'Budget',
+            tabBarIcon: ({ color, size }) => (
+              <Icon name="finance" size={size} color={color} />
+            ),
+          }}
+        />
+        <Tab.Screen
+          name="Wealth"
+          component={WealthDashboard}
+          options={{
+            tabBarLabel: 'Wealth',
+            tabBarIcon: ({ color, size }) => (
+              <Icon name="chart-bar" size={size} color={color} />
+            ),
+          }}
+        />
+      </Tab.Navigator>
     </NavigationContainer>
   );
 }
 
-function AppNavigator() {  
+function AppNavigator() {
   return (
     <Provider store={store}>
-        <GestureHandlerRootView style={{ flex: 1 }}>
-          <PaperProvider>
-            <SafeAreaView style={[styles.container, SafeViewAndroid.AndroidSafeArea, { backgroundColor: colors.background }]}>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <PaperProvider>
+          <SafeAreaView style={[styles.container, SafeViewAndroid.AndroidSafeArea, { backgroundColor: colors.background }]}>
             <AuthProvider>
-              </AuthProvider>
-            </SafeAreaView>
-          </PaperProvider>
-        </GestureHandlerRootView>
+            </AuthProvider>
+          </SafeAreaView>
+        </PaperProvider>
+      </GestureHandlerRootView>
     </Provider>
   );
 }

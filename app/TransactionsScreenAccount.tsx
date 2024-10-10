@@ -26,6 +26,7 @@ export default function TransactionsScreen() {
   const navigation = useNavigation();
   const route = useRoute();
   const { account, refreshAccounts } = route.params as RouteParams;
+  console.log('route.params : ', route.params);
 
   const [visible, setVisible] = useState(false); // State to manage menu visibility
 
