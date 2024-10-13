@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, ScrollView, View, Platform, TouchableOpacity, Animated, Pressable, Alert } from 'react-native';
 import { TextInput, Button } from 'react-native-paper';
 import { Picker } from '@react-native-picker/picker';
@@ -34,7 +34,7 @@ export default function AddAccountScreen() {
     });
     const [isAddingNewBank, setIsAddingNewBank] = useState(false);
 
-    const accountTypes = ['Checking', 'Savings', 'Investment'];
+    const accountTypes = ['checking', 'savings', 'investment'];
 
     useEffect(() => {
         dispatch(fetchBanks());
@@ -86,7 +86,7 @@ export default function AddAccountScreen() {
         const accountData = {
             name: AccountName,
             type: AccountType,
-            bankId: bankId,
+            bank_id: bankId,
             currency: AccountCurrency,
         };
 
@@ -94,12 +94,14 @@ export default function AddAccountScreen() {
             if (account) {
                 // Update existing account logic here
                 await updateAccount(account.id, accountData); 
+                Alert.alert('Account updated successfully!');
+                navigation.goBack();
             } else {
                 await createAccount(accountData);
+                Alert.alert('Account created successfully!');
+                navigation.goBack();    
             }
             dispatch(fetchAccounts());
-            Alert.alert('Account created successfully!');
-            navigation.goBack();
         } catch (error) {
             console.error('Error adding account:', error);
             Alert.alert('An error occurred. Please try again.');

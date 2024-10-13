@@ -4,7 +4,7 @@ import { Button } from 'react-native-paper';
 import { Transaction } from '@/types/transaction';
 import { colors } from '@/constants/colors';
 import { Account } from '@/types/account';
-import { createAccount, createTransaction } from './api/bankApi';
+import { createAccount, createTransaction, updateTransaction } from './api/bankApi';
 import SearchableModal from '@/app/components/SearchableModal';
 import { budgetExpensesCategories, budgetIncomesCategories } from '@/constants/categories';
 import { Category } from '@/types/category';
@@ -13,31 +13,40 @@ import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '@/store/store';
 import { fetchAccounts } from '@/actions/accountActions';
 import { BackButton } from './components/BackButton';
-import DatePicker from 'react-native-ui-datepicker'; // Import react-native-ui-datepicker
+import DatePicker from 'react-native-ui-datepicker';
 import { fetchTransactions } from '@/actions/transactionActions';
 import { useRoute } from '@react-navigation/native';
 import { RouteParams } from 'expo-router';
+
+const accountNameFromId = (accountId: number, accounts: Account[]) => {
+    if (!accounts || !Array.isArray(accounts)) {
+      return accountId.toString();
+    }
+    const account = accounts.find(a => a.id === accountId);
+    return account ? account.name : accountId.toString();
+};
 
 export default function AddTransactionScreen() {
     const route = useRoute();
     const dispatch = useDispatch();
     const transaction = route.params?.transaction as RouteParams;
+    const accounts = useSelector((state: RootState) => state.accounts.accounts);
+
     console.log('route.params : ', route.params);
     
     const [amount, setAmount] = useState(transaction ? transaction.amount : '');
     const [description, setDescription] = useState(transaction ? transaction.description : '');
     const [transactionType, setTransactionType] = useState(transaction ? transaction.type : 'expense');
     const [fromAccountId, setFromAccountId] = useState<number | null>(transaction ? transaction.from_account_id : null);
-    const [selectedFromAccountName, setSelectedFromAccountName] = useState<string>(transaction ? transaction.from_account_name : '');
+    const [selectedFromAccountName, setSelectedFromAccountName] = useState<string>(transaction ? accountNameFromId(transaction.from_account_id, accounts) : '');
     const [toAccountId, setToAccountId] = useState<number | null>(transaction ? transaction.to_account_id : null);
-    const [selectedToAccountName, setSelectedToAccountName] = useState<string>(transaction ? transaction.to_account_name : '');
+    const [selectedToAccountName, setSelectedToAccountName] = useState<string>(transaction ? accountNameFromId(transaction.to_account_id, accounts) : '');
     const [category, setCategory] = useState(transaction ? transaction.category : '');
     const [subcategory, setSubcategory] = useState<string | null>(transaction ? transaction.subcategory : null);
     const [isCategoryModalVisible, setIsCategoryModalVisible] = useState(false);
-    const [transactionDate, setTransactionDate] = useState(new Date()); // Add state for transaction date
-    const [showDatePicker, setShowDatePicker] = useState(false); // State to control date picker visibility
+    const [transactionDate, setTransactionDate] = useState(new Date());
+    const [showDatePicker, setShowDatePicker] = useState(false);
 
-    const accounts = useSelector((state: RootState) => state.accounts.accounts);
 
     useEffect(() => {
         if (transactionType === 'transfer') {
@@ -53,7 +62,7 @@ export default function AddTransactionScreen() {
         const newAccount = {
             name: accountName,
             type: accountType,
-            bankId: 1,
+            bank_id: 1,
             currency: 'EUR',
         };
 
@@ -85,7 +94,8 @@ export default function AddTransactionScreen() {
                 const newAccount = await createNewAccount(selectedFromAccountName, 'income', setFromAccountId);
                 setFromAccountId(newAccount.id);
             }
-
+            
+            console.log(selectedToAccountName, toAccountId , transactionType)
             if (selectedToAccountName && !toAccountId && transactionType === 'expense') {
                 const newAccount = await createNewAccount(selectedToAccountName, 'expense', setToAccountId);
                 setToAccountId(newAccount.id);
@@ -274,7 +284,8 @@ export default function AddTransactionScreen() {
         setIsCategoryModalVisible(false);
     };
 
-    const handleDateChange = (date: string) => {
+    const handleDateChange = (date) => {
+        console.log('data : ', date)
         setTransactionDate(new Date(date)); // Update the transaction date
         setShowDatePicker(false); // Close the date picker
     };
@@ -301,7 +312,7 @@ export default function AddTransactionScreen() {
                     style={styles.input}
                     placeholder="Enter amount (e.g., 100.00)"
                     placeholderTextColor={colors.lightText}
-                    value={amount}
+                    value={amount.toString()}
                     onChangeText={setAmount}
                     keyboardType="numeric"
                 />
@@ -390,6 +401,7 @@ export default function AddTransactionScreen() {
                 </Pressable>
 
                 {/* Modal for DatePicker */}
+                <Text>{transactionDate.toISOString()}</Text>
                 <Modal
                     visible={showDatePicker}
                     animationType="slide"
@@ -411,7 +423,7 @@ export default function AddTransactionScreen() {
                 </Modal>
 
                 <Button mode="contained" onPress={handleAddOrUpdateTransaction} style={styles.button}>
-                    <Text style={styles.buttonText}>Add Transaction</Text>
+                    <Text style={styles.buttonText}>{transaction ? 'Update Transaction' : 'Add Transaction'}</Text>
                 </Button>
             </ScrollView>
         </View>

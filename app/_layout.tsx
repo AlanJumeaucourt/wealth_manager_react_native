@@ -16,9 +16,11 @@ Sentry.init({
   integrations: [
     Sentry.mobileReplayIntegration(),
   ],
+  tracePropagationTargets: ["http://100.121.97.42:5000"],
 
   // uncomment the line below to enable Spotlight (https://spotlightjs.com)
-  // enableSpotlight: __DEV__,
+  enableSpotlight: __DEV__,
+
 });
 
 Sentry.mobileReplayIntegration({

@@ -1,6 +1,7 @@
 import apiClient from './axiosConfig';
 import axios, { AxiosError } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Account } from '@/types/account';
 
 const handleApiError = async (error: unknown, message: string) => {
   if (axios.isAxiosError(error)) {
@@ -82,7 +83,7 @@ export const fetchAccounts = async () => {
 export const createAccount = async (accountData: {
   name: string;
   type: string;
-  bankId: number;
+  bank_id: number;
   currency: string;
 }) => {
   try {
@@ -110,23 +111,40 @@ export const deleteAccount = async (accountId: number, onSuccess?: () => void) =
   }
 };
 
-export const updateAccount = async (accountId: number, accountData: {
-  name: string;
-  type: string;
-  bankId: number;
-  currency: string;
-}) => {
+export const updateAccount = async (accountId: number, accountData: Account) => {
   try {
-    const response = await apiClient.put(`/accounts/${accountId}`, accountData, { transformRequest: [addBearerToken] });
+    const response = await apiClient.put(`/accounts/${accountId}`, accountData, {
+      transformRequest: [(data, headers) => {
+        headers['Content-Type'] = 'application/json';
+        return JSON.stringify(data);
+      }]
+    });
     return response.data;
   } catch (error) {
     return handleApiError(error, 'Error updating account');
   }
 };
 
+export const updateTransaction = async (transactionId: number, transactionData) => {
+  try {
+    const response = await apiClient.put(`/transactions/${transactionId}`, transactionData, {
+      transformRequest: [(data, headers) => {
+        headers['Content-Type'] = 'application/json';
+        return JSON.stringify(data);
+      }]
+    });
+    return response.data;
+  } catch (error) {
+    return handleApiError(error, 'Error updating transaction');
+  }
+}
+
 export const fetchTransactions = async (perPage: number, page: number, accountId?: number) => {
   try {
-    const response = await apiClient.get(`/transactions?per_page=${perPage}&page=${page}&sort_by=date&sort_order=desc${accountId ? `&account_id=${accountId}` : ''}`, { transformRequest: [addBearerToken] });
+    const response = await apiClient.get(`/transactions?per_page=${perPage}&page=${page}&sort_by=date&sort_order=desc${accountId ? `&account_id=${accountId}` : ''}`, { 
+      transformRequest: [addBearerToken] // Added transformRequest
+      
+    });
     console.log('Transactions length response:', response.data.length);
     return response.data;
   } catch (error) {

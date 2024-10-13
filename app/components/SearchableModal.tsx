@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, FlatList, StyleSheet, KeyboardAvoidingView, Platform, Pressable } from 'react-native';
+import { View, Text, TextInput, FlatList, StyleSheet, Pressable, KeyboardAvoidingView } from 'react-native';
 import Modal from 'react-native-modal';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { colors } from '@/constants/colors';
 import { Account } from '@/types/account';
+import { Platform } from 'react-native';
 
 interface SearchableModalProps {
     data: Account[];
@@ -35,62 +37,67 @@ const SearchableModal: React.FC<SearchableModalProps> = ({ data, onSelect, place
                 isVisible={modalVisible}
                 onBackdropPress={() => setModalVisible(false)}
                 onSwipeComplete={() => setModalVisible(false)}
-                swipeDirection="down"
                 style={styles.modal}
+                swipeDirection="down"
+                propagateSwipe
             >
-                <KeyboardAvoidingView
-                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                    style={styles.modalContent}
-                >
-                    {searchable && (
-                        <TextInput
-                            style={styles.searchInput}
-                            placeholder="Search..."
-                            placeholderTextColor={colors.lightText}
-                            value={searchQuery}
-                            onChangeText={setSearchQuery}
+                <View style={styles.modalContent}>
+                    <KeyboardAvoidingView
+                        contentContainerStyle={styles.scrollViewContent}
+                        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                  >
+                        {searchable && (
+                            <TextInput
+                                style={styles.searchInput}
+                                placeholder="Search..."
+                                placeholderTextColor={colors.lightText}
+                                value={searchQuery}
+                                onChangeText={setSearchQuery}
+                            />
+                        )}
+                        <FlatList
+                            style={styles.flatList}
+                            data={filteredData}
+                            keyExtractor={(item) => item.id.toString()}
+                            renderItem={({ item }) => (
+                                <Pressable
+                                    style={styles.item}
+                                    onPress={() => {
+                                        onSelect(item.id);
+                                        setModalVisible(false);
+                                    }}
+                                >
+                                    <View style={styles.itemRow}>
+                                        <Text style={styles.itemText}>{item.name}</Text>
+                                        {item.type !== 'expense' && item.type !== 'income' && (
+                                            <Text style={styles.balanceText}>{item.balance.toFixed(2)} €</Text>
+                                        )}
+                                    </View>
+                                </Pressable>
+                            )}
+                            showsVerticalScrollIndicator={true}
                         />
-                    )}
-                    <FlatList
-                        data={filteredData}
-                        keyExtractor={(item) => item.id.toString()}
-                        renderItem={({ item }) => (
+                        <View style={styles.buttonContainer}>
+                            {allowCustomValue && (
+                                <Pressable
+                                    style={styles.submitButton}
+                                    onPress={() => {
+                                        onSelect(searchQuery);
+                                        setModalVisible(false);
+                                    }}
+                                >
+                                    <Text style={styles.submitButtonText}>Add</Text>
+                                </Pressable>
+                            )}
                             <Pressable
-                                style={styles.item}
-                                onPress={() => {
-                                    onSelect(item.id);
-                                    setModalVisible(false);
-                                }}
+                                style={[styles.closeButton, !allowCustomValue && styles.centeredButton]}
+                                onPress={() => setModalVisible(false)}
                             >
-                                <View style={styles.itemRow}>
-                                    <Text style={styles.itemText}>{item.name}</Text>
-                                    {item.type !== 'expense' && item.type !== 'income' && (
-                                        <Text style={styles.balanceText}>{item.balance} €</Text>
-                                    )}
-                                </View>
+                                <Text style={styles.closeButtonText}>Close</Text>
                             </Pressable>
-                        )}
-                    />
-                    <View style={styles.buttonContainer}>
-                        {allowCustomValue && (
-                            <Pressable
-                                style={styles.submitButton}
-                                onPress={() => {
-                                    onSelect(searchQuery);
-                                    setModalVisible(false);
-                                }}
-                            >
-                                <Text style={styles.submitButtonText}>Add</Text>
-                            </Pressable>
-                        )}
-                        <Pressable
-                            style={[styles.closeButton, !allowCustomValue && styles.centeredButton]}
-                            onPress={() => setModalVisible(false)}
-                        >
-                            <Text style={styles.closeButtonText}>Close</Text>
-                        </Pressable>
-                    </View>
-                </KeyboardAvoidingView>
+                        </View>
+                    </KeyboardAvoidingView>
+                </View>
             </Modal>
         </View>
     );
@@ -122,8 +129,7 @@ const styles = StyleSheet.create({
         backgroundColor: colors.white,
         borderRadius: 10,
         padding: 16,
-        alignItems: 'center',
-        maxHeight: '80%',
+        height: '80%',
     },
     searchInput: {
         height: 40,
@@ -190,7 +196,17 @@ const styles = StyleSheet.create({
     },
     centeredButton: {
         justifyContent: 'center',
-        alignItems: 'center',
+    },
+    flatListContainer: {
+        maxHeight: 300, // Set a maximum height for the FlatList container
+        width: '100%',
+    },
+    flatList: {
+        width: '100%',
+    },
+    scrollViewContent: {
+        flexGrow: 1,
+        justifyContent: 'center',
     },
 });
 

@@ -1,8 +1,8 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView, Dimensions, FlatList, Modal } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, FlatList, Modal, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LineGraph, AxisLabel } from 'react-native-graph';
-import { Provider as PaperProvider, TextInput, Button as PaperButton } from 'react-native-paper';
+import { LineChart } from 'react-native-gifted-charts'; // Import the LineChart component
+import { Button as PaperButton } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -15,11 +15,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { fetchAccounts } from '../actions/accountActions';
 import { fetchBanks } from '../actions/bankActions';
 import { colors } from '../constants/colors';
-import AddTransactionScreen from './AddTransactionScreen';
-import AddAccountScreen from './AddAccountScreen';
 import { createStackNavigator } from '@react-navigation/stack';
-import TransactionsScreenAccount from './TransactionsScreenAccount';
-import TransactionDetails from './TransactionDetails';
 import sharedStyles from './styles/sharedStyles';
 import { fetchWealthData } from '@/app/api/bankApi'; // Import the new API function
 import { ActivityIndicator } from 'react-native-paper';
@@ -55,7 +51,7 @@ export default function AccountsScreen() {
   const [isLogoutModalVisible, setIsLogoutModalVisible] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0); // Ajoutez cet état
   const [isLoading, setIsLoading] = useState(true);
-
+  const [chartWidth, setChartWidth] = useState(Dimensions.get('window').width - 20); // Initialize with current width
 
   const foundBankNameById = (bankId: number) => {
     return banks.find((bank: Bank) => bank.id === bankId)?.name;
@@ -92,6 +88,18 @@ export default function AccountsScreen() {
     dispatch(fetchAccounts() as unknown); // Cast to unknown to satisfy TypeScript
     dispatch(fetchBanks() as unknown); // Cast to unknown to satisfy TypeScript
   }, [dispatch, refreshKey]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setChartWidth(Dimensions.get('window').width - 20); // Update width on resize
+    };
+
+    const subscription = Dimensions.addEventListener('change', handleResize); // Listen for dimension changes
+
+    return () => {
+      subscription?.remove(); // Clean up the event listener on unmount
+    };
+  }, []);
 
   const filteredAccounts = useMemo(() => {
     if (selectedFilter === 'All') {
@@ -226,17 +234,80 @@ export default function AccountsScreen() {
     console.log(`Clicked on point: x=${point.x}, y=${point.y}`);
     // You can add more logic here to handle the click event
   };
-  const labels = Object.keys(wealthData);
-  const values = Object.values(wealthData);
 
-  const points: DataPoint[] = labels.map((label, index) => ({
-    date: new Date(label),
-    value: values[index],
-  }));
-
-  const handlePointSelect = (point: DataPoint) => {
-    console.log("point", point);
+  const formatData = (): DataPoint[] => {
+    return Object.entries(wealthData).map(([date, value]) => ({
+        value: parseFloat(value.toFixed(2)),
+        date
+    }));
   };
+
+  const calculateMaxPoints = (dataLength: number): number => {
+    const baseMax = 250; // Maximum points for a small dataset
+    const minMax = 100; // Minimum points for a large dataset
+    const decayFactor = 0.0005; // Decay factor
+
+    return Math.max(
+        Math.floor(baseMax * Math.exp(-decayFactor * dataLength)),
+        minMax
+    );
+  };
+
+  const reduceDataPoints = (data: DataPoint[]): DataPoint[] => {
+    const maxPoints = calculateMaxPoints(data.length);
+    if (data.length <= maxPoints) return data;
+    const interval = Math.ceil(data.length / maxPoints);
+    return data.filter((_, index) => index % interval === 0);
+  };
+
+  const data = reduceDataPoints(formatData()); // Prepare the data for the graph
+
+  const minValue = () => {
+    console.log("max value ", Math.max(...data.map(point => point.value)));
+    
+    const minValue = Math.min(...data.map(point => point.value));
+    const valueRange = Math.max(...data.map(point => point.value)) - minValue;
+    if (minValue < 0) {
+      return minValue;
+    }
+    return Math.round(minValue - 0.125 * valueRange);
+  };
+
+  const tooltipContainer = {
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.8)', // Semi-transparent white background
+    borderRadius: 6, // Reduced border radius for a smaller look
+    padding: 6, // Reduced padding for a smaller tooltip
+    shadowColor: '#000', // Add shadow for depth
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5, // For Android shadow
+  };
+
+  const tooltipValue = {
+    fontSize: 14, // Reduced font size for the value
+    fontWeight: 'bold',
+    color: colors.text,
+    marginBottom: 2, // Reduced margin for spacing
+  };
+
+  const tooltipDate = {
+    fontSize: 10, // Reduced font size for the date
+    color: colors.lightText,
+    textAlign: 'center', // Center align the date
+  };
+
+  const calculateSpacing = (width: number, dataLength: number): number => {
+    const minSpacing = 1; // Minimum spacing
+    const maxSpacing = 10; // Maximum spacing
+    const calculatedSpacing = Math.max(minSpacing, Math.min(maxSpacing, (width - 60) / (dataLength + 1))); // Adjusted width calculation
+    return calculatedSpacing;
+  };
+
+  // Update the spacing calculation
+  const spacing = calculateSpacing(chartWidth, data.length); // Calculate spacing based on width and data length
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -263,16 +334,66 @@ export default function AccountsScreen() {
               <ActivityIndicator animating={true} size="large" color={colors.primary} />
             </View>
           )}
-          {points.length > 0 && (
+          {data.length > 0 && (
             <View style={styles.graphContainer}>
-              <LineGraph
-                points={points}
-                color="#4484B2"
-                animated={true}
-                enablePanGesture={true}
-                onPointSelected={handlePointSelect}
-                style={styles.graph}
-              />
+                <LineChart
+                    areaChart
+                    data={data} // Use the prepared data
+                    width={chartWidth} // Use the dynamic width
+                    height={100}
+                    spacing={spacing} // Use the calculated spacing
+                    adjustToWidth={true}
+                    color="#007AFF"
+                    thickness={1.5}
+                    startFillColor={'rgba(84,219,234,0.3)'}
+                    endFillColor={'rgba(84,219,234,0.01)'}
+                    startOpacity={0.9}
+                    endOpacity={0.2}
+                    initialSpacing={0}
+                    noOfSections={2}
+                    yAxisOffset={minValue()}
+                    yAxisColor="transparent"
+                    xAxisColor="transparent"
+                    yAxisTextStyle={{ color: 'gray' }}
+                    xAxisTextStyle={{ color: 'gray' }}
+                    hideRules
+                    hideDataPoints
+                    showVerticalLines={false}
+                    xAxisLabelTextStyle={{ color: 'gray', fontSize: 10 }}
+                    yAxisTextNumberOfLines={1}
+                    yAxisLabelSuffix="€"
+                    yAxisLabelPrefix=""
+                    rulesType="solid"
+                    xAxisThickness={0}
+                    rulesColor="rgba(0, 0, 0, 0.1)"
+                    curved
+                    animateOnDataChange
+                    animationDuration={1000}
+                    pointerConfig={{
+                        showPointerStrip: true,
+                        pointerStripWidth: 2,
+                        pointerStripUptoDataPoint: true,
+                        pointerStripColor: 'rgba(0, 0, 0, 0.5)',
+                        width: 10,
+                        height: 10,
+                        color: '#007AFF',
+                        radius: 6,
+                        pointerLabelWidth: 150,
+                        pointerLabelHeight: 10,
+                        activatePointersOnLongPress: false,
+                        autoAdjustPointerLabelPosition: true,
+                        
+                        pointerLabelComponent: (items: any) => {
+                            const item = items[0];
+                            return (
+                                <View style={[tooltipContainer, { marginTop: 20 }]}>
+                                    <Text style={tooltipValue}>{item.value.toFixed(0)} €</Text>
+                                    <Text style={tooltipDate}>{new Date(item.date).toDateString()}</Text>
+                                </View>
+                            );
+                        },
+                    }}
+                />
             </View>
           )}
 

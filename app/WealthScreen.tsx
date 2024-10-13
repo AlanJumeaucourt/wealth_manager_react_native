@@ -108,6 +108,17 @@ export default function WealthScreen() {
 
     const screenWidth = Dimensions.get('window').width;
 
+    const calculateSpacing = (width: number, dataLength: number): number => {
+        const minSpacing = 1; // Minimum spacing
+        const maxSpacing = 10; // Maximum spacing
+        const calculatedSpacing = Math.max(minSpacing, Math.min(maxSpacing, (width - 60) / (dataLength + 1))); // Adjusted width calculation
+        return calculatedSpacing;
+      };
+    
+    // Update the spacing calculation
+    const spacing = calculateSpacing(screenWidth, data.length); // Calculate spacing based on width and data length
+    
+
     return (
         <View style={styles.container}>
             <Text style={styles.title}>Wealth over time</Text>
@@ -131,11 +142,12 @@ export default function WealthScreen() {
                 <LineChart
                     areaChart
                     data={data}
-                    width={screenWidth - 20}
+                    width={screenWidth - 60}
                     height={300}
+                    spacing={spacing}
                     adjustToWidth={true}
                     color="#007AFF"
-                    thickness={2}
+                    thickness={1.5}
                     startFillColor={'rgba(84,219,234,0.3)'}
                     endFillColor={'rgba(84,219,234,0.01)'}
                     startOpacity={0.9}
@@ -172,7 +184,7 @@ export default function WealthScreen() {
                         pointerLabelWidth: 150,
                         pointerLabelHeight: 90,
                         activatePointersOnLongPress: false,
-                        autoAdjustPointerLabelPosition: false,
+                        autoAdjustPointerLabelPosition: true,
                         pointerLabelComponent: (items: any) => {
                             const item = items[0];
                             return (
