@@ -49,15 +49,18 @@ export default function TransactionsScreen() {
           text: 'Delete',
           style: 'destructive',
           onPress: async () => {
-            await deleteAccount(account.id);
-            dispatch(fetchAccounts());
-            refreshAccounts();
-            navigation.goBack();
+            await deleteAccount(account.id, () => {
+              dispatch(fetchAccounts());
+              refreshAccounts();
+              navigation.goBack();
+              Alert.alert('Success', 'Account deleted successfully.');
+            });
           },
         },
       ]);
     } catch (error) {
       console.error('Error deleting account:', error);
+      Alert.alert('Error', 'There was an error deleting the account.');
     }
   };
 

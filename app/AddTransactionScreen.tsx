@@ -44,7 +44,7 @@ export default function AddTransactionScreen() {
     const [category, setCategory] = useState(transaction ? transaction.category : '');
     const [subcategory, setSubcategory] = useState<string | null>(transaction ? transaction.subcategory : null);
     const [isCategoryModalVisible, setIsCategoryModalVisible] = useState(false);
-    const [transactionDate, setTransactionDate] = useState(new Date());
+    const [transactionDate, setTransactionDate] = useState(transaction ? new Date(transaction.date) : new Date());
     const [showDatePicker, setShowDatePicker] = useState(false);
 
 
@@ -105,12 +105,12 @@ export default function AddTransactionScreen() {
 
                 if (transaction) {
                     await updateTransaction(transaction.id, transactionData);
+                    Alert.alert('Transaction updated successfully!');
                 } else {
                     await createTransaction(transactionData);
+                    Alert.alert('Transaction created successfully!');
                 }
                 dispatch(fetchAccounts());
-                Alert.alert('Transaction created successfully!');
-
                 dispatch(fetchTransactions());
             } else {
                 console.error('Invalid account selection');
@@ -401,7 +401,6 @@ export default function AddTransactionScreen() {
                 </Pressable>
 
                 {/* Modal for DatePicker */}
-                <Text>{transactionDate.toISOString()}</Text>
                 <Modal
                     visible={showDatePicker}
                     animationType="slide"

@@ -2,6 +2,7 @@ import apiClient from './axiosConfig';
 import axios, { AxiosError } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Account } from '@/types/account';
+import { Transaction } from '@/types/transaction';
 
 const handleApiError = async (error: unknown, message: string) => {
   if (axios.isAxiosError(error)) {
@@ -102,7 +103,7 @@ export const createAccount = async (accountData: {
 export const deleteAccount = async (accountId: number, onSuccess?: () => void) => {
   try {
     const response = await apiClient.delete(`/accounts/${accountId}`, { transformRequest: [addBearerToken] });
-    if (response.status === 200 && onSuccess) {
+    if (response.status === 204 && onSuccess) {
       onSuccess();
     }
     return response.data;
@@ -125,7 +126,7 @@ export const updateAccount = async (accountId: number, accountData: Account) => 
   }
 };
 
-export const updateTransaction = async (transactionId: number, transactionData) => {
+export const updateTransaction = async (transactionId: number, transactionData: Transaction) => {
   try {
     const response = await apiClient.put(`/transactions/${transactionId}`, transactionData, {
       transformRequest: [(data, headers) => {
@@ -194,5 +195,15 @@ export const fetchWealthData = async (startDate: string, endDate: string) => {
     return response.data;
   } catch (error) {
     return handleApiError(error, 'Error fetching wealth data');
+  }
+};
+
+export const fetchBudgetSummary = async (startDate: string, endDate: string) => {
+  try {
+    const response = await apiClient.get(`/budget/summary?start_date=${startDate}&end_date=${endDate}`, { transformRequest: [addBearerToken] });
+    console.log("budget summary", response.data);
+    return response.data;
+  } catch (error) {
+    return handleApiError(error, 'Error fetching budget summary');
   }
 };
