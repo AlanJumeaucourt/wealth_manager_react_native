@@ -59,7 +59,7 @@ export const categories: Category[] = [
   },
   {
     name: "Alimentation & Restauration",
-    color: "#A17000",
+    color: "#FFB200",
     iconName: "restaurant-outline",
     iconSet: "Ionicons",
     subCategories: [
@@ -295,7 +295,7 @@ export const categories: Category[] = [
   },
   {
     name: "Logement",
-    color: "#1C328D",
+    color: "#677FE0",
     iconName: "home-outline",
     iconSet: "Ionicons",
     subCategories: [
