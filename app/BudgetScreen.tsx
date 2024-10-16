@@ -1,42 +1,118 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Dimensions, Pressable } from 'react-native';
+/* eslint-disable react-native/no-inline-styles */
+import React, {useState, useEffect} from 'react';
+import {ScrollView, StyleSheet, Text, View, Pressable} from 'react-native';
+import DonutChart from './components/DonutChart';
+import {useFont} from '@shopify/react-native-skia';
+import {useSharedValue, withTiming} from 'react-native-reanimated';
+import RenderItem from './components/RenderItem';
+import {SafeAreaView} from 'react-native-safe-area-context';
+import {fetchBudgetSummary} from './api/bankApi'; // Adjust the import path as necessary
 import { Ionicons } from '@expo/vector-icons';
-import { Switch } from 'react-native-paper';
-import { VictoryPie, VictoryLabel, VictoryTooltip, VictoryBar, VictoryChart, VictoryAxis, VictoryStack } from 'victory-native';
-import { Category } from '@/types/category';
+import { categories } from '../constants/categories'; // Import categories
+
+interface Data {
+  value: number;
+  percentage: number;
+  color: string;
+  category: string;
+}
+
+const RADIUS = 160;
+const STROKE_WIDTH = 30;
+const OUTER_STROKE_WIDTH = 46;
+const GAP = 0.04;
 
 type PeriodType = 'month' | 'quarter' | 'year';
-type BudgetType = 'income' | 'expense';
-
-// Ajoutez ces données mock pour le graphique en donut
-const mockExpenseData = [
-  { x: "Abonnements", y: 500, color: '#600080' },
-  { x: "Achats & Shopping", y: 300, color: '#9900cc' },
-  { x: "Alimentation & Restauration", y: 800, color: '#c61aff' },
-  { x: "Auto & Transports", y: 400, color: '#d966ff' },
-  { x: "Autres", y: 200, color: '#ecb3ff' },
-];
-
-const mockIncomeData = [
-  { x: "Salaires", y: 2000, color: '#006600' },
-  { x: "Allocations", y: 500, color: '#00b300' },
-  { x: "Revenus locatifs", y: 300, color: '#00ff00' },
-  { x: "Autres", y: 200, color: '#66ff66' },
-];
-
-// Mock data for budget categories over months
-const budgetCategoriesOverMonths = [
-  { month: 'Jan', Housing: 1000, Food: 500, Transportation: 300, Entertainment: 200 },
-  { month: 'Feb', Housing: 1000, Food: 550, Transportation: 280, Entertainment: 220 },
-  { month: 'Mar', Housing: 1000, Food: 480, Transportation: 310, Entertainment: 190 },
-  { month: 'Apr', Housing: 1000, Food: 520, Transportation: 290, Entertainment: 210 },
-  // Add more months as needed
-];
 
 export default function BudgetScreen() {
+  const [data, setData] = useState<Data[]>([]);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [periodType, setPeriodType] = useState<PeriodType>('month');
-  const [budgetType, setBudgetType] = useState<BudgetType>('expense');
+  const totalValue = useSharedValue(0);
+  const decimals = useSharedValue<number[]>([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        let startDate, endDate;
+
+        switch (periodType) {
+          case 'month':
+            startDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).toISOString().split('T')[0];
+            endDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).toISOString().split('T')[0];
+            break;
+          case 'quarter':
+            const quarterStartMonth = Math.floor(currentDate.getMonth() / 3) * 3;
+            startDate = new Date(currentDate.getFullYear(), quarterStartMonth, 1).toISOString().split('T')[0];
+            endDate = new Date(currentDate.getFullYear(), quarterStartMonth + 3, 0).toISOString().split('T')[0];
+            break;
+          case 'year':
+            startDate = new Date(currentDate.getFullYear(), 0, 1).toISOString().split('T')[0];
+            endDate = new Date(currentDate.getFullYear(), 11, 31).toISOString().split('T')[0];
+            break;
+        }
+
+        const result = await fetchBudgetSummary(startDate, endDate);
+        const totalAmountArray = result.total_amount; // Access the array
+
+        if (!Array.isArray(totalAmountArray)) {
+          throw new Error('Expected total_amount to be an array');
+        }
+
+        const total = totalAmountArray.reduce(
+          (acc: number, currentValue: { amount: number }) => acc + currentValue.amount,
+          0,
+        );
+
+        const generatePercentages = totalAmountArray.map((item, index) => {
+          const category = categories.find(cat => cat.name === item.category);
+          return {
+            value: parseFloat(item.amount.toFixed(2)),
+            percentage: (item.amount / total) * 100,
+            color: category?.color || '#cccccc',
+            category: item.category,
+            iconName: category?.iconName,
+            iconSet: category?.iconSet,
+          };
+        });
+
+        // Group small segments into "Other"
+        const significantSegments = generatePercentages.filter(item => item.percentage >= 5);
+        const otherSegments = generatePercentages.filter(item => item.percentage < 5);
+
+        const otherTotal = otherSegments.reduce((acc, item) => acc + item.value, 0);
+        const otherPercentage = otherSegments.reduce((acc, item) => acc + item.percentage, 0);
+
+        if (otherSegments.length > 0) {
+          significantSegments.push({
+            value: parseFloat(otherTotal.toFixed(2)),
+            percentage: otherPercentage,
+            color: '#cccccc', // Use a default color for "Other"
+            category: 'Other',
+            iconName: 'help-circle-outline',
+            iconSet: 'Ionicons',
+          });
+        }
+
+        const generateDecimals = significantSegments.map(
+          (item) => item.percentage / 100,
+        );
+
+        // Normalize decimals to ensure they sum to 1
+        const totalDecimals = generateDecimals.reduce((acc, val) => acc + val, 0);
+        const normalizedDecimals = generateDecimals.map((decimal) => decimal / totalDecimals);
+
+        totalValue.value = withTiming(total, { duration: 1000 });
+        decimals.value = [...normalizedDecimals];
+
+        setData(significantSegments);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      }
+    };
+
+    fetchData();
+  }, [currentDate, periodType]);
 
   const formatPeriod = (date: Date, type: PeriodType) => {
     const options: Intl.DateTimeFormatOptions = { year: 'numeric' };
@@ -69,11 +145,15 @@ export default function BudgetScreen() {
     setCurrentDate(newDate);
   };
 
-  const chartData = budgetType === 'expense' ? mockExpenseData : mockIncomeData;
-  const totalAmount = chartData.reduce((sum, item) => sum + item.y, 0);
+  const font = useFont(require('./../assets/fonts/Roboto-Bold.ttf'), 60);
+  const smallFont = useFont(require('./../assets/fonts/Roboto-Light.ttf'), 25);
+
+  if (!font || !smallFont) {
+    return <View />;
+  }
 
   return (
-    <ScrollView style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.periodSelector}>
         <Pressable onPress={() => changePeriod(-1)} style={styles.arrowButton}>
           <Ionicons name="chevron-back" size={24} color="#333" />
@@ -105,144 +185,42 @@ export default function BudgetScreen() {
           <Ionicons name="chevron-forward" size={24} color="#333" />
         </Pressable>
       </View>
-
-      <View style={styles.budgetTypeSelector}>
-        <Text style={[styles.budgetTypeText, budgetType === 'income' ? styles.activeBudgetType : {}]}>Income</Text>
-        <Switch
-          value={budgetType === 'income'}
-          onValueChange={(value) => setBudgetType(value ? 'income' : 'expense')}
-          color="#007AFF"
-        />
-        <Text style={[styles.budgetTypeText, budgetType === 'expense' ? styles.activeBudgetType : {}]}>Expense</Text>
-      </View>
-
-      {/* budget pie chart */}
-      <View style={styles.chartContainer}>
-        <VictoryPie
-          data={chartData}
-          colorScale={chartData.map(item => item.color)}
-          radius={({ datum }) => 100 + datum.y / 20}
-          innerRadius={80}
-          labelRadius={({ innerRadius }) => (innerRadius as number) + 30}
-          style={{ labels: { fill: "white", fontSize: 14, fontWeight: "bold" } }}
-          width={300} height={300}
-          labelComponent={
-            <VictoryTooltip
-              renderInPortal={false}
-              flyoutStyle={{ fill: "black", stroke: "none" }}
-            />
-          }
-        />
-        <View style={styles.chartCenter}>
-          <Text style={styles.chartCenterAmount}>{totalAmount.toLocaleString()} €</Text>
-          <Text style={styles.chartCenterLabel}>{budgetType === 'expense' ? 'Dépenses' : 'Revenus'}</Text>
+      <ScrollView
+        contentContainerStyle={{alignItems: 'center'}}
+        showsVerticalScrollIndicator={false}>
+        <View style={styles.chartContainer}>
+          <DonutChart
+            radius={RADIUS}
+            gap={GAP}
+            strokeWidth={STROKE_WIDTH}
+            outerStrokeWidth={OUTER_STROKE_WIDTH}
+            font={font}
+            smallFont={smallFont}
+            totalValue={totalValue}
+            n={data.length}
+            decimals={decimals}
+            colors={data.map(item => item.color)} // Use colors from data
+          />
         </View>
-      </View>
-
-      {/* Légende du graphique */}
-      <View style={styles.chartLegend}>
-        {chartData.map((item, index) => (
+        {data.map((item, index) => (
           <View key={index} style={styles.legendItem}>
             <View style={[styles.legendColor, { backgroundColor: item.color }]} />
-            <Text style={styles.legendLabel}>{item.x}</Text>
-            <Text style={styles.legendValue}>{item.y.toLocaleString()} €</Text>
+            {item.iconSet === 'Ionicons' && (
+              <Ionicons name={item.iconName} size={20} color="white" style={styles.icon} />
+            )}
+            <Text style={styles.legendLabel}>{item.category}</Text>
+            <Text style={styles.legendValue}>{item.value.toLocaleString()} €</Text>
           </View>
         ))}
-      </View>
-
-      {/* New stacked bar chart for budget categories over months */}
-      <View style={styles.chartContainer}>
-        <Text style={styles.chartTitle}>Budget Categories Over Months</Text>
-        <VictoryChart
-          domainPadding={{ x: 25 }}
-          width={350}
-          height={300}
-        >
-          <VictoryAxis
-            tickValues={budgetCategoriesOverMonths.map(d => d.month)}
-            style={{ tickLabels: { fontSize: 12, padding: 5 } }}
-          />
-          <VictoryAxis
-            dependentAxis
-            tickFormat={(t) => `${t / 1000}k€`}
-            style={{ tickLabels: { fontSize: 12, padding: 5 } }}
-          />
-          <VictoryStack colorScale={["#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0"]}>
-            {["Housing", "Food", "Transportation", "Entertainment"].map((category, index) => (
-              <VictoryBar
-                key={index}
-                data={budgetCategoriesOverMonths}
-                x="month"
-                y={category}
-              />
-            ))}
-          </VictoryStack>
-        </VictoryChart>
-      </View>
-
-      {/* <Text style={styles.title}>Catégories de Budget</Text>
-        {budgetType === 'expense' ? (
-          budgetExpensesCategories.map((category, index) => (
-            <View key={index} style={styles.categoryContainer}>
-              <Text style={styles.categoryName}>{category.name}</Text>
-              {category.subCategories.map((subCategory, subIndex) => (
-                <Text key={subIndex} style={styles.subCategory}>
-                  • {subCategory}
-                </Text>
-              ))}
-            </View>
-          ))
-        ) : (
-          budgetIncomesCategories.map((category, index) => (
-            <View key={index} style={styles.categoryContainer}>
-              <Text style={styles.categoryName}>{category}</Text>
-            </View>
-          ))
-        )} */}
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
-}
+};
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
   container: {
     flex: 1,
-    padding: 16,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  categoryContainer: {
-    marginBottom: 16,
     backgroundColor: 'white',
-    borderRadius: 8,
-    padding: 16,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.23,
-    shadowRadius: 2.62,
-    elevation: 4,
-  },
-  categoryName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 8,
-    color: '#333',
-  },
-  subCategory: {
-    fontSize: 14,
-    marginLeft: 8,
-    marginBottom: 4,
-    color: '#666',
   },
   periodSelector: {
     flexDirection: 'row',
@@ -284,49 +262,10 @@ const styles = StyleSheet.create({
   activePeriodTypeText: {
     color: '#fff',
   },
-  budgetTypeSelector: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    padding: 10,
-    marginBottom: 16,
-    borderRadius: 8,
-  },
-  budgetTypeText: {
-    fontSize: 16,
-    marginHorizontal: 10,
-    color: '#333',
-  },
-  activeBudgetType: {
-    fontWeight: 'bold',
-    color: '#007AFF',
-  },
   chartContainer: {
-    alignItems: 'center',
-    marginVertical: 20,
-    backgroundColor: '#fff',
-    padding: 15,
-    borderRadius: 10,
-  },
-  chartCenter: {
-    position: 'absolute',
-    alignItems: 'center',
-    justifyContent: 'center',
-    top: '50%',
-  },
-  chartCenterAmount: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  chartCenterLabel: {
-    fontSize: 16,
-    color: '#666',
-  },
-  chartLegend: {
-    marginBottom: 20,
-    paddingHorizontal: 20,
+    width: RADIUS * 2,
+    height: RADIUS * 2,
+    marginTop: 10,
   },
   legendItem: {
     flexDirection: 'row',
@@ -339,6 +278,9 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginRight: 10,
   },
+  icon: {
+    marginRight: 10,
+  },
   legendLabel: {
     flex: 1,
     fontSize: 14,
@@ -349,9 +291,15 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#333',
   },
-  chartTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 10,
+  button: {
+    marginVertical: 40,
+    backgroundColor: '#f4f7fc',
+    paddingHorizontal: 60,
+    paddingVertical: 15,
+    borderRadius: 10,
+  },
+  buttonText: {
+    color: 'black',
+    fontSize: 20,
   },
 });

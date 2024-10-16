@@ -1,9 +1,7 @@
 export interface Category {
   name: string;
-  subCategories?: { name: string }[];
+  color: string;
+  iconName: string;
+  iconSet: string;
+  subCategories?: { name: string, iconName: string, iconSet: string }[];
 }
-
-export interface SubCategory {
-  name: string;
-}
-

@@ -200,8 +200,8 @@ export const fetchWealthData = async (startDate: string, endDate: string) => {
 
 export const fetchBudgetSummary = async (startDate: string, endDate: string) => {
   try {
-    const response = await apiClient.get(`/budget/summary?start_date=${startDate}&end_date=${endDate}`, { transformRequest: [addBearerToken] });
-    console.log("budget summary", response.data);
+    const response = await apiClient.get(`/budgets/budget_summary?start_date=${startDate}&end_date=${endDate}}`, { transformRequest: [addBearerToken] });
+    console.log("budget summary", response.data); // Log the response data
     return response.data;
   } catch (error) {
     return handleApiError(error, 'Error fetching budget summary');
