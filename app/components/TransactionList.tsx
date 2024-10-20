@@ -7,10 +7,21 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Account } from '@/types/account';
 import { fetchAccounts } from '../../actions/accountActions';
 import { fetchTransactions } from '../api/bankApi';
+import { Ionicons } from '@expo/vector-icons';
+import { colors } from '../../constants/colors';
+import { expenseCategories, incomeCategories } from '../../constants/categories';
+import { findCategoryByName } from '@/utils/categoryUtils';
 
 interface TransactionListProps {
   accountId?: number;
 }
+
+const getIconName = (transaction: Transaction) => {
+  if (transaction.subcategory) {
+    return findCategoryByName(transaction.category)?.subCategories?.find((sub: any) => sub.name === transaction.subcategory)?.iconName || "help-circle-outline";
+  }
+  return findCategoryByName(transaction.category)?.iconName || "help-circle-outline";
+};
 
 const TransactionList: React.FC<TransactionListProps> = ({ accountId }) => {
   const { accounts, loading: accountsLoading, error: accountsError } = useSelector((state: any) => state.accounts || {});
@@ -138,6 +149,19 @@ const TransactionList: React.FC<TransactionListProps> = ({ accountId }) => {
                     index === transactions.length - 1 && styles.lastTransaction,
                   ]}
                 >
+                  <View style={styles.transactionIcon}>
+                    <View style={[styles.iconCircle, { backgroundColor: findCategoryByName(item.category)?.color }, { marginRight: 10 }]}>
+                        <Ionicons
+                            name={
+                                findCategoryByName(item.category)?.subCategories?.find(
+                                    sub => sub.name.toLowerCase() === item.subcategory.toLowerCase()
+                            )?.iconName || "chevron-forward"
+                        }
+                        size={20}
+                        color={colors.white}    
+                        />
+                    </View>
+                  </View>
                   <View style={styles.transactionDetails}>
                     <Text style={styles.transactionDescription}>{item.description}</Text>
                     {item.type === 'transfer' && (
@@ -145,11 +169,17 @@ const TransactionList: React.FC<TransactionListProps> = ({ accountId }) => {
                         {accountNameFromId(item.from_account_id)} → {accountNameFromId(item.to_account_id)}
                       </Text>
                     )}
-                    {item.type === 'expense' && (
+                    {item.type === 'expense' && !accountId && (
                       <Text style={styles.expenseDetails}>{accountNameFromId(item.from_account_id)}</Text>
                     )}
-                    {item.type === 'income' && (
+                    {item.type === 'income' && !accountId && (
                       <Text style={styles.incomeDetails}>{accountNameFromId(item.to_account_id)}</Text>
+                    )}
+                    {item.category && !item.subcategory && item.type != 'transfer' &&(
+                      <Text style={styles.categoryDetails}>{item.category}</Text>
+                    )}
+                    {item.subcategory && item.type != 'transfer' && (
+                      <Text style={styles.subcategoryDetails}>{item.category} - {item.subcategory}</Text>
                     )}
                   </View>
                   <Text style={[
@@ -234,11 +264,13 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0,
   },
   transactionDescription: {
-    fontSize: 16,
+    fontSize: 14,
     flex: 1,
+    paddingBottom: 5,
+    fontWeight: 'bold',
   },
   transactionAmount: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
   },
   expense: {
@@ -270,6 +302,21 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#000000',
     fontWeight: '300',
+  },
+  categoryDetails: {
+    fontSize: 14,
+    color: '#000000',
+    fontWeight: '300',
+  },
+  subcategoryDetails: {
+    fontSize: 14,
+    color: '#000000',
+    fontWeight: '300',
+  },
+  iconCircle: {
+    borderRadius: 16,
+    padding: 8,
+    marginRight: 14,
   },
 });
 

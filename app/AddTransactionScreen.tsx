@@ -1,12 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TextInput, StyleSheet, FlatList, Pressable, ScrollView, Modal, Animated, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, StyleSheet, FlatList, Pressable, ScrollView, Modal, Alert } from 'react-native';
 import { Button } from 'react-native-paper';
 import { Transaction } from '@/types/transaction';
 import { colors } from '@/constants/colors';
 import { Account } from '@/types/account';
 import { createAccount, createTransaction, updateTransaction } from './api/bankApi';
 import SearchableModal from '@/app/components/SearchableModal';
-import { budgetExpensesCategories, budgetIncomesCategories } from '@/constants/categories';
+import { expenseCategories, incomeCategories } from '@/constants/categories';
 import { Category } from '@/types/category';
 import { Ionicons } from '@expo/vector-icons';
 import { useDispatch, useSelector } from 'react-redux';
@@ -16,7 +16,7 @@ import { BackButton } from './components/BackButton';
 import DatePicker from 'react-native-ui-datepicker';
 import { fetchTransactions } from '@/actions/transactionActions';
 import { useRoute } from '@react-navigation/native';
-import { RouteParams } from 'expo-router';
+import { findCategoryByName } from '../utils/categoryUtils'; // Import the utility function
 
 const accountNameFromId = (accountId: number, accounts: Account[]) => {
     if (!accounts || !Array.isArray(accounts)) {
@@ -29,12 +29,12 @@ const accountNameFromId = (accountId: number, accounts: Account[]) => {
 export default function AddTransactionScreen() {
     const route = useRoute();
     const dispatch = useDispatch();
-    const transaction = route.params?.transaction as RouteParams;
+    const transaction = route.params?.transaction as Transaction | undefined;
     const accounts = useSelector((state: RootState) => state.accounts.accounts);
 
     console.log('route.params : ', route.params);
     
-    const [amount, setAmount] = useState(transaction ? transaction.amount : '');
+    const [amount, setAmount] = useState(transaction ? transaction.amount.toString() : '');
     const [description, setDescription] = useState(transaction ? transaction.description : '');
     const [transactionType, setTransactionType] = useState(transaction ? transaction.type : 'expense');
     const [fromAccountId, setFromAccountId] = useState<number | null>(transaction ? transaction.from_account_id : null);
@@ -59,56 +59,69 @@ export default function AddTransactionScreen() {
     }, [transactionType]);
 
     const createNewAccount = async (accountName: string, accountType: string, setAccountId: React.Dispatch<React.SetStateAction<number | null>>) => {
-        const newAccount = {
-            name: accountName,
-            type: accountType,
-            bank_id: 1,
-            currency: 'EUR',
-        };
+        try {
+            const newAccount = {
+                name: accountName,
+                type: accountType,
+                bank_id: 1,
+                currency: 'EUR',
+            };
 
-        const newAccountResponse = await createAccount(newAccount);
-        console.log('newAccountResponse', newAccountResponse);
-        const createdAccount = { ...newAccount, id: newAccountResponse.id };
+            const newAccountResponse = await createAccount(newAccount);
+            console.log('newAccountResponse', newAccountResponse);
+            const createdAccount: Account = { ...newAccount, id: newAccountResponse.id };
 
-        setAccountId(createdAccount.id);
-        console.log('Creating new account with name:', accountName);
+            setAccountId(createdAccount.id);
+            console.log('Creating new account with name:', accountName);
 
-        return createdAccount;
+            return createdAccount;
+        } catch (error) {
+            console.error('Error creating new account:', error);
+            Alert.alert('Error', 'Failed to create a new account. Please try again.');
+            throw error; // Re-throw to handle upstream if necessary
+        }
     };
 
     const handleAddOrUpdateTransaction = async () => {
+        const parsedAmount = parseFloat(amount);
+        if (isNaN(parsedAmount)) {
+            Alert.alert('Invalid Amount', 'Please enter a valid number for the amount.');
+            return;
+        }
+
         const transactionData: Transaction = {
             date: transactionDate.toISOString().split('T')[0],
             description,
-            amount: parseFloat(amount),
+            amount: parsedAmount,
             type: transactionType,
-            from_account_id: fromAccountId,
-            to_account_id: toAccountId,
+            from_account_id: fromAccountId as number,
+            to_account_id: toAccountId as number,
             category,
             subcategory: subcategory || null,
         };
         
         try {
-
+            // Handle Account Creation if Necessary
             if (selectedFromAccountName && !fromAccountId && transactionType === 'income') {
                 const newAccount = await createNewAccount(selectedFromAccountName, 'income', setFromAccountId);
                 setFromAccountId(newAccount.id);
             }
             
-            console.log(selectedToAccountName, toAccountId , transactionType)
+            console.log(selectedToAccountName, toAccountId, transactionType);
             if (selectedToAccountName && !toAccountId && transactionType === 'expense') {
                 const newAccount = await createNewAccount(selectedToAccountName, 'expense', setToAccountId);
                 setToAccountId(newAccount.id);
             }
 
+            // Ensure both accounts are selected
             if (fromAccountId !== null && toAccountId !== null) {
 
                 if (transaction) {
                     await updateTransaction(transaction.id, transactionData);
-                    Alert.alert('Transaction updated successfully!');
+                    Alert.alert('Success', 'Transaction updated successfully!');
                 } else {
                     await createTransaction(transactionData);
-                    Alert.alert('Transaction created successfully!');
+                    Alert.alert('Success', 'Transaction created successfully!');
                 }
                 dispatch(fetchAccounts());
                 dispatch(fetchTransactions());
@@ -117,11 +130,11 @@ export default function AddTransactionScreen() {
                 console.error('localFromAccountId:', fromAccountId);
                 console.error('localToAccountId:', toAccountId);
 
-                Alert.alert('Invalid account selection. Please try again.');
+                Alert.alert('Invalid Account Selection', 'Please select valid accounts before proceeding.');
             }
         } catch (error) {
             console.error('Error submitting transaction:', error);
-            Alert.alert('An error occurred. Please try again.');
+            Alert.alert('Error', 'An error occurred while submitting the transaction. Please try again.');
         }
     };
 
@@ -157,7 +170,7 @@ export default function AddTransactionScreen() {
                 onPress={() => setTransactionType(item)}
             >
                 <Text style={[styles.filterText, transactionType === item && styles.selectedFilterText]}>
-                    {item}
+                    {item.charAt(0).toUpperCase() + item.slice(1)}
                 </Text>
             </Pressable>
         );
@@ -168,7 +181,7 @@ export default function AddTransactionScreen() {
             case 'income':
                 return accounts.filter(account => account.type === 'income');
             case 'expense':
-                return accounts.filter(account => account.type !== 'income' && account.type !== 'expense');
+                return accounts.filter(account => account.type === 'expense');
             case 'transfer':
                 return accounts.filter(account => account.type !== 'income' && account.type !== 'expense');
             default:
@@ -193,7 +206,7 @@ export default function AddTransactionScreen() {
         const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
         const [showSubCategories, setShowSubCategories] = useState(false);
 
-        const categories = transactionType === 'expense' ? budgetExpensesCategories : budgetIncomesCategories;
+        const categories = transactionType === 'expense' ? expenseCategories : incomeCategories;
 
         const handleCategorySelect = (category: Category) => {
             setSelectedCategory(category);
@@ -207,9 +220,11 @@ export default function AddTransactionScreen() {
         };
 
         const handleSubcategorySelect = (subcategory: { name: string }) => {
-            onSelectCategory(selectedCategory!.name);
-            onSelectSubcategory(subcategory.name);
-            setIsCategoryModalVisible(false);
+            if (selectedCategory) {
+                onSelectCategory(selectedCategory.name);
+                onSelectSubcategory(subcategory.name);
+                setIsCategoryModalVisible(false);
+            }
         };
 
         const handleBack = () => {
@@ -225,16 +240,21 @@ export default function AddTransactionScreen() {
                 style={styles.categoryItem}
                 onPress={() => handleCategorySelect(item)}
             >
-                <Ionicons name="folder-outline" size={24} color={colors.primary} />
+                <View style={[styles.iconCircle, { backgroundColor: item.color }]}>
+                    {item.iconSet === 'Ionicons' && (
+                        <Ionicons name={item.iconName as any} size={16} color="white" />
+                    )}
+                </View>
                 <Text style={styles.categoryText}>{item.name}</Text>
             </Pressable>
         );
 
-        const renderSubcategoryItem = ({ item }: { item: { name: string } }) => (
+        const renderSubcategoryItem = ({ item }: { item: { name: string, iconName: string } }) => (
             <Pressable
                 style={styles.subcategoryItem}
                 onPress={() => handleSubcategorySelect(item)}
             >
+                <Ionicons name={item.iconName} size={24} color={colors.primary} />
                 <Text style={styles.subcategoryText}>{item.name}</Text>
             </Pressable>
         );
@@ -251,7 +271,14 @@ export default function AddTransactionScreen() {
                     />
                 ) : (
                     <View>
-                        <Text style={styles.selectedCategoryText}>{selectedCategory?.name}</Text>
+                        <View style={styles.selectedCategoryContainer}>
+                            <View style={[styles.iconCircle, { backgroundColor: selectedCategory?.color }]}>
+                                {selectedCategory?.iconSet === 'Ionicons' && (
+                                    <Ionicons name={selectedCategory?.iconName as any} size={16} color="white" />
+                                )}
+                            </View>
+                            <Text style={styles.selectedCategoryText}>{selectedCategory?.name}</Text>
+                        </View>
                         <FlatList
                             data={selectedCategory?.subCategories}
                             renderItem={renderSubcategoryItem}
@@ -284,8 +311,8 @@ export default function AddTransactionScreen() {
         setIsCategoryModalVisible(false);
     };
 
-    const handleDateChange = (date) => {
-        console.log('data : ', date)
+    const handleDateChange = (date: string) => {
+        console.log('Selected date:', date);
         setTransactionDate(new Date(date)); // Update the transaction date
         setShowDatePicker(false); // Close the date picker
     };
@@ -312,7 +339,7 @@ export default function AddTransactionScreen() {
                     style={styles.input}
                     placeholder="Enter amount (e.g., 100.00)"
                     placeholderTextColor={colors.lightText}
-                    value={amount.toString()}
+                    value={amount}
                     onChangeText={setAmount}
                     keyboardType="numeric"
                 />
@@ -370,10 +397,35 @@ export default function AddTransactionScreen() {
                         style={styles.categoryButton}
                         onPress={() => setIsCategoryModalVisible(true)}
                     >
-                        <Text style={styles.categoryButtonText}>
-                            {category ? `${category}${subcategory ? ` - ${subcategory}` : ''}` : 'Select Category'}
-                        </Text>
-                        <Ionicons name="chevron-forward" size={24} color={colors.primary} />
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                            {subcategory && (
+                                <View style={[styles.iconCircle, { backgroundColor: findCategoryByName(category)?.color, marginRight: 10 }]}>
+                                    <Ionicons
+                                        name={
+                                            findCategoryByName(category)?.subCategories?.find(
+                                                sub => sub.name.toLowerCase() === subcategory.toLowerCase()
+                                        )?.iconName || "chevron-forward"
+                                        }
+                                        size={20}
+                                        color={colors.white}    
+                                    />
+                                </View>
+                            )}
+                            {category && !subcategory && (
+                                <View style={[styles.iconCircle, { backgroundColor: findCategoryByName(category)?.color, marginRight: 10 }]}>
+                                    <Ionicons
+                                        name={
+                                            findCategoryByName(category)?.iconName || "chevron-forward"
+                                        }
+                                        size={20}
+                                        color={colors.white}    
+                                    />
+                                </View>
+                            )}
+                            <Text style={styles.categoryButtonText}>
+                                {category ? `${category}${subcategory ? ` - ${subcategory}` : ''}` : 'Select Category'}
+                            </Text>
+                        </View>
                     </Pressable>
                 )}
 
@@ -415,7 +467,7 @@ export default function AddTransactionScreen() {
                                 mode="single"
                             />
                             <Button mode="outlined" onPress={() => setShowDatePicker(false)} style={styles.closeButton}>
-                                <Text>Close</Text>
+                                Close
                             </Button>
                         </View>
                     </View>
@@ -493,17 +545,13 @@ const styles = StyleSheet.create({
         color: colors.text,
         marginBottom: 4,
     },
-    selectedAccountText: {
-        fontSize: 16,
-        color: colors.darkGray,
-        marginBottom: 12,
-    },
     button: {
         marginTop: 16,
         marginBottom: 16,
+        backgroundColor: colors.primary,
     },
     buttonText: {
-        color: "#fff"
+        color: "#fff",
     },
     categoryContainer: {
         marginBottom: 16,
@@ -546,7 +594,8 @@ const styles = StyleSheet.create({
     selectedCategoryText: {
         fontSize: 18,
         fontWeight: 'bold',
-        marginBottom: 16,
+        marginLeft: 10,
+        textAlign: 'center',
     },
     categoryButton: {
         flexDirection: 'row',
@@ -576,27 +625,8 @@ const styles = StyleSheet.create({
         width: '90%',
         maxHeight: '80%',
     },
-    modalTitle: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        marginBottom: 16,
-        textAlign: 'center',
-    },
     closeButton: {
         marginTop: 16,
-    },
-    popup: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        backgroundColor: colors.primary,
-        padding: 10,
-        zIndex: 1000,
-    },
-    popupText: {
-        color: 'white',
-        textAlign: 'center',
     },
     dateButton: {
         padding: 16,
@@ -607,5 +637,18 @@ const styles = StyleSheet.create({
     dateButtonText: {
         fontSize: 16,
         color: colors.text,
+    },
+    iconCircle: {
+        width: 30,
+        height: 30,
+        borderRadius: 15,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    selectedCategoryContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 16,
     },
 });

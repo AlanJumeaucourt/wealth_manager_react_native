@@ -14,6 +14,7 @@ import { deleteTransaction } from './api/bankApi';
 import sharedStyles from './styles/sharedStyles';
 import { Menu } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
+import { expenseCategories, incomeCategories } from '@/constants/categories';
 
 type TransactionDetailsRouteProp = RouteProp<RootStackParamList, 'TransactionDetails'>;
 
@@ -30,6 +31,26 @@ const accountNameFromId = (accountId: number, accounts: Account[] | undefined) =
   return account ? account.name : accountId.toString();
 };
 
+function findCategoryIcon(categoryName: string, subcategoryName?: string) {
+  const allCategories = [...expenseCategories, ...incomeCategories];
+  const category = allCategories.find(cat => cat.name === categoryName);
+  console.log('category in findCategoryIcon : ', category);
+  if (!category) return null;
+
+  if (subcategoryName) {
+    const subCategory = category.subCategories?.find(sub => sub.name === subcategoryName);
+    return subCategory ? { iconName: subCategory.iconName, iconSet: subCategory.iconSet } : null;
+  }
+
+  return { iconName: category.iconName, iconSet: category.iconSet };
+}
+
+// Implement findCategoryByName function
+function findCategoryByName(categoryName: string) {
+  const allCategories = [...expenseCategories, ...incomeCategories];
+  return allCategories.find(cat => cat.name === categoryName);
+}
+
 export default function TransactionDetailsScreen() {
   const route = useRoute<TransactionDetailsRouteProp>();
   const navigation = useNavigation();
@@ -40,11 +61,9 @@ export default function TransactionDetailsScreen() {
 
   const [NewTransaction, setNewTransaction] = useState(transaction);
 
-
-  const handleEdit = () => { // Change parameter type to Transaction
-    // Navigate to the edit screen or open a modal
+  const handleEdit = () => {
     console.log('transaction in handleEdit : ', transaction);
-    navigation.navigate('AddTransaction', { transaction: transaction }); // Pass the entire transaction object
+    navigation.navigate('AddTransaction', { transaction: transaction }); // Ensure this matches the expected type
     closeMenu();
   };
 
@@ -90,18 +109,20 @@ export default function TransactionDetailsScreen() {
     }
   };
 
+  const categoryIcon = findCategoryIcon(transaction.category, transaction.subcategory);
+
   return (
     <View style={styles.container}>
       <View style={sharedStyles.header}>
         <BackButton />
         <Menu
-            visible={visible}
-            onDismiss={closeMenu}
-            anchor={<Pressable style={styles.menuButton} onPress={openMenu}><Ionicons name="ellipsis-vertical" size={24} /></Pressable>}
-          >
-            <Menu.Item onPress={handleEdit} title="Edit Transaction" />
-            <Menu.Item onPress={handleDeleteTransaction} title="Delete Transaction" />
-          </Menu>
+          visible={visible}
+          onDismiss={closeMenu}
+          anchor={<Pressable style={styles.menuButton} onPress={openMenu}><Ionicons name="ellipsis-vertical" size={24} /></Pressable>}
+        >
+          <Menu.Item onPress={handleEdit} title="Edit Transaction" />
+          <Menu.Item onPress={handleDeleteTransaction} title="Delete Transaction" />
+        </Menu>
       </View>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.card}>
@@ -124,8 +145,18 @@ export default function TransactionDetailsScreen() {
           </Text>
 
           <View style={styles.categoryContainer}>
-            <Icon name="tag" type="font-awesome" color="#517fa4" size={18} />
-            <Text style={styles.category}>{transaction.category} {transaction.subcategory && (transaction.type !== 'income' && transaction.type !== 'transfer') ? ` - ${transaction.subcategory}` : ''}</Text>
+            {categoryIcon && (
+              <View style={[styles.iconCircle, { backgroundColor: findCategoryByName(transaction.category)?.color }]}>
+                {categoryIcon.iconSet === 'Ionicons' && (
+                  <Ionicons name={categoryIcon.iconName as any} size={16} color="white" />
+                )}
+              </View>
+            )}
+            <View style={styles.legendLabelContainer}>
+              <Text style={styles.legendLabel} numberOfLines={1} ellipsizeMode="tail">
+                {transaction.subcategory ? `${transaction.category} - ${transaction.subcategory}` : transaction.category}
+              </Text>
+            </View>
           </View>
 
           <View style={styles.divider} />
@@ -148,7 +179,7 @@ export default function TransactionDetailsScreen() {
 interface DetailRowProps {
   icon: string;
   label: string;
-  value: string;
+  value: string;transactionIcon
 }
 
 const DetailRow: React.FC<DetailRowProps> = ({ icon, label, value }) => (
@@ -257,6 +288,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 15,
     textAlign: 'center',
+    color: '#333', // Ensure color is consistent
   },
   date: {
     fontSize: 16,
@@ -326,6 +358,23 @@ const styles = StyleSheet.create({
     fontSize: 18,
     textAlign: 'center',
     marginTop: 50,
+    color: '#666',
+  },
+  iconCircle: {
+    borderRadius: 16,
+    padding: 8,
+    marginRight: 10,
+  },
+  legendLabelContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  legendLabel: {
+    fontSize: 16,
+    color: '#333',
+  },
+  subCategoryLabel: {
+    fontSize: 14,
     color: '#666',
   },
 });

@@ -12,14 +12,15 @@ type Props = {
   outerStrokeWidth: number;
   decimals: SharedValue<number[]>;
   colors: string[];
-  totalValue: SharedValue<number>;
+  totalValue: number;
   font: SkFont;
   smallFont: SkFont;
+  totalText: string;
 };
 
 const DonutChart = ({
   n,
-  gap,
+  gap = 0, // Set default gap to 0
   decimals,
   colors,
   totalValue,
@@ -28,6 +29,7 @@ const DonutChart = ({
   radius,
   font,
   smallFont,
+  totalText,
 }: Props) => {
   const array = Array.from({length: n});
   const innerRadius = radius - outerStrokeWidth / 2;
@@ -35,14 +37,11 @@ const DonutChart = ({
   const path = Skia.Path.Make();
   path.addCircle(radius, radius, innerRadius);
 
-  const targetText = useDerivedValue(
-    () => `$${Math.round(totalValue.value)}`,
-    [],
-  );
-
+  const targetText = Math.round(totalValue).toString()
+    
   return (
     <View style={styles.container}>
-      <Canvas style={{ width: radius * 2, height: radius * 2 }}>
+      <Canvas style={{width: radius * 2, height: radius * 2}}>
         <Path
           path={path}
           color="#f4f7fc"
@@ -63,27 +62,27 @@ const DonutChart = ({
               color={colors[index]}
               decimals={decimals}
               index={index}
-              gap={gap}
+              gap={gap} // Pass the gap value here
             />
           );
         })}
         <Text
-          x={radius - 60}
-          y={radius - 30} // Adjust y to position the text vertically
-          text={'Total Spent'}
+          x={radius - smallFont.measureText(totalText).width / 2}
+          y={radius - smallFont.measureText(totalText).y + 10} // Position above center based on smallFont size
+          text={totalText}
           font={smallFont}
           color="black"
-          align="center" // Center align the text
-          horizontalAlign="center" // Ensure horizontal alignment
+          align="center"
+          horizontalAlign="center"
         />
         <Text
-          x={radius - 80}
-          y={radius + 30} // Adjust y to position the text vertically
+          x={radius - font.measureText(targetText).width / 2}
+          y={radius + font.measureText(targetText).y / 2 + 15} // Position below center based on font size
           text={targetText}
           font={font}
           color="black"
-          align="center" // Center align the text
-          horizontalAlign="center" // Ensure horizontal alignment
+          align="center"
+          horizontalAlign="center"
         />
       </Canvas>
     </View>

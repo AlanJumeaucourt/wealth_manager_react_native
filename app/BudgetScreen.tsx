@@ -1,26 +1,31 @@
 /* eslint-disable react-native/no-inline-styles */
 import React, {useState, useEffect} from 'react';
-import {ScrollView, StyleSheet, Text, View, Pressable} from 'react-native';
+import {ScrollView, StyleSheet, Text, View, Pressable, TouchableOpacity, Switch} from 'react-native';
+import {useNavigation} from '@react-navigation/native';
 import DonutChart from './components/DonutChart';
 import {useFont} from '@shopify/react-native-skia';
-import {useSharedValue, withTiming} from 'react-native-reanimated';
-import RenderItem from './components/RenderItem';
+import {useSharedValue} from 'react-native-reanimated';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {fetchBudgetSummary} from './api/bankApi'; // Adjust the import path as necessary
-import { Ionicons } from '@expo/vector-icons';
-import { categories } from '../constants/categories'; // Import categories
+import {Ionicons} from '@expo/vector-icons';
+import {expenseCategories, incomeCategories} from '../constants/categories'; // Import both expense and income categories
 
 interface Data {
   value: number;
   percentage: number;
   color: string;
   category: string;
+  subcategory?: string;
+  iconName?: string;
+  iconSet?: string;
+  transactionIds?: string[];
+  type?: 'income' | 'expense';
 }
 
-const RADIUS = 160;
-const STROKE_WIDTH = 30;
-const OUTER_STROKE_WIDTH = 46;
-const GAP = 0.04;
+const RADIUS = 130;
+const STROKE_WIDTH = 20;
+const OUTER_STROKE_WIDTH = 30;
+const GAP = 0.03;
 
 type PeriodType = 'month' | 'quarter' | 'year';
 
@@ -28,8 +33,11 @@ export default function BudgetScreen() {
   const [data, setData] = useState<Data[]>([]);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [periodType, setPeriodType] = useState<PeriodType>('month');
-  const totalValue = useSharedValue(0);
+  const [filterType, setFilterType] = useState<'Income' | 'Expense'>('Expense'); // {{ edit: Remove 'All' from filterType state }}
+  const [totalValue, setTotalValue] = useState(0);
   const decimals = useSharedValue<number[]>([]);
+  const navigation = useNavigation();
+  const [allData, setAllData] = useState<Data[]>([]); // {{ edit: Add allData state }}
 
   useEffect(() => {
     const fetchData = async () => {
@@ -53,32 +61,79 @@ export default function BudgetScreen() {
         }
 
         const result = await fetchBudgetSummary(startDate, endDate);
-        const totalAmountArray = result.total_amount; // Access the array
+        const budgetSummary = result.total_amount;
 
-        if (!Array.isArray(totalAmountArray)) {
-          throw new Error('Expected total_amount to be an array');
+        if (!Array.isArray(budgetSummary)) {
+          throw new Error('Expected budgetSummary to be an array');
         }
 
-        const total = totalAmountArray.reduce(
+        // Assign 'type' to each budget item based on category
+        const categorizedBudgetSummary = budgetSummary.map((item: any) => {
+          let category = expenseCategories.find(cat => cat.name.toLowerCase() === item.category.toLowerCase());
+          let type: 'expense' | 'income' = 'expense';
+
+          if (!category) {
+            category = incomeCategories.find(cat => cat.name.toLowerCase() === item.category.toLowerCase());
+            if (category) {
+              type = 'income';
+            }
+          }
+
+          if (!category) {
+            console.warn(`Category "${item.category}" not found in expense or income categories.`);
+            type = 'expense'; // Defaulting to 'expense'
+          }
+
+          return {
+            ...item,
+            type, // Assign the determined type
+          };
+        });
+
+        // Filter based on filterType
+        let filterBudgetSummary = categorizedBudgetSummary;
+        if (filterType === 'Income') {
+          filterBudgetSummary = categorizedBudgetSummary.filter(item => item.type === 'income');
+        } else if (filterType === 'Expense') {
+          filterBudgetSummary = categorizedBudgetSummary.filter(item => item.type === 'expense');
+        }
+
+        const total = filterBudgetSummary.reduce(
           (acc: number, currentValue: { amount: number }) => acc + currentValue.amount,
           0,
         );
 
-        const generatePercentages = totalAmountArray.map((item, index) => {
-          const category = categories.find(cat => cat.name === item.category);
+        const generatePercentages = filterBudgetSummary.map((item: any) => {
+          let category = expenseCategories.find(cat => cat.name.toLowerCase() === item.category.toLowerCase());
+          let type: 'expense' | 'income' = 'expense';
+
+          if (!category) {
+            category = incomeCategories.find(cat => cat.name.toLowerCase() === item.category.toLowerCase());
+            if (category) {
+              type = 'income';
+            }
+          }
+
+          if (!category) {
+            console.warn(`Category "${item.category}" not found in expense or income categories.`);
+            type = 'expense'; // Defaulting to 'expense'
+          }
+
           return {
             value: parseFloat(item.amount.toFixed(2)),
             percentage: (item.amount / total) * 100,
             color: category?.color || '#cccccc',
             category: item.category,
+            subcategory: item.subcategory,
             iconName: category?.iconName,
             iconSet: category?.iconSet,
+            transactionIds: item.transactions_related,
+            type: type,
           };
         });
 
-        // Group small segments into "Other"
-        const significantSegments = generatePercentages.filter(item => item.percentage >= 5);
-        const otherSegments = generatePercentages.filter(item => item.percentage < 5);
+        const significantSegments = generatePercentages.filter(item => item.percentage >= 3);
+        const otherSegments = generatePercentages.filter(item => item.percentage < 3);
 
         const otherTotal = otherSegments.reduce((acc, item) => acc + item.value, 0);
         const otherPercentage = otherSegments.reduce((acc, item) => acc + item.percentage, 0);
@@ -87,35 +142,46 @@ export default function BudgetScreen() {
           significantSegments.push({
             value: parseFloat(otherTotal.toFixed(2)),
             percentage: otherPercentage,
-            color: '#cccccc', // Use a default color for "Other"
+            color: '#cccccc',
             category: 'Other',
             iconName: 'help-circle-outline',
             iconSet: 'Ionicons',
+            transactionIds: otherSegments.flatMap(item => item.transactionIds || []),
+            type: 'expense',
           });
         }
 
-        const generateDecimals = significantSegments.map(
+        // Filter out "Virements internes" from significantSegments
+        const filteredSegments = significantSegments.filter(item => item.category !== 'Virements internes');
+
+        // Sort segments by value, ensuring 'Other' is always last
+        filteredSegments.sort((a, b) => {
+          if (a.category === 'Other') return 1;
+          if (b.category === 'Other') return -1;
+          return b.value - a.value;
+        });
+
+        const generateDecimals = filteredSegments.map(
           (item) => item.percentage / 100,
         );
 
-        // Normalize decimals to ensure they sum to 1
         const totalDecimals = generateDecimals.reduce((acc, val) => acc + val, 0);
         const normalizedDecimals = generateDecimals.map((decimal) => decimal / totalDecimals);
 
-        totalValue.value = withTiming(total, { duration: 1000 });
         decimals.value = [...normalizedDecimals];
 
-        setData(significantSegments);
+        setData(filteredSegments);
+        setTotalValue(total)
       } catch (error) {
         console.error('Error fetching data:', error);
       }
     };
 
     fetchData();
-  }, [currentDate, periodType]);
+  }, [currentDate, periodType, filterType]);
 
   const formatPeriod = (date: Date, type: PeriodType) => {
-    const options: Intl.DateTimeFormatOptions = { year: 'numeric' };
+    const options: Intl.DateTimeFormatOptions = {year: 'numeric'};
     switch (type) {
       case 'month':
         options.month = 'long';
@@ -145,7 +211,7 @@ export default function BudgetScreen() {
     setCurrentDate(newDate);
   };
 
-  const font = useFont(require('./../assets/fonts/Roboto-Bold.ttf'), 60);
+  const font = useFont(require('./../assets/fonts/Roboto-Bold.ttf'), 45);
   const smallFont = useFont(require('./../assets/fonts/Roboto-Light.ttf'), 25);
 
   if (!font || !smallFont) {
@@ -163,27 +229,68 @@ export default function BudgetScreen() {
           <View style={styles.periodTypeSelector}>
             <Pressable
               onPress={() => setPeriodType('month')}
-              style={[styles.periodTypeButton, periodType === 'month' && styles.activePeriodType]}
+              style={[
+                styles.periodTypeButton,
+                periodType === 'month' && styles.activePeriodType,
+              ]}
             >
-              <Text style={[styles.periodTypeText, periodType === 'month' && styles.activePeriodTypeText]}>Mois</Text>
+              <Text
+                style={[
+                  styles.periodTypeText,
+                  periodType === 'month' && styles.activePeriodTypeText,
+                ]}
+              >
+                Mois
+              </Text>
             </Pressable>
             <Pressable
               onPress={() => setPeriodType('quarter')}
-              style={[styles.periodTypeButton, periodType === 'quarter' && styles.activePeriodType]}
+              style={[
+                styles.periodTypeButton,
+                periodType === 'quarter' && styles.activePeriodType,
+              ]}
             >
-              <Text style={[styles.periodTypeText, periodType === 'quarter' && styles.activePeriodTypeText]}>Trimestre</Text>
+              <Text
+                style={[
+                  styles.periodTypeText,
+                  periodType === 'quarter' && styles.activePeriodTypeText,
+                ]}
+              >
+                Trimestre
+              </Text>
             </Pressable>
             <Pressable
               onPress={() => setPeriodType('year')}
-              style={[styles.periodTypeButton, periodType === 'year' && styles.activePeriodType]}
+              style={[
+                styles.periodTypeButton,
+                periodType === 'year' && styles.activePeriodType,
+              ]}
             >
-              <Text style={[styles.periodTypeText, periodType === 'year' && styles.activePeriodTypeText]}>Année</Text>
+              <Text
+                style={[
+                  styles.periodTypeText,
+                  periodType === 'year' && styles.activePeriodTypeText,
+                ]}
+              >
+                Année
+              </Text>
             </Pressable>
           </View>
         </View>
         <Pressable onPress={() => changePeriod(1)} style={styles.arrowButton}>
           <Ionicons name="chevron-forward" size={24} color="#333" />
         </Pressable>
+      </View>
+      <View style={styles.filterContainer}>
+        <Text style={styles.filterLabel}>Expense</Text>
+        <Switch
+          value={filterType === 'Income'}
+          onValueChange={(value) => setFilterType(value ? 'Income' : 'Expense')}
+          thumbColor="white" // Thumb remains white for better contrast
+          trackColor={{ false: '#FF3B30', true: '#34C759' }} // Red for Expense, Green for Income
+          ios_backgroundColor="#FF0000"
+        />
+        <Text style={styles.filterLabel}>Income</Text>
       </View>
       <ScrollView
         contentContainerStyle={{alignItems: 'center'}}
@@ -199,18 +306,29 @@ export default function BudgetScreen() {
             totalValue={totalValue}
             n={data.length}
             decimals={decimals}
-            colors={data.map(item => item.color)} // Use colors from data
+            colors={data.map(item => item.color)}
+            totalText={filterType === 'Income' ? 'Total Income' : 'Total Expense'}
           />
         </View>
         {data.map((item, index) => (
-          <View key={index} style={styles.legendItem}>
-            <View style={[styles.legendColor, { backgroundColor: item.color }]} />
-            {item.iconSet === 'Ionicons' && (
-              <Ionicons name={item.iconName} size={20} color="white" style={styles.icon} />
-            )}
-            <Text style={styles.legendLabel}>{item.category}</Text>
+          <Pressable
+            key={index}
+            style={styles.legendItem}
+            onPress={() => navigation.navigate('BudgetDetail', { category: item.category, subcategory: item.subcategory, transactionIds: item.transactionIds })}
+          >
+            <View style={[styles.iconCircle, { backgroundColor: item.color }]}>
+              {item.iconSet === 'Ionicons' && (
+                <Ionicons name={item.iconName as any} size={16} color="white" />
+              )}
+            </View>
+            <View style={styles.legendLabelContainer}>
+              <Text style={styles.legendLabel} numberOfLines={1} ellipsizeMode="tail">
+                {item.category}
+              </Text>
+              {item.subcategory && <Text style={styles.subCategoryLabel}>{item.subcategory}</Text>}
+            </View>
             <Text style={styles.legendValue}>{item.value.toLocaleString()} €</Text>
-          </View>
+          </Pressable>
         ))}
       </ScrollView>
     </SafeAreaView>
@@ -271,6 +389,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 10,
+    paddingHorizontal: 20,
   },
   legendColor: {
     width: 20,
@@ -278,18 +397,36 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginRight: 10,
   },
-  icon: {
+  iconCircle: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    justifyContent: 'center',
+    alignItems: 'center',
     marginRight: 10,
   },
+  legendLabelContainer: {
+    flex: 1, // Allow the label container to take up available space
+    flexDirection: 'column',
+    marginLeft: 10, // Add space between icons and labels
+  },
   legendLabel: {
-    flex: 1,
     fontSize: 14,
     color: '#333',
+    flexShrink: 1, // Allow the text to shrink if it's too long
+  },
+  subCategoryLabel: {
+    fontSize: 12,
+    color: '#666',
+    flexShrink: 1, // Allow the text to shrink if it's too long
   },
   legendValue: {
     fontSize: 14,
     fontWeight: 'bold',
     color: '#333',
+    marginLeft: 10,
+    textAlign: 'right', // Align the value text to the right
+    minWidth: 60, // Ensure there's enough space for the value
   },
   button: {
     marginVertical: 40,
@@ -301,5 +438,17 @@ const styles = StyleSheet.create({
   buttonText: {
     color: 'black',
     fontSize: 20,
+  },
+  // Add new styles for filter buttons
+  filterContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 10, // Spacing below date selection
+  },
+  filterLabel: {
+    fontSize: 14,
+    color: '#333',
+    marginHorizontal: 10, // Spacing between label and Switch
   },
 });

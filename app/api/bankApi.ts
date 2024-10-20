@@ -19,23 +19,27 @@ const handleApiError = async (error: unknown, message: string) => {
   throw error;
 };
 
-const addBearerToken = async (config: any) => {
-  const token = await AsyncStorage.getItem('accessToken');
-  if (token) {
-    config.headers = {
-      ...config.headers,
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
-    };
-  } else {
-    throw new Error('NO_TOKEN');
+// Add a request interceptor to add the bearer token synchronously
+apiClient.interceptors.request.use(
+  async (config) => {
+    const token = await AsyncStorage.getItem('accessToken');
+    if (token) {
+      config.headers['Authorization'] = `Bearer ${token}`;
+      config.headers['Content-Type'] = 'application/json';
+    } else {
+      // Optionally handle the case where no token is available
+      console.warn('No access token found');
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
   }
-  return config;
-};
+);
 
 export const fetchBanks = async () => {
   try {
-    const response = await apiClient.get('/banks', { transformRequest: [addBearerToken] });
+    const response = await apiClient.get('/banks');
     console.log('Banks response:', response.data);
     return response.data;
   } catch (error) {
@@ -63,7 +67,7 @@ export const createBank = async (name: string) => {
 
 export const deleteBank = async (bankId: number) => {
   try {
-    const response = await apiClient.delete(`/banks/${bankId}`, { transformRequest: [addBearerToken] });
+    const response = await apiClient.delete(`/banks/${bankId}`);
     console.log('Bank deleted:', response.data);
     return response.data;
   } catch (error) {
@@ -73,7 +77,7 @@ export const deleteBank = async (bankId: number) => {
 
 export const fetchAccounts = async () => {
   try {
-    const response = await apiClient.get('/accounts?per_page=1000&page=1', { transformRequest: [addBearerToken] });
+    const response = await apiClient.get('/accounts?per_page=1000&page=1');
     console.log('Accounts response:', response.data);
     return response.data;
   } catch (error) {
@@ -102,7 +106,7 @@ export const createAccount = async (accountData: {
 
 export const deleteAccount = async (accountId: number, onSuccess?: () => void) => {
   try {
-    const response = await apiClient.delete(`/accounts/${accountId}`, { transformRequest: [addBearerToken] });
+    const response = await apiClient.delete(`/accounts/${accountId}`);
     if (response.status === 204 && onSuccess) {
       onSuccess();
     }
@@ -142,10 +146,7 @@ export const updateTransaction = async (transactionId: number, transactionData: 
 
 export const fetchTransactions = async (perPage: number, page: number, accountId?: number) => {
   try {
-    const response = await apiClient.get(`/transactions?per_page=${perPage}&page=${page}&sort_by=date&sort_order=desc${accountId ? `&account_id=${accountId}` : ''}`, { 
-      transformRequest: [addBearerToken] // Added transformRequest
-      
-    });
+    const response = await apiClient.get(`/transactions?per_page=${perPage}&page=${page}&sort_by=date&sort_order=desc${accountId ? `&account_id=${accountId}` : ''}`);
     console.log('Transactions length response:', response.data.length);
     return response.data;
   } catch (error) {
@@ -164,12 +165,7 @@ export const createTransaction = async (transactionData: {
   subCategory: string | null;
 }) => {
   try {
-    const response = await apiClient.post('/transactions', transactionData, {
-      transformRequest: [(data, headers) => {
-        headers['Content-Type'] = 'application/json';
-        return JSON.stringify(data);
-      }]
-    });
+    const response = await apiClient.post('/transactions', transactionData);
     return response.data;
   } catch (error) {
     return handleApiError(error, 'Error creating transaction');
@@ -178,7 +174,7 @@ export const createTransaction = async (transactionData: {
 
 export const deleteTransaction = async (transactionId: number, onSuccess?: () => void) => {
   try {
-    const response = await apiClient.delete(`/transactions/${transactionId}`, { transformRequest: [addBearerToken] });
+    const response = await apiClient.delete(`/transactions/${transactionId}`);
     if (response.status === 200 && onSuccess) {
       onSuccess();
     }
@@ -190,7 +186,7 @@ export const deleteTransaction = async (transactionId: number, onSuccess?: () =>
 
 export const fetchWealthData = async (startDate: string, endDate: string) => {
   try {
-    const response = await apiClient.get(`/accounts/balance_over_time?start_date=${startDate}&end_date=${endDate}`, { transformRequest: [addBearerToken] });
+    const response = await apiClient.get(`/accounts/balance_over_time?start_date=${startDate}&end_date=${endDate}`);
     console.log("wealth data", response.data);
     return response.data;
   } catch (error) {
@@ -200,7 +196,7 @@ export const fetchWealthData = async (startDate: string, endDate: string) => {
 
 export const fetchBudgetSummary = async (startDate: string, endDate: string) => {
   try {
-    const response = await apiClient.get(`/budgets/budget_summary?start_date=${startDate}&end_date=${endDate}}`, { transformRequest: [addBearerToken] });
+    const response = await apiClient.get(`/budgets/budget_summary?start_date=${startDate}&end_date=${endDate}}`);
     console.log("budget summary", response.data); // Log the response data
     return response.data;
   } catch (error) {
