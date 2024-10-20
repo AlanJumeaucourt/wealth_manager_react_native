@@ -59,12 +59,22 @@ function AccountsStack() {
       <Stack.Screen
         name="AddAccount"
         component={AddAccountScreen}
-        options={{ title: 'Add Account' }}
+        options={{ title: 'Add Account', headerShown: false }}
+      />
+      <Stack.Screen
+        name="AddTransaction"
+        component={AddTransactionScreen}
+        options={{ title: 'Add Transaction', headerShown: false }}
+      />
+      <Stack.Screen
+        name="TransactionsScreenAccount"
+        component={TransactionsScreenAccount}
+        options={{ title: 'Transaction Details', headerShown: false }}
       />
       <Stack.Screen
         name="TransactionDetails"
         component={TransactionDetails}
-        options={{ title: 'Transaction Details' }}
+        options={{ title: 'Transaction Details', headerShown: false }}
       />
       {/* Add more screens related to Accounts here */}
     </Stack.Navigator>
@@ -83,17 +93,17 @@ function TransactionsStack() {
       <Stack.Screen
         name="AddTransaction"
         component={AddTransactionScreen}
-        options={{ title: 'Add Transaction' }}
+        options={{ title: 'Add Transaction', headerShown: false }}
       />
       <Stack.Screen
         name="TransactionsScreenAccount"
         component={TransactionsScreenAccount}
-        options={{ title: 'Account Transactions' }}
+        options={{ title: 'Account Transactions', headerShown: false }}
       />
       <Stack.Screen
         name="BudgetDetail"
         component={BudgetDetailScreen}
-        options={{ title: 'Budget Details' }}
+        options={{ title: 'Budget Details', headerShown: false }}
       />
       {/* Add more screens related to Transactions here */}
     </Stack.Navigator>
@@ -126,7 +136,7 @@ function BudgetStack() {
       <Stack.Screen
         name="BudgetDetail"
         component={BudgetDetailScreen}
-        options={{ title: 'Budget Details' }}
+        options={{ title: 'Budget Details', headerShown: false }}
       />
       {/* Add more screens related to Budget here */}
     </Stack.Navigator>

@@ -98,6 +98,8 @@ export default function BudgetScreen() {
           filterBudgetSummary = categorizedBudgetSummary.filter(item => item.type === 'expense');
         }
 
+        filterBudgetSummary = filterBudgetSummary.filter(item => item.category !== 'Virements internes');
+
         const total = filterBudgetSummary.reduce(
           (acc: number, currentValue: { amount: number }) => acc + currentValue.amount,
           0,
@@ -130,8 +132,8 @@ export default function BudgetScreen() {
             transactionIds: item.transactions_related,
             type: type,
           };
-        });
-
+        });    
+        
         const significantSegments = generatePercentages.filter(item => item.percentage >= 3);
         const otherSegments = generatePercentages.filter(item => item.percentage < 3);
 
@@ -151,17 +153,15 @@ export default function BudgetScreen() {
           });
         }
 
-        // Filter out "Virements internes" from significantSegments
-        const filteredSegments = significantSegments.filter(item => item.category !== 'Virements internes');
 
         // Sort segments by value, ensuring 'Other' is always last
-        filteredSegments.sort((a, b) => {
+        significantSegments.sort((a, b) => {
           if (a.category === 'Other') return 1;
           if (b.category === 'Other') return -1;
           return b.value - a.value;
         });
 
-        const generateDecimals = filteredSegments.map(
+        const generateDecimals = significantSegments.map(
           (item) => item.percentage / 100,
         );
 
@@ -170,7 +170,7 @@ export default function BudgetScreen() {
 
         decimals.value = [...normalizedDecimals];
 
-        setData(filteredSegments);
+        setData(significantSegments);
         setTotalValue(total)
       } catch (error) {
         console.error('Error fetching data:', error);
