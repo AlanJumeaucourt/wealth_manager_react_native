@@ -70,7 +70,7 @@ export const setupAxiosInterceptors = (router: any) => {
       if (error.response && error.response.status === 401) {
         await AsyncStorage.removeItem('accessToken');
         setAuthToken('');
-        router.push('/login');
+        router.push('/');
       }
       return Promise.reject(error);
     }

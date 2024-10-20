@@ -36,7 +36,7 @@ export default function RegisterScreen() {
       console.log('Registration response:', response);
 
       if (response.status === 201) {
-        router.replace('/login');
+        router.replace('/');
       } else {
         setError('Registration failed. Please try again.');
       }
@@ -93,7 +93,7 @@ export default function RegisterScreen() {
       >
         Register
       </Button>
-      <Pressable onPress={() => router.push('/login')}>
+      <Pressable onPress={() => router.push('/')}>
         <Text style={styles.loginLink}>Already have an account? Login here</Text>
       </Pressable>
     </View>

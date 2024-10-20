@@ -68,7 +68,7 @@ export default function AccountsScreen() {
         const endDate = new Date(); // Current date
         console.log("endDate", endDate);
         const response = await fetchWealthData(startDate.toISOString().split('T')[0], endDate.toISOString().split('T')[0]);
-        console.log("response", response);
+        // console.log("response", response);
         if (response) {
           setWealthData(response);
         }
@@ -144,7 +144,7 @@ export default function AccountsScreen() {
   const handleLogout = async () => {
     await AsyncStorage.removeItem('accessToken');
     await AsyncStorage.removeItem('refreshToken');
-    router.replace('/login');
+    router.replace('/');
   };
 
   const formatCompactNumber = (number: number) => {
