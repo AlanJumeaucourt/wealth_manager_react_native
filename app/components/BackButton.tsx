@@ -17,12 +17,11 @@ export const BackButton = () => {
 
 const styles = StyleSheet.create({
     backButton: {
-        marginLeft: 2,
         flexDirection: 'row',
         alignItems: 'center',
     },
     backButtonText: {
-        marginLeft: 5,
+        marginLeft: 3,
         fontSize: 18,
         color: '#007AFF',
     },

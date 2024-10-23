@@ -3,7 +3,7 @@ import { Bank } from '@/types/bank';
 import { Picker } from '@react-native-picker/picker';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import React, { useEffect, useState } from 'react';
-import { ActionSheetIOS, Alert, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActionSheetIOS, Alert, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View, Image } from 'react-native';
 import { Button, TextInput } from 'react-native-paper';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchAccounts } from '../actions/accountActions';
@@ -260,78 +260,87 @@ export default function AddAccountScreen() {
         <View style={sharedStyles.container}>
             <View style={sharedStyles.header}>
                 <BackButton />
-            </View>
-            <Text style={sharedStyles.headerTitle}>{account ? `Edit Account` : 'Add New Account'}</Text>
-            <ScrollView contentContainerStyle={styles.scrollContainer}>
-                <Text style={styles.label}>Account Name</Text>
-                <TextInput
-                    style={styles.input}
-                    placeholder="Enter account name"
-                    placeholderTextColor={darkTheme.colors.textSecondary}
-                    value={formData.AccountName}
-                    onChangeText={value => handleChange('AccountName', value)}
+                <View style={sharedStyles.headerTitleContainer}>
+                    <Text style={sharedStyles.headerTitle}>{account ? `Edit Account` : 'Add New Account'}</Text>
+                </View>
+                <Image
+                    source={require('./../assets/images/logo-removebg-white.png')}
+                    style={{ width: 30, height: 30 }}
+                    resizeMode="contain"
                 />
+            </View>
+            <View style={sharedStyles.body}>
+                <ScrollView contentContainerStyle={styles.scrollContainer}>
+                    <Text style={styles.label}>Account Name</Text>
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Enter account name"
+                        placeholderTextColor={darkTheme.colors.textSecondary}
+                        value={formData.AccountName}
+                        onChangeText={value => handleChange('AccountName', value)}
+                    />
 
-                <Text style={styles.label}>Account Type</Text>
-                {renderPicker(
-                    'Account Type',
-                    formData.AccountType,
-                    100,
-                    Platform.OS === 'ios' ? showAccountTypePicker : (itemValue) => setNewAccountType(itemValue)
-                )}
+                    <Text style={styles.label}>Account Type</Text>
+                    {renderPicker(
+                        'Account Type',
+                        formData.AccountType,
+                        100,
+                        Platform.OS === 'ios' ? showAccountTypePicker : (itemValue) => setNewAccountType(itemValue)
+                    )}
 
-                <Text style={styles.label}>Bank</Text>
-                {!isAddingNewBank && (
-                    <View style={styles.bankSelectionContainer}>
-                        {renderPicker(
-                            'Bank',
-                            formData.AccountBankId ? banks.find((bank: Bank) => bank.id === formData.AccountBankId)?.name : '',
-                            isAddingNewBank ? 85 : 100,
-                            Platform.OS === 'ios' ? showBankPicker : () => handleBankSelection(itemValue)
-                        )}
-                        <View style={styles.deleteButtonContainer}>
-                            <DeleteButton
-                                deleteText=""
-                                deleteTextAlert="Are you sure you want to delete this bank?"
-                                deleteFunction={() => handleDeleteBank(parseInt(formData.AccountBankId))} // This should return a promise
-                            />
+                    <Text style={styles.label}>Bank</Text>
+                    {!isAddingNewBank && (
+                        <View style={styles.bankSelectionContainer}>
+                            {renderPicker(
+                                'Bank',
+                                formData.AccountBankId ? banks.find((bank: Bank) => bank.id === formData.AccountBankId)?.name : '',
+                                isAddingNewBank ? 85 : 100,
+                                Platform.OS === 'ios' ? showBankPicker : () => handleBankSelection(itemValue)
+                            )}
+                            <View style={styles.deleteButtonContainer}>
+                                <DeleteButton
+                                    deleteText=""
+                                    deleteTextAlert="Are you sure you want to delete this bank?"
+                                    deleteFunction={() => handleDeleteBank(parseInt(formData.AccountBankId))} // This should return a promise
+                                />
+                            </View>
                         </View>
-                    </View>
-                )}
-                {isAddingNewBank && (
-                    <View style={styles.bankSelectionContainer}>
-                        <TextInput
-                            style={[styles.input, { width: '85%' }]}
-                            placeholder="Enter new bank name"
-                            placeholderTextColor={darkTheme.colors.textSecondary}
-                            value={formData.newBankName}
-                            onChangeText={value => handleChange('newBankName', value)}
-                        />
-                        <View style={styles.addButtonContainer}>
-                            <AddButton
-                                addText=""
-                                addTextAlert="Are you sure you want to add this bank?"
-                                addFunction={handleAddBank}
+                    )}
+                    {isAddingNewBank && (
+                        <View style={styles.bankSelectionContainer}>
+                            <TextInput
+                                style={[styles.input, { width: '85%' }]}
+                                placeholder="Enter new bank name"
+                                placeholderTextColor={darkTheme.colors.textSecondary}
+                                value={formData.newBankName}
+                                onChangeText={value => handleChange('newBankName', value)}
                             />
+                            <View style={styles.addButtonContainer}>
+                                <AddButton
+                                    addText=""
+                                    addTextAlert="Are you sure you want to add this bank?"
+                                    addFunction={handleAddBank}
+                                />
+                            </View>
                         </View>
-                    </View>
-                )}
+                    )}
 
-                <Text style={styles.label}>Currency</Text>
-                {renderPicker(
-                    'Currency',
-                    formData.AccountCurrency,
-                    100,
-                    Platform.OS === 'ios' ? showCurrencyPicker : (itemValue) => setNewAccountCurrency(itemValue)
-                )}
+                    <Text style={styles.label}>Currency</Text>
+                    {renderPicker(
+                        'Currency',
+                        formData.AccountCurrency,
+                        100,
+                        Platform.OS === 'ios' ? showCurrencyPicker : (itemValue) => setNewAccountCurrency(itemValue)
+                    )}
 
-                <Button mode="contained" onPress={handleAddOrUpdateAccount} style={styles.editButton}>
-                    {account ? 'Update Account' : 'Add Account'}
-                </Button>
-                <Button mode="contained" onPress={() => navigation.goBack()} style={styles.closeButton}>
-                    Close
-                </Button>
-            </ScrollView>
+                    <Button mode="contained" onPress={handleAddOrUpdateAccount} style={styles.editButton}>
+                        {account ? 'Update Account' : 'Add Account'}
+                    </Button>
+                    <Button mode="contained" onPress={() => navigation.goBack()} style={styles.closeButton}>
+                        Close
+                    </Button>
+                </ScrollView>
+            </View>
         </View>
     );
 }

@@ -10,7 +10,7 @@ import { Transaction } from '@/types/transaction';
 import { Ionicons } from '@expo/vector-icons';
 import { useRoute } from '@react-navigation/native';
 import React, { useEffect, useState } from 'react';
-import { Alert, FlatList, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, FlatList, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View, Image } from 'react-native';
 import { Button } from 'react-native-paper';
 import DatePicker from 'react-native-ui-datepicker';
 import { useDispatch, useSelector } from 'react-redux';
@@ -171,7 +171,10 @@ export default function AddTransactionScreen() {
                 ]}
                 onPress={() => setTransactionType(item)}
             >
-                <Text style={[sharedStyles.text, transactionType === item && sharedStyles.textBold]}>
+                <Text style={[
+                    styles.filterText,
+                    transactionType === item && styles.selectedFilterText
+                ]}>
                     {item.charAt(0).toUpperCase() + item.slice(1)}
                 </Text>
             </Pressable>
@@ -319,179 +322,192 @@ export default function AddTransactionScreen() {
     };
 
     return (
-        <View style={styles.container}>
-            <BackButton />
-            <ScrollView contentContainerStyle={styles.scrollContainer}>
-                <Text style={styles.title}>{transaction ? `Edit Transaction` : 'Add New Transaction'}</Text>
-                <View style={styles.filtersContainer}>
-                    <FlatList
-                        data={transactionTypes}
-                        renderItem={renderTransactionTypeItem}
-                        keyExtractor={(item) => item}
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        scrollEnabled={false}
-                        contentContainerStyle={styles.filtersScrollViewContent}
-                    />
+        <View style={sharedStyles.container}>
+            <View style={sharedStyles.header}>
+                <BackButton />
+                <View style={sharedStyles.headerTitleContainer}>
+                    <Text style={sharedStyles.headerTitle}>{transaction ? `Edit Transaction` : 'Add New Transaction'}</Text>
                 </View>
-
-                <Text style={styles.label}>Amount</Text>
-                <TextInput
-                    style={styles.input}
-                    placeholder="Enter amount (e.g., 100.00)"
-                    placeholderTextColor={colors.lightText}
-                    value={amount}
-                    onChangeText={setAmount}
-                    keyboardType="numeric"
+                <Image
+                    source={require('./../assets/images/logo-removebg-white.png')}
+                    style={{ width: 30, height: 30 }}
+                    resizeMode="contain"
                 />
+            </View>
+            <View style={sharedStyles.body}>
 
-                <Text style={styles.label}>Description</Text>
-                <TextInput
-                    style={styles.input}
-                    placeholder="Enter description (e.g., Grocery shopping)"
-                    placeholderTextColor={colors.lightText}
-                    value={description}
-                    onChangeText={setDescription}
-                />
-
-                <SearchableModal
-                    data={fromAccountFilter(transactionType, accounts)}
-                    onSelect={(value) => {
-                        if (typeof value === 'string') {
-                            setSelectedFromAccountName(value);
-                            setFromAccountId(null);
-                        } else {
-                            setFromAccountId(value);
-                            const selectedAccount = accounts.find(account => account.id === value);
-                            setSelectedFromAccountName(selectedAccount ? selectedAccount.name : '');
-                        }
-                    }}
-                    placeholder={selectedFromAccountName || "Select an account"}
-                    label="From account"
-                    allowCustomValue={transactionType === 'income'}
-                />
-
-                <SearchableModal
-                    data={toAccountFilter(transactionType, accounts)}
-                    onSelect={(value) => {
-                        if (typeof value === 'string') {
-                            setSelectedToAccountName(value);
-                            setToAccountId(null);
-                        } else {
-                            setToAccountId(value);
-                            const selectedAccount = accounts.find(account => account.id === value);
-                            setSelectedToAccountName(selectedAccount ? selectedAccount.name : '');
-                        }
-                    }}
-                    placeholder={selectedToAccountName || "Select an account"}
-                    label="To account"
-                    allowCustomValue={transactionType === 'expense'}
-                />
-
-                <Text style={styles.label}>Category</Text>
-                {transactionType === 'transfer' ? (
-                    <View style={styles.categoryButton}>
-                        <Text style={styles.categoryButtonText}>Virements internes</Text>
+                <ScrollView contentContainerStyle={styles.scrollContainer}>
+                    <View style={styles.filtersContainer}>
+                        <Text style={styles.label}>Type of transaction</Text>
+                        <FlatList
+                            data={transactionTypes}
+                            renderItem={renderTransactionTypeItem}
+                            keyExtractor={(item) => item}
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            scrollEnabled={false}
+                            contentContainerStyle={styles.filtersScrollViewContent}
+                        />
                     </View>
-                ) : (
-                    <Pressable
-                        style={styles.categoryButton}
-                        onPress={() => setIsCategoryModalVisible(true)}
+
+                    <Text style={styles.label}>Amount</Text>
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Enter amount (e.g., 100.00)"
+                        placeholderTextColor={colors.lightText}
+                        value={amount}
+                        onChangeText={setAmount}
+                        keyboardType="numeric"
+                    />
+
+                    <Text style={styles.label}>Description</Text>
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Enter description (e.g., Grocery shopping)"
+                        placeholderTextColor={colors.lightText}
+                        value={description}
+                        onChangeText={setDescription}
+                    />
+
+                    <SearchableModal
+                        data={fromAccountFilter(transactionType, accounts)}
+                        onSelect={(value) => {
+                            if (typeof value === 'string') {
+                                setSelectedFromAccountName(value);
+                                setFromAccountId(null);
+                            } else {
+                                setFromAccountId(value);
+                                const selectedAccount = accounts.find(account => account.id === value);
+                                setSelectedFromAccountName(selectedAccount ? selectedAccount.name : '');
+                            }
+                        }}
+                        placeholder={selectedFromAccountName || "Select an account"}
+                        label="From account"
+                        allowCustomValue={transactionType === 'income'}
+                    />
+
+                    <SearchableModal
+                        data={toAccountFilter(transactionType, accounts)}
+                        onSelect={(value) => {
+                            if (typeof value === 'string') {
+                                setSelectedToAccountName(value);
+                                setToAccountId(null);
+                            } else {
+                                setToAccountId(value);
+                                const selectedAccount = accounts.find(account => account.id === value);
+                                setSelectedToAccountName(selectedAccount ? selectedAccount.name : '');
+                            }
+                        }}
+                        placeholder={selectedToAccountName || "Select an account"}
+                        label="To account"
+                        allowCustomValue={transactionType === 'expense'}
+                    />
+
+                    <Text style={styles.label}>Category</Text>
+                    {transactionType === 'transfer' ? (
+                        <View style={styles.categoryButton}>
+                            <Text style={styles.categoryButtonText}>Virements internes</Text>
+                        </View>
+                    ) : (
+                        <Pressable
+                            style={styles.categoryButton}
+                            onPress={() => setIsCategoryModalVisible(true)}
+                        >
+                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                {subcategory && (
+                                    <View style={[styles.iconCircle, { backgroundColor: findCategoryByName(category)?.color, marginRight: darkTheme.spacing.m }]}>
+                                        <Ionicons
+                                            name={
+                                                findCategoryByName(category)?.subCategories?.find(
+                                                    sub => sub.name.toLowerCase() === subcategory.toLowerCase()
+                                                )?.iconName || "chevron-forward"
+                                            }
+                                            size={20}
+                                            color={colors.white}
+                                        />
+                                    </View>
+                                )}
+                                {category && !subcategory && (
+                                    <View style={[styles.iconCircle, { backgroundColor: findCategoryByName(category)?.color, marginRight: darkTheme.spacing.m }]}>
+                                        <Ionicons
+                                            name={
+                                                findCategoryByName(category)?.iconName || "chevron-forward"
+                                            }
+                                            size={20}
+                                            color={colors.white}
+                                        />
+                                    </View>
+                                )}
+                                <Text style={styles.categoryButtonText}>
+                                    {category ? `${category}${subcategory ? ` - ${subcategory}` : ''}` : 'Select Category'}
+                                </Text>
+                            </View>
+                        </Pressable>
+                    )}
+
+                    <Modal
+                        visible={isCategoryModalVisible}
+                        animationType="slide"
+                        transparent={true}
+                        onRequestClose={() => setIsCategoryModalVisible(false)}
                     >
-                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                            {subcategory && (
-                                <View style={[styles.iconCircle, { backgroundColor: findCategoryByName(category)?.color, marginRight: darkTheme.spacing.m }]}>
-                                    <Ionicons
-                                        name={
-                                            findCategoryByName(category)?.subCategories?.find(
-                                                sub => sub.name.toLowerCase() === subcategory.toLowerCase()
-                                            )?.iconName || "chevron-forward"
-                                        }
-                                        size={20}
-                                        color={colors.white}
-                                    />
-                                </View>
-                            )}
-                            {category && !subcategory && (
-                                <View style={[styles.iconCircle, { backgroundColor: findCategoryByName(category)?.color, marginRight: darkTheme.spacing.m }]}>
-                                    <Ionicons
-                                        name={
-                                            findCategoryByName(category)?.iconName || "chevron-forward"
-                                        }
-                                        size={20}
-                                        color={colors.white}
-                                    />
-                                </View>
-                            )}
-                            <Text style={styles.categoryButtonText}>
-                                {category ? `${category}${subcategory ? ` - ${subcategory}` : ''}` : 'Select Category'}
-                            </Text>
+                        <View style={styles.modalContainer}>
+                            <View style={styles.modalContent}>
+                                <Text style={styles.label}>Select Category</Text>
+                                <CategorySelector
+                                    transactionType={transactionType}
+                                    onSelectCategory={handleCategorySelect}
+                                    onSelectSubcategory={handleSubcategorySelect}
+                                />
+                            </View>
                         </View>
+                    </Modal>
+
+                    <Text style={styles.label}>Transaction Date</Text>
+                    <Pressable onPress={() => setShowDatePicker(true)} style={styles.dateButton}>
+                        <Text style={styles.dateButtonText}>{transactionDate.toLocaleDateString()}</Text>
                     </Pressable>
-                )}
 
-                <Modal
-                    visible={isCategoryModalVisible}
-                    animationType="slide"
-                    transparent={true}
-                    onRequestClose={() => setIsCategoryModalVisible(false)}
-                >
-                    <View style={styles.modalContainer}>
-                        <View style={styles.modalContent}>
-                            <Text style={styles.label}>Select Category</Text>
-                            <CategorySelector
-                                transactionType={transactionType}
-                                onSelectCategory={handleCategorySelect}
-                                onSelectSubcategory={handleSubcategorySelect}
-                            />
+                    {/* Modal for DatePicker */}
+                    <Modal
+                        visible={showDatePicker}
+                        animationType="slide"
+                        transparent={true}
+                        onRequestClose={() => setShowDatePicker(false)}
+                    >
+                        <View style={styles.modalContainer}>
+                            <View style={styles.modalContent}>
+                                <DatePicker
+                                    date={transactionDate}
+                                    onChange={(params) => handleDateChange(params.date)}
+                                    mode="single"
+                                    calendarTextStyle={styles.datePicker}
+                                    selectedTextStyle={styles.datePicker}
+                                    weekDaysTextStyle={styles.datePicker}
+                                    monthContainerStyle={styles.monthContainerStyle}
+                                    yearContainerStyle={styles.monthContainerStyle}
+                                    selectedItemColor={darkTheme.colors.primary}
+                                    headerContainerStyle={styles.datePickerHeader}
+                                    headerTextStyle={styles.datePickerHeaderText}
+                                    dayContainerStyle={styles.datePickerDayContainer}
+                                    selectedRangeBackgroundColor={darkTheme.colors.primary}
+                                    weekDaysContainerStyle={styles.datePickerDayContainer}
+                                    timePickerContainerStyle={styles.datePicker}
+                                    buttonNextIcon={<Ionicons name="chevron-forward" size={24} color={darkTheme.colors.primary} />}
+                                    buttonPrevIcon={<Ionicons name="chevron-back" size={24} color={darkTheme.colors.primary} />}
+                                />
+                                <Button mode="outlined" onPress={() => setShowDatePicker(false)} style={styles.closeButton}>
+                                    Close
+                                </Button>
+                            </View>
                         </View>
-                    </View>
-                </Modal>
+                    </Modal>
 
-                <Text style={styles.label}>Transaction Date</Text>
-                <Pressable onPress={() => setShowDatePicker(true)} style={styles.dateButton}>
-                    <Text style={styles.dateButtonText}>{transactionDate.toLocaleDateString()}</Text>
-                </Pressable>
-
-                {/* Modal for DatePicker */}
-                <Modal
-                    visible={showDatePicker}
-                    animationType="slide"
-                    transparent={true}
-                    onRequestClose={() => setShowDatePicker(false)}
-                >
-                    <View style={styles.modalContainer}>
-                        <View style={styles.modalContent}>
-                            <DatePicker
-                                date={transactionDate}
-                                onChange={(params) => handleDateChange(params.date)}
-                                mode="single"
-                                calendarTextStyle={styles.datePicker}
-                                selectedTextStyle={styles.datePicker}
-                                weekDaysTextStyle={styles.datePicker}
-                                monthContainerStyle={styles.monthContainerStyle}
-                                yearContainerStyle={styles.monthContainerStyle}
-                                selectedItemColor={darkTheme.colors.primary}
-                                headerContainerStyle={styles.datePickerHeader}
-                                headerTextStyle={styles.datePickerHeaderText}
-                                dayContainerStyle={styles.datePickerDayContainer}
-                                selectedRangeBackgroundColor={darkTheme.colors.primary}
-                                weekDaysContainerStyle={styles.datePickerDayContainer}
-                                timePickerContainerStyle={styles.datePicker}
-                                buttonNextIcon={<Ionicons name="chevron-forward" size={24} color={darkTheme.colors.primary} />}
-                                buttonPrevIcon={<Ionicons name="chevron-back" size={24} color={darkTheme.colors.primary} />}
-                            />
-                            <Button mode="outlined" onPress={() => setShowDatePicker(false)} style={styles.closeButton}>
-                                Close
-                            </Button>
-                        </View>
-                    </View>
-                </Modal>
-
-                <Button mode="contained" onPress={handleAddOrUpdateTransaction} style={styles.button}>
-                    <Text style={styles.buttonText}>{transaction ? 'Update Transaction' : 'Add Transaction'}</Text>
-                </Button>
-            </ScrollView>
+                    <Button mode="contained" onPress={handleAddOrUpdateTransaction} style={styles.button}>
+                        <Text style={styles.buttonText}>{transaction ? 'Update Transaction' : 'Add Transaction'}</Text>
+                    </Button>
+                </ScrollView>
+            </View>
         </View>
     );
 };
@@ -553,7 +569,7 @@ const styles = StyleSheet.create({
         fontSize: 14,
     },
     selectedFilterText: {
-        color: darkTheme.colors.white,
+        color: '#FFFFFF',  // Using direct color value instead of theme color
     },
     label: {
         fontSize: 16,

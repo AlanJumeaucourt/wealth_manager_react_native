@@ -99,7 +99,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginVertical: darkTheme.spacing.s,
-    backgroundColor: darkTheme.colors.surface,
     padding: darkTheme.spacing.m,
     borderRadius: darkTheme.borderRadius.l,
     ...darkTheme.shadows.small,

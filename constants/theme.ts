@@ -15,6 +15,7 @@ export const darkTheme = {
     error: '#CF6679', // Error states
     warning: '#FB8C00', // Warning states
     info: '#2196F3', // Information states
+    white: '#FFFFFF',
     chart: {
       primary: '#BB86FC',
       secondary: '#03DAC6',
