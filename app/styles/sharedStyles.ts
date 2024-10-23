@@ -1,4 +1,4 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Platform } from 'react-native';
 import { darkTheme } from '@/constants/theme';
 
 export const sharedStyles = StyleSheet.create({
@@ -15,7 +15,8 @@ export const sharedStyles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingHorizontal: darkTheme.spacing.m,
-        paddingVertical: darkTheme.spacing.m,
+        paddingTop: Platform.OS === 'ios' ? 60 : darkTheme.spacing.m,
+        paddingBottom: darkTheme.spacing.m,
         backgroundColor: darkTheme.colors.surface,
     },
     headerTitle: {
@@ -25,8 +26,8 @@ export const sharedStyles = StyleSheet.create({
     },
     body: {
         flex: 1,
-        paddingHorizontal: darkTheme.spacing.m,
-        paddingBottom: darkTheme.spacing.m,
+        backgroundColor: darkTheme.colors.background,
+        paddingBottom: Platform.OS === 'ios' ? 0 : 0,
     },
     card: {
         backgroundColor: darkTheme.colors.surface,
@@ -47,7 +48,6 @@ export const sharedStyles = StyleSheet.create({
     },
     text: {
         color: darkTheme.colors.text,
-        fontSize: 16,
     },
     textSecondary: {
         color: darkTheme.colors.textSecondary,
@@ -140,6 +140,9 @@ export const sharedStyles = StyleSheet.create({
         padding: darkTheme.spacing.m,
         backgroundColor: darkTheme.colors.surface,
         borderRadius: darkTheme.borderRadius.l,
+    },
+    textBold: {
+        fontWeight: 'bold',
     },
 });
 

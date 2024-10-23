@@ -1,7 +1,7 @@
 export const darkTheme = {
   colors: {
-    background: '#121212', // Main background
-    surface: '#1E1E1E', // Cards and elevated surfaces
+    background: '#000000', // Pure black for OLED screens
+    surface: '#1C1C1E', // Dark surface color
     surfaceVariant: '#2C2C2C', // Alternative surface color
     primary: '#BB86FC', // Primary brand color
     primaryVariant: '#3700B3', // Variant of primary color

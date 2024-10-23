@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView, FlatList, Modal, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LineChart } from 'react-native-gifted-charts'; // Import the LineChart component
-import { Button as PaperButton } from 'react-native-paper';
+import { Menu, Button as PaperButton } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -304,13 +304,30 @@ export default function AccountsScreen() {
   // Update the spacing calculation
   const spacing = calculateSpacing(chartWidth, data.length); // Calculate spacing based on width and data length
 
+  
+  const [visible, setVisible] = useState(false);
+  const openMenu = () => setVisible(true);
+  const closeMenu = () => {
+    setVisible(false);
+  };
+
   return (
-    <View style={[styles.container, { backgroundColor: darkTheme.colors.background }]}>
+    <View style={[sharedStyles.container, { backgroundColor: darkTheme.colors.background }]}>
       <StatusBar style="light" backgroundColor={darkTheme.colors.background} />
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Accounts</Text>
-        <LogoutButton />
-      </View>
+      <View style={sharedStyles.header}>
+        <Text style={sharedStyles.headerTitle}>Accounts</Text>
+        <Menu
+          visible={visible}
+            onDismiss={closeMenu}
+            anchor={
+              <Pressable style={styles.menuButton} onPress={openMenu}>
+                <Ionicons name="ellipsis-vertical" size={24} color={darkTheme.colors.text} />
+              </Pressable>
+            }
+          >
+            <Menu.Item onPress={handleLogout} title="Logout" />
+          </Menu>
+        </View>
       <View style={sharedStyles.body}>
         <ScrollView
           contentContainerStyle={styles.scrollViewContent}
@@ -682,5 +699,13 @@ const styles = StyleSheet.create({
   },
   filtersScrollViewContent: {
     paddingHorizontal: 16,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  menuButton: {
+    marginRight: 16,
   },
 });

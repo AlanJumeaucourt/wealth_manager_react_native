@@ -21,11 +21,8 @@ export const BackButton = () => {
 const styles = StyleSheet.create({
     backButton: {
         marginLeft: 2,
-        marginTop: Platform.OS === 'ios' ? 20 : 0,
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 16,
-        padding: 10,
     },
     backButtonText: {
         marginLeft: 5,

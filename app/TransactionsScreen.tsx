@@ -30,10 +30,9 @@ const TransactionContent = ({
   }
 
   return (
-    <>
-      <Text style={styles.screenTitle}>All Transactions</Text>
+    <View style={[sharedStyles.body, { paddingTop: darkTheme.spacing.m }]}>
       {transactions && <TransactionList transactions={transactions} accountId="" />}
-    </>
+    </View>
   );
 };
 
@@ -48,7 +47,7 @@ export default function TransactionsScreen() {
   return (
     <View style={[sharedStyles.container]}>
       <View style={sharedStyles.header}>
-        <Text style={sharedStyles.headerTitle}>Transactions</Text>
+        <Text style={sharedStyles.headerTitle}>All Transactions</Text>
       </View>
       <View style={sharedStyles.body}>
         <TransactionContent

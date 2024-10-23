@@ -9,7 +9,7 @@ import { BackButton } from './components/BackButton';
 import { deleteAccount } from './api/bankApi';
 import { fetchAccounts } from '@/actions/accountActions';
 import sharedStyles from './styles/sharedStyles';
-import { Menu, Provider } from 'react-native-paper';
+import { Menu } from 'react-native-paper';
 import { darkTheme } from '../constants/theme';
 
 type RouteParams = {
@@ -61,34 +61,35 @@ export default function TransactionsScreen() {
   };
 
   return (
-    <Provider>
-      <View style={[sharedStyles.container]}>
-        <View style={sharedStyles.header}>
-          <BackButton />
-          <Menu
-            visible={visible}
-            onDismiss={closeMenu}
-            anchor={
-              <Pressable style={styles.menuButton} onPress={openMenu}>
-                <Ionicons name="ellipsis-vertical" size={24} color={darkTheme.colors.text} />
-              </Pressable>
-            }
-          >
-            <Menu.Item onPress={handleEditAccount} title="Edit Account" />
-            <Menu.Item onPress={handleDeleteAccount} title="Delete Account" />
-          </Menu>
+    <View style={[sharedStyles.container]}>
+      <View style={sharedStyles.header}>
+        <BackButton />
+        <Menu
+          visible={visible}
+          onDismiss={closeMenu}
+          anchor={
+            <Pressable style={styles.menuButton} onPress={openMenu}>
+              <Ionicons name="ellipsis-vertical" size={24} color={darkTheme.colors.text} />
+            </Pressable>
+          
+          }
+        >
+          <Menu.Item onPress={handleEditAccount} title="Edit Account" />
+          <Menu.Item onPress={handleDeleteAccount} title="Delete Account" />
+        </Menu>
+      </View>
+      <View style={[sharedStyles.body, { paddingHorizontal: darkTheme.spacing.s }]}>
+        <View style={styles.accountHeader}>
+          <Text style={styles.accountName}>{account.name}</Text>
+          <Text style={styles.accountBalance}>
+            {account.balance.toLocaleString()} €
+          </Text>
         </View>
-        <View style={sharedStyles.body}>
-          <View style={styles.accountHeader}>
-            <Text style={styles.accountName}>{account.name}</Text>
-            <Text style={styles.accountBalance}>
-              {account.balance.toLocaleString()} €
-            </Text>
-          </View>
+        <View style={styles.transactionsContainer}> 
           <TransactionList accountId={account.id} />
         </View>
       </View>
-    </Provider>
+    </View>
   );
 }
 
@@ -97,14 +98,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: darkTheme.spacing.m,
+    marginVertical: darkTheme.spacing.s,
     backgroundColor: darkTheme.colors.surface,
     padding: darkTheme.spacing.m,
     borderRadius: darkTheme.borderRadius.l,
     ...darkTheme.shadows.small,
   },
   menuButton: {
-    padding: darkTheme.spacing.s,
+    marginRight: 16,
   },
   accountName: {
     fontSize: 24,
@@ -115,5 +116,8 @@ const styles = StyleSheet.create({
     fontSize: 20,
     color: darkTheme.colors.primary,
     fontWeight: '600',
+  },
+  transactionsContainer: {
+    flex: 1,
   },
 });

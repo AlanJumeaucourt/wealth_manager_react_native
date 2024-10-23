@@ -31,6 +31,16 @@ const GAP = 0.03;
 
 type PeriodType = 'month' | 'quarter' | 'year';
 
+type BudgetDetailParams = {
+  category: string;
+  subcategory: string | undefined;
+  transactionIds: string[] | undefined;
+};
+
+type NavigationProp = {
+  navigate: (screen: string, params: BudgetDetailParams) => void;
+};
+
 export default function BudgetScreen() {
   const [data, setData] = useState<Data[]>([]);
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -38,7 +48,7 @@ export default function BudgetScreen() {
   const [filterType, setFilterType] = useState<'Income' | 'Expense'>('Expense'); // {{ edit: Remove 'All' from filterType state }}
   const [totalValue, setTotalValue] = useState(0);
   const decimals = useSharedValue<number[]>([]);
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp>();
   const [allData, setAllData] = useState<Data[]>([]); // {{ edit: Add allData state }}
 
   useEffect(() => {
@@ -148,6 +158,7 @@ export default function BudgetScreen() {
             percentage: otherPercentage,
             color: '#cccccc',
             category: 'Other',
+            subcategory: undefined, // Add this line
             iconName: 'help-circle-outline',
             iconSet: 'Ionicons',
             transactionIds: otherSegments.flatMap(item => item.transactionIds || []),
@@ -220,8 +231,17 @@ export default function BudgetScreen() {
     return <View />;
   }
 
+  function NoBudget() {
+    return (
+      <View style={styles.noBudgetContainer}>
+        <Ionicons name="wallet-outline" size={64} color={darkTheme.colors.textSecondary} />
+        <Text style={styles.noBudgetText}>No budget data available for this period</Text>
+      </View>
+    );
+  }
+
   return (
-    <SafeAreaView style={[sharedStyles.container]}>
+    <View style={[sharedStyles.container]}>
       <View style={sharedStyles.header}>
         <Text style={sharedStyles.headerTitle}>Budget</Text>
       </View>
@@ -272,8 +292,9 @@ export default function BudgetScreen() {
         <Text style={styles.filterLabel}>Income</Text>
       </View>
 
-      <ScrollView
-        contentContainerStyle={styles.scrollViewContent}
+      {data.length === 0 ? <NoBudget /> : (
+        <ScrollView
+          contentContainerStyle={styles.scrollViewContent}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.chartContainer}>
@@ -318,9 +339,10 @@ export default function BudgetScreen() {
             </View>
             <Text style={styles.legendValue}>{item.value.toLocaleString()} €</Text>
           </Pressable>
-        ))}
-      </ScrollView>
-    </SafeAreaView>
+          ))}
+        </ScrollView>
+      )}
+    </View>
   );
 };
 
@@ -420,5 +442,17 @@ const styles = StyleSheet.create({
     height: RADIUS * 2,
     marginTop: 10,
     marginBottom: darkTheme.spacing.m,
+  },
+  noBudgetContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: darkTheme.spacing.xl,
+  },
+  noBudgetText: {
+    fontSize: 16,
+    color: darkTheme.colors.textSecondary,
+    textAlign: 'center',
+    marginTop: darkTheme.spacing.m,
   },
 });

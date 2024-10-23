@@ -240,7 +240,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   menuButton: {
-    padding: darkTheme.spacing.s,
+    marginRight: 16,
   },
   header: {
     flexDirection: 'row',
