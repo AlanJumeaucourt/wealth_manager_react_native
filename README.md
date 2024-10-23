@@ -1,50 +1,105 @@
-# Welcome to your Expo app 👋
+# Wealth Manager Mobile App 🚀
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A sophisticated cross-platform mobile application for comprehensive wealth management, built with React Native and Expo. Track your finances, analyze spending patterns, and manage your investments - all in one beautifully designed app.
 
-## Get started
+<img src="screenshots/app-overview.png" alt="App Overview" width="50%">
 
-1. Install dependencies
+## ✨ Key Features
 
-   ```bash
-   npm install
-   ```
+### 📊 Real-Time Wealth Tracking
+- Interactive wealth evolution charts
+- Multi-currency support
+- Customizable date ranges (1M, 3M, 6M, 1Y, 3Y, 5Y, Max)
 
-2. Start the app
+<img src="screenshots/wealth-tracking.png" alt="Wealth Tracking" width="50%">
 
-   ```bash
-    npx expo start
-   ```
+### 💰 Smart Account Management
+- Multiple account types (Checking, Savings, Investment)
+- Bank integration
+- Real-time balance updates
+- Detailed transaction history
 
-In the output, you'll find options to open the app in a
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+<img src="screenshots/accounts.png" alt="Account Management" width="50%">
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+### 📈 Budget Analytics
+- Beautiful donut charts for expense categorization
+- Customizable budget periods
+- Detailed category breakdown
+- Income vs Expense analysis
 
-## Get a fresh project
+<img src="screenshots/budget1.png" alt="Budget Analytics" width="50%">
+<img src="screenshots/budget2.png" alt="Budget Analytics" width="50%">
 
-When you're ready, run:
+### 🔄 Transaction Management
+- Easy transaction entry
+- Smart categorization
+- Detailed transaction view
+- Transfer between accounts
 
+<img src="screenshots/transactions.png" alt="Transactions" width="50%">
+
+### 🎨 Modern UI/UX
+- Dark mode support
+- Smooth animations
+- Intuitive navigation
+- Responsive design
+
+<img src="screenshots/ui-showcase.png" alt="UI Showcase" width="50%">
+
+## 🛠 Technical Stack
+
+- **Frontend Framework**: React Native with Expo
+- **State Management**: Redux
+- **Charts**: react-native-gifted-charts
+- **UI Components**: React Native Paper
+- **Navigation**: Expo Router
+- **API Integration**: Axios
+- **Authentication**: JWT
+
+## 🚀 Getting Started
+
+1. Install dependencies:
 ```bash
-npm run reset-project
+npm install
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+2. Start the development server:
+```bash
+npx expo start
+```
 
-## Learn more
+3. Run on your preferred platform:
+- Press `i` for iOS simulator
+- Press `a` for Android emulator
+- Scan QR code with Expo Go app for physical device
 
-To learn more about developing your project with Expo, look at the following resources:
+## 📱 Platform Support
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+- iOS
+- Android
+- Web (Progressive Web App)
 
-## Join the community
+## 🔒 Security
 
-Join our community of developers creating universal apps.
+- Secure authentication
+- Encrypted data transmission
+- Token-based API access
+- Automatic session management
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## 🎯 Future Roadmap
+
+- [ ] Investment portfolio tracking
+- [ ] AI-powered spending insights
+- [ ] Bill payment reminders
+- [ ] Custom category creation
+- [ ] Export financial reports
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
