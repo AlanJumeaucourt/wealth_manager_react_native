@@ -75,9 +75,18 @@ export const deleteBank = async (bankId: number) => {
   }
 };
 
-export const fetchAccounts = async () => {
+export const fetchAccounts = async (perPage: number, page: number, search?: string) => {
   try {
-    const response = await apiClient.get('/accounts?per_page=1000&page=1');
+    const params = new URLSearchParams({
+      per_page: perPage.toString(),
+      page: page.toString(),
+    });
+
+    if (search) {
+      params.append('search', search);
+    }
+
+    const response = await apiClient.get(`/accounts?${params.toString()}`);
     console.log('Accounts response:', response.data);
     return response.data;
   } catch (error) {
@@ -144,10 +153,10 @@ export const updateTransaction = async (transactionId: number, transactionData: 
   }
 }
 
-export const fetchTransactions = async (perPage: number, page: number, accountId?: number) => {
+export const fetchTransactions = async (perPage: number, page: number, accountId?: number, search?: string) => {
   try {
-    const response = await apiClient.get(`/transactions?per_page=${perPage}&page=${page}&sort_by=date&sort_order=desc${accountId ? `&account_id=${accountId}` : ''}`);
-    console.log('Transactions length response:', response.data.length);
+    const response = await apiClient.get(`/transactions?per_page=${perPage}&page=${page}&sort_by=date&sort_order=desc${accountId ? `&account_id=${accountId}` : ''}${search ? `&search=${search}` : ''}`);
+    console.log('Transactions response:', response.data);
     return response.data;
   } catch (error) {
     return handleApiError(error, 'Error fetching transactions');
@@ -203,3 +212,4 @@ export const fetchBudgetSummary = async (startDate: string, endDate: string) => 
     return handleApiError(error, 'Error fetching budget summary');
   }
 };
+

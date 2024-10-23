@@ -199,7 +199,6 @@ export default function WealthScreen() {
                                 pointerStripColor: 'rgba(0, 0, 0, 0.5)',
                                 width: 10,
                                 height: 10,
-                                color: '#007AFF',
                                 radius: 6,
                                 pointerLabelWidth: 150,
                                 pointerLabelHeight: 90,
@@ -266,17 +265,17 @@ const styles = StyleSheet.create({
         ...darkTheme.shadows.medium,
     },
     tooltipContainer: {
-        backgroundColor: 'white',
+        backgroundColor: darkTheme.colors.surface,
         padding: 10,
         borderRadius: 5,
         alignItems: 'center',
-        borderColor: '#007AFF',
+        borderColor: darkTheme.colors.primary,
         borderWidth: 1,
     },
     tooltipValue: {
         fontSize: 18,
         fontWeight: 'bold',
-        color: '#007AFF',
+        color: darkTheme.colors.primary,
     },
     tooltipDate: {
         fontSize: 14,

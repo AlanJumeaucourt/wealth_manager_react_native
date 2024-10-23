@@ -386,44 +386,23 @@ export default function AccountsScreen() {
                   showPointerStrip: true,
                   pointerStripWidth: 2,
                   pointerStripUptoDataPoint: true,
-                  pointerStripColor: darkTheme.colors.textSecondary,
+                  pointerStripColor: 'rgba(0, 0, 0, 0.5)',
                   width: 10,
                   height: 10,
-                  color: darkTheme.colors.primary,
                   radius: 6,
-                  pointerLabelWidth: 150,
-                  pointerLabelHeight: 10,
+                  pointerLabelWidth: 120,
+                  pointerLabelHeight: 90,
                   activatePointersOnLongPress: false,
                   autoAdjustPointerLabelPosition: true,
-
                   pointerLabelComponent: (items: any) => {
                     const item = items[0];
                     return (
-                      <View style={[{
-                        backgroundColor: darkTheme.colors.surface,
-                        padding: darkTheme.spacing.m,
-                        borderRadius: darkTheme.borderRadius.m,
-                        shadowColor: '#000',
-                        shadowOffset: { width: 0, height: 4 },
-                        shadowOpacity: 0.3,
-                        shadowRadius: 8,
-                        elevation: 5,
-                      }, { marginTop: 20 }]}>
-                        <Text style={{
-                          fontSize: 16,
-                          fontWeight: '700',
-                          color: darkTheme.colors.text,
-                          marginBottom: 4,
-                        }}>{item.value.toFixed(0)} €</Text>
-                        <Text style={{
-                          fontSize: 12,
-                          color: darkTheme.colors.textSecondary,
-                          textAlign: 'center',
-                        }}>{new Date(item.date).toDateString()}</Text>
-                      </View>
+                        <View style={styles.tooltipContainer}>
+                            <Text style={styles.tooltipValue}>{item.value.toFixed(0)} €</Text>
+                            <Text style={styles.tooltipDate}>{new Date(item.date).toDateString()}</Text>
+                        </View>
                     );
-                  },
-                }}
+                },                }}
               />
             </View>
           )}
@@ -708,4 +687,22 @@ const styles = StyleSheet.create({
   menuButton: {
     marginRight: 16,
   },
+  tooltipContainer: {
+    backgroundColor: darkTheme.colors.surface,
+    padding: 5,
+    borderRadius: 2,
+    alignItems: 'center',
+    borderColor: darkTheme.colors.primary,
+    borderWidth: 1,
+},
+tooltipValue: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: darkTheme.colors.primary,
+},
+tooltipDate: {
+    fontSize: 10,
+    color: 'gray',
+    marginTop: 2,
+},
 });

@@ -3,7 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { format, parseISO } from 'date-fns';
 import React, { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View, TextInput, TouchableOpacity } from 'react-native';
 import { useSelector } from 'react-redux';
 import { colors } from '../../constants/colors';
 import { darkTheme } from '../../constants/theme';
@@ -12,6 +12,13 @@ import { fetchTransactions } from '../api/bankApi';
 
 interface TransactionListProps {
   accountId?: number;
+}
+
+// Add these new interfaces
+interface TransactionResponse {
+  transactions: Transaction[];
+  total_amount: number;
+  count: number;
 }
 
 const getIconName = (transaction: Transaction) => {
@@ -26,29 +33,48 @@ const TransactionList: React.FC<TransactionListProps> = ({ accountId }) => {
   const navigation = useNavigation();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [page, setPage] = useState(1);
-  const [isLoadingMore, setIsLoadingMore] = useState(false); // Add loading state
+  const [isLoadingMore, setIsLoadingMore] = useState(false); // Loading state
+  const [searchQuery, setSearchQuery] = useState(''); // Reintroduce searchQuery without debounce
+  const [isSearchVisible, setIsSearchVisible] = useState(false);
+  const [searchStats, setSearchStats] = useState<{ total: number; count: number } | null>(null);
 
-  // Fetch transactions when the component mounts or when the page changes
+  // Fetch transactions when the component mounts or when the page or search query changes
   useEffect(() => {
     const fetchData = async () => {
-      setIsLoadingMore(true); // Set loading state before fetching
-      const newTransactions = await fetchTransactions(50, page, accountId);
-      setTransactions(prevTransactions => [...prevTransactions, ...newTransactions]);
-      setIsLoadingMore(false); // Reset loading state after fetching
+      setIsLoadingMore(true);
+      const numberofTransactionFetch = 50;
+      const response = await fetchTransactions(numberofTransactionFetch, page, accountId, searchQuery);
+      if ('transactions' in response) {
+        // Update transactions
+        setTransactions(prevTransactions => 
+          page === 1 ? response.transactions : [...prevTransactions, ...response.transactions]
+        );
+        // Only update search stats if it's the first page or if we don't have stats yet
+        if (searchQuery && (page === 1 || !searchStats)) {
+          setSearchStats({
+            total: response.total_amount,
+            count: response.count
+          });
+        }
+      }
+      setIsLoadingMore(false);
     };
 
     fetchData();
-  }, [page, accountId]); // Only run when page or accountId changes
+  }, [page, accountId, searchQuery]);
 
   const loadMoreTransactions = () => {
-    if (!isLoadingMore) { // Prevent multiple calls
+    if (!isLoadingMore) {
       setPage(prevPage => prevPage + 1);
     }
   };
 
   const filteredTransactions = useMemo(() => {
     if (accountId) {
-      return transactions.filter(transaction => transaction.from_account_id === accountId || transaction.to_account_id === accountId);
+      return transactions.filter(transaction => 
+        transaction.from_account_id === accountId || 
+        transaction.to_account_id === accountId
+      );
     }
     return transactions;
   }, [transactions, accountId]);
@@ -103,6 +129,33 @@ const TransactionList: React.FC<TransactionListProps> = ({ accountId }) => {
     navigation.navigate('TransactionDetails', { transaction });
   };
 
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    setPage(1);
+    setTransactions([]);
+    // Reset search stats when starting a new search
+    setSearchStats(null);
+  };
+
+  // Add this component to display search results
+  const renderSearchStats = () => {
+    if (!searchStats || !searchQuery) return null;
+    
+    return (
+      <View style={styles.searchStatsContainer}>
+        <Text style={styles.searchStatsText}>
+          Found {searchStats.count} transactions
+        </Text>
+        <Text style={[
+          styles.searchStatsAmount,
+          searchStats.total >= 0 ? styles.positiveTotal : styles.negativeTotal
+        ]}>
+          Total: {formatAmount(Math.abs(searchStats.total), searchStats.total >= 0 ? 'income' : 'expense')}
+        </Text>
+      </View>
+    );
+  };
+
   if (accountsLoading) {
     return <Text>Loading accounts...</Text>;
   }
@@ -122,82 +175,110 @@ const TransactionList: React.FC<TransactionListProps> = ({ accountId }) => {
   };
 
   return (
-    <FlatList
-      data={groupedTransactions}
-      keyExtractor={([date]) => date}
-      style={{ flex: 1, paddingBottom: 150 }}
-      renderItem={({ item: [date, transactions] }) => {
-        const dayTotal = calculateDayTotal(transactions);
-        return (
-          <View key={date} style={styles.dateGroup}>
-            <View style={styles.dateHeader}>
-              <Text style={styles.dateHeaderText}>{formatDate(date)}</Text>
-              <Text style={[styles.dayTotal, dayTotal >= 0 ? styles.positiveTotal : styles.negativeTotal]}>
-                {formatAmount(Math.abs(dayTotal), dayTotal >= 0 ? 'income' : 'expense')}
-              </Text>
-            </View>
-            <View style={styles.transactionsContainer}>
-              {transactions.map((item, index) => (
-                <Pressable
-                  key={`${item.id}-${date}`}
-                  onPress={() => handlePress(item)}
-                  style={[
-                    styles.transactionItem,
-                    index === 0 && styles.firstTransaction,
-                    index === transactions.length - 1 && styles.lastTransaction,
-                  ]}
-                >
-                  <View style={styles.transactionIcon}>
-                    <View style={[styles.iconCircle, { backgroundColor: findCategoryByName(item.category)?.color }, { marginRight: 10 }]}>
-                      <Ionicons
-                        name={
-                          findCategoryByName(item.category)?.subCategories?.find(
-                            sub => sub.name.toLowerCase() === item.subcategory.toLowerCase()
-                          )?.iconName || "chevron-forward"
-                        }
-                        size={20}
-                        color={colors.white}
-                      />
+    <>
+      {isSearchVisible && (
+        <View style={styles.searchContainer}>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search Transactions"
+            value={searchQuery}
+            onChangeText={handleSearch} // Update search handling
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => handleSearch('')} style={styles.searchClearButton}>
+              <Ionicons name="close-circle-outline" size={20} color={"red"} />
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
+      {renderSearchStats()}
+      <FlatList
+        data={groupedTransactions}
+        keyExtractor={([date]) => date}
+        style={{ flex: 1, paddingBottom: 150 }}
+        renderItem={({ item: [date, transactions] }) => {
+          const dayTotal = calculateDayTotal(transactions);
+          return (
+            <View key={date} style={styles.dateGroup}>
+              <View style={styles.dateHeader}>
+                <Text style={styles.dateHeaderText}>{formatDate(date)}</Text>
+                <Text style={[styles.dayTotal, dayTotal >= 0 ? styles.positiveTotal : styles.negativeTotal]}>
+                  {formatAmount(Math.abs(dayTotal), dayTotal >= 0 ? 'income' : 'expense')}
+                </Text>
+              </View>
+              <View style={styles.transactionsContainer}>
+                {transactions.map((item, index) => (
+                  <Pressable
+                    key={`${item.id}-${date}`}
+                    onPress={() => handlePress(item)}
+                    style={[
+                      styles.transactionItem,
+                      index === 0 && styles.firstTransaction,
+                      index === transactions.length - 1 && styles.lastTransaction,
+                    ]}
+                  >
+                    <View style={styles.transactionIcon}>
+                      <View style={[styles.iconCircle, { backgroundColor: findCategoryByName(item.category)?.color }, { marginRight: 10 }]}>
+                        <Ionicons
+                          name={
+                            findCategoryByName(item.category)?.subCategories?.find(
+                              sub => sub.name.toLowerCase() === item.subcategory.toLowerCase()
+                            )?.iconName || "chevron-forward"
+                          }
+                          size={20}
+                          color={colors.white}
+                        />
+                      </View>
                     </View>
-                  </View>
-                  <View style={styles.transactionDetails}>
-                    <Text style={styles.transactionDescription}>{item.description}</Text>
-                    {item.type === 'transfer' && (
-                      <Text style={styles.transferDetails}>
-                        {accountNameFromId(item.from_account_id)} → {accountNameFromId(item.to_account_id)}
-                      </Text>
-                    )}
-                    {item.type === 'expense' && !accountId && (
-                      <Text style={styles.expenseDetails}>{accountNameFromId(item.from_account_id)}</Text>
-                    )}
-                    {item.type === 'income' && !accountId && (
-                      <Text style={styles.incomeDetails}>{accountNameFromId(item.to_account_id)}</Text>
-                    )}
-                    {item.category && !item.subcategory && item.type != 'transfer' && (
-                      <Text style={styles.categoryDetails}>{item.category}</Text>
-                    )}
-                    {item.subcategory && item.type != 'transfer' && (
-                      <Text style={styles.subcategoryDetails}>{item.category} - {item.subcategory}</Text>
-                    )}
-                  </View>
-                  <Text style={[
-                    styles.transactionAmount,
-                    item.type === 'expense' ? styles.expense :
-                      item.type === 'income' ? styles.income : styles.transfer
-                  ]}>
-                    {formatAmount(item.amount, item.type)}
-                  </Text>
-                </Pressable>
-              ))}
+                    <View style={styles.transactionDetails}>
+                      <Text style={styles.transactionDescription}>{item.description}</Text>
+                      {item.type === 'transfer' && (
+                        <Text style={styles.transferDetails}>
+                          {accountNameFromId(item.from_account_id)} → {accountNameFromId(item.to_account_id)}
+                        </Text>
+                      )}
+                      {item.type === 'expense' && !accountId && (
+                        <Text style={styles.expenseDetails}>{accountNameFromId(item.from_account_id)}</Text>
+                      )}
+                      {item.type === 'income' && !accountId && (
+                        <Text style={styles.incomeDetails}>{accountNameFromId(item.to_account_id)}</Text>
+                      )}
+                      {item.category && !item.subcategory && item.type != 'transfer' && (
+                        <Text style={styles.categoryDetails}>{item.category}</Text>
+                      )}
+                      {item.subcategory && item.type != 'transfer' && (
+                        <Text style={styles.subcategoryDetails}>{item.category} - {item.subcategory}</Text>
+                      )}
+                    </View>
+                    <Text style={[
+                      styles.transactionAmount,
+                      item.type === 'expense' ? styles.expense :
+                        item.type === 'income' ? styles.income : styles.transfer
+                    ]}>
+                      {formatAmount(item.amount, item.type)}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
             </View>
-          </View>
-        );
-      }}
-      onEndReached={loadMoreTransactions} // Load more transactions when reaching the end
-      onEndReachedThreshold={0.5} // Adjust threshold to prevent premature triggering
-      contentContainerStyle={styles.contentTransactionList}
-      ListFooterComponent={renderFooter}
-    />
+          );
+        }}
+        onEndReached={loadMoreTransactions} // Load more transactions when reaching the end
+        onEndReachedThreshold={0.5} // Adjust threshold to prevent premature triggering
+        contentContainerStyle={styles.contentTransactionList}
+        ListFooterComponent={renderFooter}
+        onScroll={({ nativeEvent }) => {
+          if (nativeEvent.contentOffset.y < -50) { // Adjust threshold as needed
+            setIsSearchVisible(true);
+          }
+        }}
+        onScrollEndDrag={({ nativeEvent }) => {
+          if (nativeEvent.contentOffset.y >= 0) {
+            setIsSearchVisible(false);
+          }
+        }}
+      />
+    </>
   );
 };
 
@@ -315,6 +396,48 @@ const styles = StyleSheet.create({
   },
   transactionIcon: {
     marginRight: darkTheme.spacing.s,
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 10,
+    backgroundColor: darkTheme.colors.surface,
+    marginBottom: darkTheme.spacing.s,
+  },
+  searchInput: {
+    flex: 1,
+    height: 40,
+    borderColor: darkTheme.colors.border,
+    borderWidth: 1,
+    borderRadius: darkTheme.borderRadius.m,
+    paddingHorizontal: 10,
+    backgroundColor: darkTheme.colors.background,
+    color: darkTheme.colors.text,
+  },
+  searchClearButton: {
+    marginHorizontal: 10,
+  },
+  noResultsText: {
+    textAlign: 'center',
+    marginTop: 20,
+    color: darkTheme.colors.textSecondary,
+    fontSize: 16,
+  },
+  searchStatsContainer: {
+    backgroundColor: darkTheme.colors.surface,
+    padding: darkTheme.spacing.m,
+    marginBottom: darkTheme.spacing.s,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  searchStatsText: {
+    color: darkTheme.colors.text,
+    fontSize: 14,
+  },
+  searchStatsAmount: {
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
 
