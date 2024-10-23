@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, ScrollView, View, Platform, TouchableOpacity, Animated, Pressable, Alert } from 'react-native';
+import { StyleSheet, Text, ScrollView, View, Platform, TouchableOpacity, Pressable, Alert } from 'react-native';
 import { TextInput, Button } from 'react-native-paper';
 import { Picker } from '@react-native-picker/picker';
 import { createBank, createAccount } from './api/bankApi';
@@ -8,14 +8,15 @@ import { ActionSheetIOS } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchBanks } from '../actions/bankActions';
 import { fetchAccounts } from '../actions/accountActions';
-import { colors } from '../constants/colors';
 import { BackButton } from './components/BackButton';
-import { DeleteButton } from './components/DeleteButton'; // Ensure this import is present
+import { DeleteButton } from './components/DeleteButton';
 import { deleteBank } from './api/bankApi';
 import { updateAccount } from './api/bankApi';
-import { AddButton } from './components/AddButton'; // Ensure this import is present
+import { AddButton } from './components/AddButton';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Account } from '@/types/account';
+import { darkTheme } from '../constants/theme';
+import sharedStyles from './styles/sharedStyles';
 
 export default function AddAccountScreen() {
     const navigation = useNavigation();
@@ -177,27 +178,28 @@ export default function AddAccountScreen() {
                 flexDirection: 'row',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                backgroundColor: colors.white,
-                borderRadius: 10,
-                padding: 16,
-                marginBottom: 16,
+                backgroundColor: darkTheme.colors.surface,
+                borderRadius: darkTheme.borderRadius.m,
+                padding: darkTheme.spacing.m,
+                marginBottom: darkTheme.spacing.s,
                 borderWidth: 1,
-                borderColor: colors.darkGray,
+                borderColor: darkTheme.colors.border,
                 width: `${pickerWidth}%`,
             },
             pickerLabel: {
                 fontSize: 16,
-                color: colors.lightText,
+                color: darkTheme.colors.text,
             },
             pickerValue: {
                 fontSize: 16,
-                color: colors.text,
+                color: darkTheme.colors.textSecondary,
             },
             picker: {
-                backgroundColor: colors.white,
-                borderRadius: 10,
+                backgroundColor: darkTheme.colors.surface,
+                color: darkTheme.colors.text,
+                borderRadius: darkTheme.borderRadius.m,
                 borderWidth: 1,
-                borderColor: colors.darkGray,
+                borderColor: darkTheme.colors.border,
                 marginBottom: 16,
             },
 
@@ -258,15 +260,17 @@ export default function AddAccountScreen() {
     };
 
     return (
-        <View style={styles.container}>
-            <BackButton />
+        <View style={sharedStyles.container}>
+            <View style={sharedStyles.header}>
+                <BackButton />
+            </View>
+            <Text style={sharedStyles.headerTitle}>{account ? `Edit Account` : 'Add New Account'}</Text>
             <ScrollView contentContainerStyle={styles.scrollContainer}>
-            <Text style={styles.title}>{account ? `Edit Account` : 'Add New Account'}</Text>
             <Text style={styles.label}>Account Name</Text>
                 <TextInput
                     style={styles.input}
                     placeholder="Enter account name"
-                    placeholderTextColor={colors.lightText}
+                    placeholderTextColor={darkTheme.colors.textSecondary}
                     value={formData.AccountName}
                     onChangeText={value => handleChange('AccountName', value)}
                 />
@@ -302,7 +306,7 @@ export default function AddAccountScreen() {
                         <TextInput
                             style={[styles.input, { width: '85%' }]}
                             placeholder="Enter new bank name"
-                            placeholderTextColor={colors.lightText}
+                            placeholderTextColor={darkTheme.colors.textSecondary}
                             value={formData.newBankName}
                             onChangeText={value => handleChange('newBankName', value)}
                         />
@@ -324,10 +328,10 @@ export default function AddAccountScreen() {
                     Platform.OS === 'ios' ? showCurrencyPicker : (itemValue) => setNewAccountCurrency(itemValue)
                 )}
 
-                <Button mode="contained" onPress={handleAddOrUpdateAccount} style={styles.button}>
+                <Button mode="contained" onPress={handleAddOrUpdateAccount} style={styles.editButton}>
                     {account ? 'Update Account' : 'Add Account'}
                 </Button>
-                <Button mode="outlined" onPress={() => navigation.goBack()} style={styles.closeButton}>
+                <Button mode="contained" onPress={() => navigation.goBack()} style={styles.closeButton}>
                     Close
                 </Button>
             </ScrollView>
@@ -336,53 +340,46 @@ export default function AddAccountScreen() {
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: colors.background,
-    },
     scrollContainer: {
         flexGrow: 1,
-        justifyContent: 'center',
-        padding: 16,
+        padding: darkTheme.spacing.m,
     },
-    title: {
-        fontSize: 24,
-        marginBottom: 16,
+    formContainer: {
+        backgroundColor: darkTheme.colors.surface,
+        borderRadius: darkTheme.borderRadius.l,
+        padding: darkTheme.spacing.m,
+        ...darkTheme.shadows.medium,
     },
     label: {
         fontSize: 16,
-        color: colors.text,
-        marginBottom: 4,
+        color: darkTheme.colors.text,
+        marginBottom: darkTheme.spacing.s,
+        marginTop: darkTheme.spacing.m,
     },
     input: {
-        borderColor: colors.darkGray,
+        backgroundColor: darkTheme.colors.surface,
+        borderRadius: darkTheme.borderRadius.m,
         borderWidth: 1,
-        borderRadius: 10,
-        marginBottom: 12,
-        paddingHorizontal: 16,
-        backgroundColor: colors.white,
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 1,
-        },
-        shadowOpacity: 0.1,
-        shadowRadius: 2,
-        elevation: 1,
+        borderColor: darkTheme.colors.border,
+        color: darkTheme.colors.text,
+        paddingHorizontal: darkTheme.spacing.m,
+        paddingVertical: darkTheme.spacing.s,
+        marginBottom: darkTheme.spacing.s,
     },
-    button: {
-        marginTop: 16,
-        marginBottom: 8,
-        backgroundColor: colors.primary,
+    editButton: {
+        marginTop: darkTheme.spacing.l,
+        marginBottom: darkTheme.spacing.m,
+        backgroundColor: darkTheme.colors.primary,
     },
     closeButton: {
-        marginTop: 8,
-        marginBottom: 16,
+        marginTop: darkTheme.spacing.m,
+        backgroundColor: darkTheme.colors.primary,
     },
     bankSelectionContainer: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
+        marginBottom: darkTheme.spacing.s,
     },
     deleteButtonContainer: {
         width: '15%',
@@ -390,11 +387,34 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     addButtonContainer: {
-        width: '15%', // Set the width to 15%
-        alignItems: 'flex-end', // Align the button to the right
-        justifyContent: 'center', // Center the button vertically
+        width: '15%',
+        alignItems: 'flex-end',
+        justifyContent: 'center',
     },
-    deleteButton: {
-        padding: 5,
+    pickerButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        backgroundColor: darkTheme.colors.surface,
+        borderRadius: darkTheme.borderRadius.m,
+        padding: darkTheme.spacing.m,
+        marginBottom: darkTheme.spacing.s,
+        borderWidth: 1,
+        borderColor: darkTheme.colors.border,
+    },
+    pickerLabel: {
+        fontSize: 16,
+        color: darkTheme.colors.text,
+    },
+    pickerValue: {
+        fontSize: 16,
+        color: darkTheme.colors.textSecondary,
+    },
+    picker: {
+        backgroundColor: darkTheme.colors.surface,
+        color: darkTheme.colors.text,
+        borderRadius: darkTheme.borderRadius.m,
+        borderWidth: 1,
+        borderColor: darkTheme.colors.border,
     },
 });

@@ -15,6 +15,7 @@ import sharedStyles from './styles/sharedStyles';
 import { Menu } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
 import { expenseCategories, incomeCategories } from '@/constants/categories';
+import { darkTheme } from '@/constants/theme';
 
 type TransactionDetailsRouteProp = RouteProp<RootStackParamList, 'TransactionDetails'>;
 
@@ -112,13 +113,17 @@ export default function TransactionDetailsScreen() {
   const categoryIcon = findCategoryIcon(transaction.category, transaction.subcategory);
 
   return (
-    <View style={styles.container}>
+    <View style={[sharedStyles.container]}>
       <View style={sharedStyles.header}>
         <BackButton />
         <Menu
           visible={visible}
           onDismiss={closeMenu}
-          anchor={<Pressable style={styles.menuButton} onPress={openMenu}><Ionicons name="ellipsis-vertical" size={24} /></Pressable>}
+          anchor={
+            <Pressable style={styles.menuButton} onPress={openMenu}>
+              <Ionicons name="ellipsis-vertical" size={24} color={darkTheme.colors.text} />
+            </Pressable>
+          }
         >
           <Menu.Item onPress={handleEdit} title="Edit Transaction" />
           <Menu.Item onPress={handleDeleteTransaction} title="Delete Transaction" />
@@ -131,7 +136,7 @@ export default function TransactionDetailsScreen() {
               <Icon
                 name={getIconName(transaction.type)}
                 type="font-awesome"
-                color="white"
+                color={darkTheme.colors.surface}
                 size={30}
               />
             </View>
@@ -235,7 +240,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   menuButton: {
-    marginRight: 16,
+    padding: darkTheme.spacing.s,
   },
   header: {
     flexDirection: 'row',
@@ -251,28 +256,23 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    paddingVertical: 20,
+    padding: darkTheme.spacing.m,
   },
   card: {
-    backgroundColor: 'white',
-    borderRadius: 15,
-    padding: 20,
-    marginHorizontal: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 5,
+    backgroundColor: darkTheme.colors.surface,
+    borderRadius: darkTheme.borderRadius.l,
+    padding: darkTheme.spacing.l,
+    ...darkTheme.shadows.medium,
   },
   headerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: darkTheme.spacing.m,
   },
   iconContainer: {
-    borderRadius: 30,
-    padding: 15,
-    marginRight: 15,
+    borderRadius: darkTheme.borderRadius.xl,
+    padding: darkTheme.spacing.m,
+    marginRight: darkTheme.spacing.m,
   },
   headerTextContainer: {
     flex: 1,
@@ -280,70 +280,68 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 5,
+    color: darkTheme.colors.text,
+    marginBottom: darkTheme.spacing.xs,
   },
   amount: {
     fontSize: 32,
     fontWeight: 'bold',
-    marginBottom: 15,
+    marginBottom: darkTheme.spacing.m,
     textAlign: 'center',
-    color: '#333', // Ensure color is consistent
   },
   date: {
     fontSize: 16,
-    color: '#666',
+    color: darkTheme.colors.textSecondary,
   },
   categoryContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 15,
+    marginBottom: darkTheme.spacing.m,
   },
   category: {
     fontSize: 18,
-    color: '#517fa4',
-    marginLeft: 10,
-    fontStyle: 'italic',
+    color: darkTheme.colors.text,
+    marginLeft: darkTheme.spacing.m,
   },
   divider: {
     height: 1,
-    backgroundColor: '#E0E0E0',
-    marginVertical: 15,
+    backgroundColor: darkTheme.colors.border,
+    marginVertical: darkTheme.spacing.m,
   },
   detailsContainer: {
-    marginBottom: 20,
+    marginBottom: darkTheme.spacing.m,
   },
   detailRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 15,
+    marginBottom: darkTheme.spacing.m,
   },
   detailTextContainer: {
-    marginLeft: 15,
+    marginLeft: darkTheme.spacing.m,
     flex: 1,
   },
   detailLabel: {
     fontSize: 14,
-    color: '#666',
-    marginBottom: 2,
+    color: darkTheme.colors.textSecondary,
+    marginBottom: darkTheme.spacing.xs,
   },
   detailValue: {
     fontSize: 16,
-    color: '#333',
+    color: darkTheme.colors.text,
   },
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
   editButton: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: darkTheme.colors.success,
     borderRadius: 8,
     paddingVertical: 12,
     flex: 1,
     marginRight: 10,
   },
   deleteButton: {
-    backgroundColor: '#F44336',
+    backgroundColor: darkTheme.colors.error,
     borderRadius: 8,
     paddingVertical: 12,
     flex: 1,
@@ -358,7 +356,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     textAlign: 'center',
     marginTop: 50,
-    color: '#666',
+    color: darkTheme.colors.textSecondary,
   },
   iconCircle: {
     borderRadius: 16,
@@ -371,10 +369,12 @@ const styles = StyleSheet.create({
   },
   legendLabel: {
     fontSize: 16,
-    color: '#333',
+    color: darkTheme.colors.text,
+    flex: 1,
+    flexWrap: 'wrap',
   },
   subCategoryLabel: {
     fontSize: 14,
-    color: '#666',
+    color: darkTheme.colors.textSecondary,
   },
 });

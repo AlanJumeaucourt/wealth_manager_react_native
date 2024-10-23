@@ -6,7 +6,7 @@ import { Button as PaperButton } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { router, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Button } from 'react-native-paper';
 import { Account } from '@/types/account';
@@ -19,6 +19,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import sharedStyles from './styles/sharedStyles';
 import { fetchWealthData } from '@/app/api/bankApi'; // Import the new API function
 import { ActivityIndicator } from 'react-native-paper';
+import { darkTheme } from '../constants/theme';
 
 interface DataPoint {
   date: Date;
@@ -129,15 +130,9 @@ export default function AccountsScreen() {
     return sortedGroups;
   }, [filteredAccounts, banks, accounts, dispatch]);
 
-  // Ajoutez cette fonction
-  const refreshAccounts = useCallback(() => {
-    setRefreshKey(prevKey => prevKey + 1);
-  }, []);
-
-  // Modifiez la navigation pour inclure la fonction de rafraîchissement
   const handleAccountPress = (account: Account) => {
     if (account.type === 'checking' || account.type === 'savings' || account.type === 'investment') {
-      navigation.navigate('TransactionsScreenAccount', { account: account }); // Remove refreshAccounts from params
+      navigation.navigate('TransactionsScreenAccount', { account: account });
     }
   };
 
@@ -276,27 +271,27 @@ export default function AccountsScreen() {
   const tooltipContainer = {
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.8)', // Semi-transparent white background
-    borderRadius: 6, // Reduced border radius for a smaller look
-    padding: 6, // Reduced padding for a smaller tooltip
-    shadowColor: '#000', // Add shadow for depth
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 5, // For Android shadow
+    backgroundColor: colors.white,
+    borderRadius: 12,
+    padding: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 6,
   };
 
   const tooltipValue = {
-    fontSize: 14, // Reduced font size for the value
-    fontWeight: 'bold',
+    fontSize: 16,
+    fontWeight: '700',
     color: colors.text,
-    marginBottom: 2, // Reduced margin for spacing
+    marginBottom: 4,
   };
 
   const tooltipDate = {
-    fontSize: 10, // Reduced font size for the date
+    fontSize: 12,
     color: colors.lightText,
-    textAlign: 'center', // Center align the date
+    textAlign: 'center',
   };
 
   const calculateSpacing = (width: number, dataLength: number): number => {
@@ -310,8 +305,8 @@ export default function AccountsScreen() {
   const spacing = calculateSpacing(chartWidth, data.length); // Calculate spacing based on width and data length
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <StatusBar style="auto" />
+    <View style={[styles.container, { backgroundColor: darkTheme.colors.background }]}>
+      <StatusBar style="light" backgroundColor={darkTheme.colors.background} />
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Accounts</Text>
         <LogoutButton />
@@ -343,23 +338,24 @@ export default function AccountsScreen() {
                     height={100}
                     spacing={spacing} // Use the calculated spacing
                     adjustToWidth={true}
-                    color="#007AFF"
+                    color={darkTheme.colors.primary}
+                    startFillColor={`${darkTheme.colors.primary}40`} // 40 pour 25% d'opacité
+                    endFillColor={`${darkTheme.colors.primary}10`} // 10 pour 6% d'opacité
                     thickness={1.5}
-                    startFillColor={'rgba(84,219,234,0.3)'}
-                    endFillColor={'rgba(84,219,234,0.01)'}
                     startOpacity={0.9}
                     endOpacity={0.2}
                     initialSpacing={0}
                     noOfSections={2}
+
                     yAxisOffset={minValue()}
                     yAxisColor="transparent"
                     xAxisColor="transparent"
-                    yAxisTextStyle={{ color: 'gray' }}
-                    xAxisTextStyle={{ color: 'gray' }}
+                    yAxisTextStyle={{ color: darkTheme.colors.textTertiary }}
+                    xAxisTextStyle={{ color: darkTheme.colors.textTertiary }}
                     hideRules
                     hideDataPoints
                     showVerticalLines={false}
-                    xAxisLabelTextStyle={{ color: 'gray', fontSize: 10 }}
+                    xAxisLabelTextStyle={{ color: darkTheme.colors.textTertiary, fontSize: 10 }}
                     yAxisTextNumberOfLines={1}
                     yAxisLabelSuffix="€"
                     yAxisLabelPrefix=""
@@ -373,10 +369,10 @@ export default function AccountsScreen() {
                         showPointerStrip: true,
                         pointerStripWidth: 2,
                         pointerStripUptoDataPoint: true,
-                        pointerStripColor: 'rgba(0, 0, 0, 0.5)',
+                        pointerStripColor: darkTheme.colors.textSecondary,
                         width: 10,
                         height: 10,
-                        color: '#007AFF',
+                        color: darkTheme.colors.primary,
                         radius: 6,
                         pointerLabelWidth: 150,
                         pointerLabelHeight: 10,
@@ -386,9 +382,27 @@ export default function AccountsScreen() {
                         pointerLabelComponent: (items: any) => {
                             const item = items[0];
                             return (
-                                <View style={[tooltipContainer, { marginTop: 20 }]}>
-                                    <Text style={tooltipValue}>{item.value.toFixed(0)} €</Text>
-                                    <Text style={tooltipDate}>{new Date(item.date).toDateString()}</Text>
+                                <View style={[{
+                                    backgroundColor: darkTheme.colors.surface,
+                                    padding: darkTheme.spacing.m,
+                                    borderRadius: darkTheme.borderRadius.m,
+                                    shadowColor: '#000',
+                                    shadowOffset: { width: 0, height: 4 },
+                                    shadowOpacity: 0.3,
+                                    shadowRadius: 8,
+                                    elevation: 5,
+                                }, { marginTop: 20 }]}>
+                                    <Text style={{
+                                        fontSize: 16,
+                                        fontWeight: '700',
+                                        color: darkTheme.colors.text,
+                                        marginBottom: 4,
+                                    }}>{item.value.toFixed(0)} €</Text>
+                                    <Text style={{
+                                        fontSize: 12,
+                                        color: darkTheme.colors.textSecondary,
+                                        textAlign: 'center',
+                                    }}>{new Date(item.date).toDateString()}</Text>
                                 </View>
                             );
                         },
@@ -465,63 +479,86 @@ export default function AccountsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: darkTheme.colors.background,
   },
   scrollViewContent: {
     flexGrow: 1,
-    paddingTop: 50,
-    paddingBottom: 20,
+    paddingTop: darkTheme.spacing.xl,
+    paddingBottom: darkTheme.spacing.l,
   },
   totalBalanceContainer: {
-    marginBottom: 20,
+    marginBottom: darkTheme.spacing.l,
+    padding: darkTheme.spacing.m,
+    backgroundColor: darkTheme.colors.surface,
+    borderRadius: darkTheme.borderRadius.l,
+    marginHorizontal: darkTheme.spacing.m,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 5,
   },
   totalBalanceLabel: {
     fontSize: 14,
     textAlign: 'center',
-    color: colors.lightText,
+    color: darkTheme.colors.textSecondary,
+    marginBottom: darkTheme.spacing.xs,
   },
   totalBalance: {
     fontSize: 36,
     fontWeight: 'bold',
     textAlign: 'center',
-    color: colors.text,
-  },
-  wealthOverTimeContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
+    color: darkTheme.colors.text,
   },
   filtersContainer: {
-    backgroundColor: colors.white,
-    borderRadius: 16,
-    marginBottom: 16,
-    paddingVertical: 8,
-  },
-  filtersScrollViewContent: {
-    paddingHorizontal: 16,
+    backgroundColor: 'transparent',
+    marginBottom: darkTheme.spacing.m,
+    paddingVertical: darkTheme.spacing.s,
+    alignItems: 'center',
   },
   filterButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 16,
-    backgroundColor: colors.lightGray,
+    paddingVertical: darkTheme.spacing.s,
+    paddingHorizontal: darkTheme.spacing.m,
+    borderRadius: darkTheme.borderRadius.l,
+    backgroundColor: darkTheme.colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 10,
+    marginRight: darkTheme.spacing.s,
   },
   selectedFilter: {
-    backgroundColor: colors.primary,
+    backgroundColor: darkTheme.colors.primary,
   },
   filterText: {
-    color: colors.text,
+    color: darkTheme.colors.textSecondary,
     fontWeight: '600',
     fontSize: 14,
   },
   selectedFilterText: {
-    color: colors.white,
+    color: darkTheme.colors.background,
+  },
+  bankContainer: {
+    backgroundColor: darkTheme.colors.surface,
+    marginBottom: darkTheme.spacing.m,
+    marginHorizontal: darkTheme.spacing.m,
+    borderRadius: darkTheme.borderRadius.l,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  bankName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    padding: darkTheme.spacing.m,
+    color: darkTheme.colors.text,
+    backgroundColor: darkTheme.colors.surface,
   },
   accountItem: {
-    padding: 15,
+    padding: darkTheme.spacing.m,
     borderBottomWidth: 1,
-    borderBottomColor: colors.lightGray,
+    borderBottomColor: darkTheme.colors.border,
   },
   accountHeader: {
     flexDirection: 'row',
@@ -530,47 +567,66 @@ const styles = StyleSheet.create({
   },
   accountName: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '500',
     flex: 1,
-    color: colors.text,
+    color: darkTheme.colors.text,
   },
   accountBalance: {
     fontSize: 16,
-    color: colors.primary,
+    color: darkTheme.colors.primary,
     fontWeight: '600',
   },
-  bankName: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    padding: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.lightGray,
-    color: colors.text,
-  },
-  bankContainer: {
-    backgroundColor: colors.white,
-    marginBottom: 20,
-    borderRadius: 10,
-    overflow: 'hidden',
-    shadowColor: colors.text,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+  graphContainer: {
+    backgroundColor: darkTheme.colors.surface,
+    padding: darkTheme.spacing.m,
+    marginHorizontal: darkTheme.spacing.m,
+    marginBottom: darkTheme.spacing.l,
+    borderRadius: darkTheme.borderRadius.l,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
     elevation: 5,
   },
   addButton: {
     width: '70%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 10,
-    borderRadius: 10,
-    marginBottom: 20,
-    alignSelf: 'center',
+    marginHorizontal: '15%',
+    marginTop: darkTheme.spacing.m,
+    marginBottom: darkTheme.spacing.s,
+    borderRadius: darkTheme.borderRadius.m,
+    backgroundColor: darkTheme.colors.primary,
   },
-  addButtonText: {
-    marginLeft: 8,
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: darkTheme.spacing.m,
+    paddingVertical: darkTheme.spacing.m,
+    backgroundColor: darkTheme.colors.surface,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: darkTheme.colors.text,
+  },
+  modalContent: {
+    backgroundColor: darkTheme.colors.surface,
+    borderRadius: darkTheme.borderRadius.l,
+    padding: darkTheme.spacing.l,
+    width: '80%',
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: darkTheme.spacing.s,
+    color: darkTheme.colors.text,
+  },
+  modalText: {
     fontSize: 16,
+    marginBottom: darkTheme.spacing.l,
+    textAlign: 'center',
+    color: darkTheme.colors.textSecondary,
   },
   noAccountsText: {
     fontSize: 16,
@@ -615,19 +671,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.darkGray,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: colors.white,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: colors.text,
-  },
   logoutButton: {
     padding: 8,
   },
@@ -637,35 +680,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  modalContent: {
-    backgroundColor: colors.white,
-    borderRadius: 10,
-    padding: 20,
-    width: '80%',
-    alignItems: 'center',
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    color: colors.text,
-  },
-  modalText: {
-    fontSize: 16,
-    marginBottom: 20,
-    textAlign: 'center',
-    color: colors.text,
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    width: '100%',
-  },
-  modalButton: {
-    width: '45%',
-  },
-  newBankContainer: {
-    width: '100%',
-    marginBottom: 16,
+  filtersScrollViewContent: {
+    paddingHorizontal: 16,
   },
 });

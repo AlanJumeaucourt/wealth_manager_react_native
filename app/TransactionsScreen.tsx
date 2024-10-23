@@ -4,6 +4,9 @@ import TransactionList from './components/TransactionList';
 import { fetchTransactions } from '../actions/transactionActions';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../store'; // Assuming you have a root state type defined
+import { darkTheme } from '../constants/theme';
+import { ActivityIndicator } from 'react-native-paper';
+import sharedStyles from './styles/sharedStyles';
 
 const TransactionContent = ({
   transactions,
@@ -15,11 +18,15 @@ const TransactionContent = ({
   transactionsError: string | null
 }) => {
   if (transactionsLoading) {
-    return <Text>Loading...</Text>;
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={darkTheme.colors.primary} />
+      </View>
+    );
   }
 
   if (transactionsError) {
-    return <Text>Error: {transactionsError}</Text>;
+    return <Text style={styles.errorText}>Error: {transactionsError}</Text>;
   }
 
   return (
@@ -39,26 +46,36 @@ export default function TransactionsScreen() {
   }, [dispatch]);
 
   return (
-    <View style={styles.container}>
-      <TransactionContent
-        transactions={transactions}
-        transactionsLoading={transactionsLoading}
-        transactionsError={transactionsError}
-      />
+    <View style={[sharedStyles.container]}>
+      <View style={sharedStyles.header}>
+        <Text style={sharedStyles.headerTitle}>Transactions</Text>
+      </View>
+      <View style={sharedStyles.body}>
+        <TransactionContent
+          transactions={transactions}
+          transactionsLoading={transactionsLoading}
+          transactionsError={transactionsError}
+        />
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  loadingContainer: {
     flex: 1,
-    backgroundColor: '#F0F0F0',
-    paddingTop: 50,
-    paddingHorizontal: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   screenTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 20,
+    marginBottom: darkTheme.spacing.m,
+    color: darkTheme.colors.text,
+  },
+  errorText: {
+    color: darkTheme.colors.error,
+    textAlign: 'center',
+    marginTop: darkTheme.spacing.l,
   },
 });

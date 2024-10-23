@@ -3,6 +3,7 @@ import React from 'react';
 import {SharedValue, useDerivedValue} from 'react-native-reanimated';
 import {Canvas, Path, SkFont, Skia, Text} from '@shopify/react-native-skia';
 import DonutPath from './DonutPath';
+import {darkTheme} from '@/constants/theme';
 
 type Props = {
   n: number;
@@ -68,19 +69,19 @@ const DonutChart = ({
         })}
         <Text
           x={radius - smallFont.measureText(totalText).width / 2}
-          y={radius - smallFont.measureText(totalText).y + 10} // Position above center based on smallFont size
+          y={radius - smallFont.measureText(totalText).y + 10}
           text={totalText}
           font={smallFont}
-          color="black"
+          color={darkTheme.colors.text}
           align="center"
           horizontalAlign="center"
         />
         <Text
           x={radius - font.measureText(targetText).width / 2}
-          y={radius + font.measureText(targetText).y / 2 + 15} // Position below center based on font size
+          y={radius + font.measureText(targetText).y / 2 + 15}
           text={targetText}
           font={font}
-          color="black"
+          color={darkTheme.colors.text}
           align="center"
           horizontalAlign="center"
         />

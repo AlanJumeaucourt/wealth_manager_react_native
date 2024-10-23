@@ -5,6 +5,8 @@ import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view
 import { colors } from '@/constants/colors';
 import { Account } from '@/types/account';
 import { Platform } from 'react-native';
+import { darkTheme } from '@/constants/theme';
+import sharedStyles from '../styles/sharedStyles';
 
 interface SearchableModalProps {
     data: Account[];
@@ -25,7 +27,7 @@ const SearchableModal: React.FC<SearchableModalProps> = ({ data, onSelect, place
 
     return (
         <View>
-            <Text style={styles.label}>{label}</Text>
+            <Text style={sharedStyles.text}>{label}</Text>
             <Pressable
                 style={styles.input}
                 onPress={() => setModalVisible(true)}
@@ -106,45 +108,47 @@ const SearchableModal: React.FC<SearchableModalProps> = ({ data, onSelect, place
 const styles = StyleSheet.create({
     label: {
         fontSize: 16,
-        color: colors.text,
-        marginBottom: 4,
+        color: darkTheme.colors.text,
+        marginBottom: darkTheme.spacing.xs,
     },
     input: {
         height: 50,
-        borderColor: colors.darkGray,
+        borderColor: darkTheme.colors.border,
         borderWidth: 1,
-        borderRadius: 10,
-        paddingHorizontal: 16,
+        borderRadius: darkTheme.borderRadius.m,
+        paddingHorizontal: darkTheme.spacing.m,
         justifyContent: 'center',
-        backgroundColor: colors.white,
+        backgroundColor: darkTheme.colors.surface,
     },
     placeholder: {
-        color: colors.lightText,
+        color: darkTheme.colors.textTertiary,
     },
     modal: {
         justifyContent: 'flex-end',
         margin: 0,
     },
     modalContent: {
-        backgroundColor: colors.white,
-        borderRadius: 10,
-        padding: 16,
+        backgroundColor: darkTheme.colors.surface,
+        borderTopLeftRadius: darkTheme.borderRadius.l,
+        borderTopRightRadius: darkTheme.borderRadius.l,
+        padding: darkTheme.spacing.m,
         height: '80%',
     },
     searchInput: {
         height: 40,
-        borderColor: colors.darkGray,
+        borderColor: darkTheme.colors.border,
         borderWidth: 1,
-        borderRadius: 10,
-        paddingHorizontal: 16,
-        marginBottom: 16,
+        borderRadius: darkTheme.borderRadius.m,
+        paddingHorizontal: darkTheme.spacing.m,
+        marginBottom: darkTheme.spacing.m,
         width: '100%',
-        color: colors.text,
+        color: darkTheme.colors.text,
+        backgroundColor: darkTheme.colors.surface,
     },
     item: {
-        padding: 12,
+        padding: darkTheme.spacing.m,
         borderBottomWidth: 1,
-        borderBottomColor: colors.lightGray,
+        borderBottomColor: darkTheme.colors.border,
         width: '100%',
     },
     itemRow: {
@@ -153,37 +157,40 @@ const styles = StyleSheet.create({
     },
     itemText: {
         fontSize: 16,
-        color: colors.text,
-        marginRight: 16,
+        color: darkTheme.colors.text,
+        marginRight: darkTheme.spacing.m,
     },
     balanceText: {
         fontSize: 16,
-        color: colors.darkGray,
+        color: darkTheme.colors.textTertiary,
     },
     submitButton: {
-        marginTop: 16,
-        marginBottom: 16,
-        padding: 12,
-        backgroundColor: colors.secondary,
-        borderRadius: 10,
+        marginTop: darkTheme.spacing.m,
+        marginBottom: darkTheme.spacing.m,
+        padding: darkTheme.spacing.m,
+        backgroundColor: darkTheme.colors.primary,
+        borderRadius: darkTheme.borderRadius.m,
         flex: 1,
-        marginRight: 8,
+        marginRight: darkTheme.spacing.m,
     },
     submitButtonText: {
-        color: colors.white,
+        color: darkTheme.colors.surface,
         fontSize: 16,
         textAlign: 'center',
+        fontWeight: '600',
     },
     closeButton: {
-        marginTop: 16,
-        marginBottom: 16,
-        padding: 12,
-        backgroundColor: colors.primary,
-        borderRadius: 10,
+        marginTop: darkTheme.spacing.m,
+        marginBottom: darkTheme.spacing.m,
+        padding: darkTheme.spacing.m,
+        backgroundColor: darkTheme.colors.surface,
+        borderRadius: darkTheme.borderRadius.m,
+        borderWidth: 1,
+        borderColor: darkTheme.colors.border,
         flex: 1,
     },
     closeButtonText: {
-        color: colors.white,
+        color: darkTheme.colors.text,
         fontSize: 16,
         textAlign: 'center',
     },
@@ -191,14 +198,14 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         width: '100%',
-        marginTop: 16,
-        marginBottom: Platform.OS === 'ios' ? 16 : 0,
+        marginTop: darkTheme.spacing.m,
+        marginBottom: Platform.OS === 'ios' ? darkTheme.spacing.m : 0,
     },
     centeredButton: {
         justifyContent: 'center',
     },
     flatListContainer: {
-        maxHeight: 300, // Set a maximum height for the FlatList container
+        maxHeight: 300,
         width: '100%',
     },
     flatList: {

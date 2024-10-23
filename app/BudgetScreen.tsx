@@ -1,14 +1,16 @@
 /* eslint-disable react-native/no-inline-styles */
 import React, {useState, useEffect} from 'react';
-import {ScrollView, StyleSheet, Text, View, Pressable, TouchableOpacity, Switch} from 'react-native';
+import {ScrollView, StyleSheet, Text, View, Pressable, Switch} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import DonutChart from './components/DonutChart';
 import {useFont} from '@shopify/react-native-skia';
 import {useSharedValue} from 'react-native-reanimated';
 import {SafeAreaView} from 'react-native-safe-area-context';
-import {fetchBudgetSummary} from './api/bankApi'; // Adjust the import path as necessary
+import {fetchBudgetSummary} from './api/bankApi';
 import {Ionicons} from '@expo/vector-icons';
-import {expenseCategories, incomeCategories} from '../constants/categories'; // Import both expense and income categories
+import {expenseCategories, incomeCategories} from '../constants/categories';
+import { darkTheme } from '../constants/theme';
+import sharedStyles from './styles/sharedStyles';
 
 interface Data {
   value: number;
@@ -219,82 +221,61 @@ export default function BudgetScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[sharedStyles.container]}>
+      <View style={sharedStyles.header}>
+        <Text style={sharedStyles.headerTitle}>Budget</Text>
+      </View>
       <View style={styles.periodSelector}>
         <Pressable onPress={() => changePeriod(-1)} style={styles.arrowButton}>
-          <Ionicons name="chevron-back" size={24} color="#333" />
+          <Ionicons name="chevron-back" size={24} color={darkTheme.colors.text} />
         </Pressable>
         <View>
           <Text style={styles.periodText}>{formatPeriod(currentDate, periodType)}</Text>
           <View style={styles.periodTypeSelector}>
-            <Pressable
-              onPress={() => setPeriodType('month')}
-              style={[
-                styles.periodTypeButton,
-                periodType === 'month' && styles.activePeriodType,
-              ]}
-            >
-              <Text
+            {['month', 'quarter', 'year'].map((type) => (
+              <Pressable
+                key={type}
+                onPress={() => setPeriodType(type as PeriodType)}
                 style={[
-                  styles.periodTypeText,
-                  periodType === 'month' && styles.activePeriodTypeText,
+                  styles.periodTypeButton,
+                  periodType === type && styles.activePeriodType,
                 ]}
               >
-                Mois
-              </Text>
-            </Pressable>
-            <Pressable
-              onPress={() => setPeriodType('quarter')}
-              style={[
-                styles.periodTypeButton,
-                periodType === 'quarter' && styles.activePeriodType,
-              ]}
-            >
-              <Text
-                style={[
-                  styles.periodTypeText,
-                  periodType === 'quarter' && styles.activePeriodTypeText,
-                ]}
-              >
-                Trimestre
-              </Text>
-            </Pressable>
-            <Pressable
-              onPress={() => setPeriodType('year')}
-              style={[
-                styles.periodTypeButton,
-                periodType === 'year' && styles.activePeriodType,
-              ]}
-            >
-              <Text
-                style={[
-                  styles.periodTypeText,
-                  periodType === 'year' && styles.activePeriodTypeText,
-                ]}
-              >
-                Année
-              </Text>
-            </Pressable>
+                <Text
+                  style={[
+                    styles.periodTypeText,
+                    periodType === type && styles.activePeriodTypeText,
+                  ]}
+                >
+                  {type.charAt(0).toUpperCase() + type.slice(1)}
+                </Text>
+              </Pressable>
+            ))}
           </View>
         </View>
         <Pressable onPress={() => changePeriod(1)} style={styles.arrowButton}>
-          <Ionicons name="chevron-forward" size={24} color="#333" />
+          <Ionicons name="chevron-forward" size={24} color={darkTheme.colors.text} />
         </Pressable>
       </View>
+
       <View style={styles.filterContainer}>
         <Text style={styles.filterLabel}>Expense</Text>
         <Switch
           value={filterType === 'Income'}
           onValueChange={(value) => setFilterType(value ? 'Income' : 'Expense')}
-          thumbColor="white" // Thumb remains white for better contrast
-          trackColor={{ false: '#FF3B30', true: '#34C759' }} // Red for Expense, Green for Income
-          ios_backgroundColor="#FF0000"
+          thumbColor={darkTheme.colors.surface}
+          trackColor={{
+            false: darkTheme.colors.error,
+            true: darkTheme.colors.success,
+          }}
         />
         <Text style={styles.filterLabel}>Income</Text>
       </View>
+
       <ScrollView
-        contentContainerStyle={{alignItems: 'center'}}
-        showsVerticalScrollIndicator={false}>
+        contentContainerStyle={styles.scrollViewContent}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.chartContainer}>
           <DonutChart
             radius={RADIUS}
@@ -314,18 +295,26 @@ export default function BudgetScreen() {
           <Pressable
             key={index}
             style={styles.legendItem}
-            onPress={() => navigation.navigate('BudgetDetail', { category: item.category, subcategory: item.subcategory, transactionIds: item.transactionIds })}
+            onPress={() =>
+              navigation.navigate('BudgetDetail', {
+                category: item.category,
+                subcategory: item.subcategory,
+                transactionIds: item.transactionIds,
+              })
+            }
           >
-            <View style={[styles.iconCircle, { backgroundColor: item.color }]}>
+            <View style={[styles.iconCircle, {backgroundColor: item.color}]}>
               {item.iconSet === 'Ionicons' && (
-                <Ionicons name={item.iconName as any} size={16} color="white" />
+                <Ionicons name={item.iconName as any} size={16} color={darkTheme.colors.surface} />
               )}
             </View>
             <View style={styles.legendLabelContainer}>
               <Text style={styles.legendLabel} numberOfLines={1} ellipsizeMode="tail">
                 {item.category}
               </Text>
-              {item.subcategory && <Text style={styles.subCategoryLabel}>{item.subcategory}</Text>}
+              {item.subcategory && (
+                <Text style={styles.subCategoryLabel}>{item.subcategory}</Text>
+              )}
             </View>
             <Text style={styles.legendValue}>{item.value.toLocaleString()} €</Text>
           </Pressable>
@@ -336,66 +325,68 @@ export default function BudgetScreen() {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: 'white',
-  },
   periodSelector: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    paddingVertical: darkTheme.spacing.m,
+    paddingHorizontal: darkTheme.spacing.l,
+    backgroundColor: darkTheme.colors.surface,
   },
   arrowButton: {
-    padding: 10,
+    padding: darkTheme.spacing.s,
   },
   periodText: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333',
+    color: darkTheme.colors.text,
     textAlign: 'center',
   },
   periodTypeSelector: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 5,
+    marginTop: darkTheme.spacing.s,
   },
   periodTypeButton: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 15,
-    marginHorizontal: 5,
+    paddingHorizontal: darkTheme.spacing.m,
+    paddingVertical: darkTheme.spacing.s,
+    borderRadius: darkTheme.borderRadius.l,
+    marginHorizontal: darkTheme.spacing.xs,
   },
   activePeriodType: {
-    backgroundColor: '#007AFF',
+    backgroundColor: darkTheme.colors.primary,
   },
   periodTypeText: {
     fontSize: 12,
-    color: '#333',
+    color: darkTheme.colors.textSecondary,
   },
   activePeriodTypeText: {
-    color: '#fff',
+    color: darkTheme.colors.surface,
   },
-  chartContainer: {
-    width: RADIUS * 2,
-    height: RADIUS * 2,
-    marginTop: 10,
+  filterContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: darkTheme.spacing.m,
+    backgroundColor: darkTheme.colors.surface,
+  },
+  filterLabel: {
+    fontSize: 14,
+    color: darkTheme.colors.text,
+    marginHorizontal: darkTheme.spacing.m,
+  },
+  scrollViewContent: {
+    alignItems: 'center',
+    padding: darkTheme.spacing.m,
   },
   legendItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
-    paddingHorizontal: 20,
-  },
-  legendColor: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    marginRight: 10,
+    padding: darkTheme.spacing.m,
+    backgroundColor: darkTheme.colors.surface,
+    marginBottom: darkTheme.spacing.s,
+    borderRadius: darkTheme.borderRadius.m,
+    ...darkTheme.shadows.small,
   },
   iconCircle: {
     width: 30,
@@ -403,52 +394,31 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 10,
   },
   legendLabelContainer: {
-    flex: 1, // Allow the label container to take up available space
-    flexDirection: 'column',
-    marginLeft: 10, // Add space between icons and labels
+    flex: 1,
+    marginLeft: darkTheme.spacing.m,
   },
   legendLabel: {
     fontSize: 14,
-    color: '#333',
-    flexShrink: 1, // Allow the text to shrink if it's too long
+    color: darkTheme.colors.text,
+    fontWeight: '500',
   },
   subCategoryLabel: {
     fontSize: 12,
-    color: '#666',
-    flexShrink: 1, // Allow the text to shrink if it's too long
+    color: darkTheme.colors.textSecondary,
+    marginTop: 2,
   },
   legendValue: {
     fontSize: 14,
     fontWeight: 'bold',
-    color: '#333',
-    marginLeft: 10,
-    textAlign: 'right', // Align the value text to the right
-    minWidth: 60, // Ensure there's enough space for the value
+    color: darkTheme.colors.text,
+    marginLeft: darkTheme.spacing.m,
   },
-  button: {
-    marginVertical: 40,
-    backgroundColor: '#f4f7fc',
-    paddingHorizontal: 60,
-    paddingVertical: 15,
-    borderRadius: 10,
-  },
-  buttonText: {
-    color: 'black',
-    fontSize: 20,
-  },
-  // Add new styles for filter buttons
-  filterContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 10, // Spacing below date selection
-  },
-  filterLabel: {
-    fontSize: 14,
-    color: '#333',
-    marginHorizontal: 10, // Spacing between label and Switch
+  chartContainer: {
+    width: RADIUS * 2,
+    height: RADIUS * 2,
+    marginTop: 10,
+    marginBottom: darkTheme.spacing.m,
   },
 });

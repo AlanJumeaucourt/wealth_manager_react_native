@@ -17,6 +17,8 @@ import DatePicker from 'react-native-ui-datepicker';
 import { fetchTransactions } from '@/actions/transactionActions';
 import { useRoute } from '@react-navigation/native';
 import { findCategoryByName } from '../utils/categoryUtils'; // Import the utility function
+import sharedStyles from './styles/sharedStyles';
+import { darkTheme } from '../constants/theme';
 
 const accountNameFromId = (accountId: number, accounts: Account[]) => {
     if (!accounts || !Array.isArray(accounts)) {
@@ -169,7 +171,7 @@ export default function AddTransactionScreen() {
                 ]}
                 onPress={() => setTransactionType(item)}
             >
-                <Text style={[styles.filterText, transactionType === item && styles.selectedFilterText]}>
+                <Text style={[sharedStyles.text, transactionType === item && sharedStyles.textBold]}>
                     {item.charAt(0).toUpperCase() + item.slice(1)}
                 </Text>
             </Pressable>
@@ -251,11 +253,11 @@ export default function AddTransactionScreen() {
 
         const renderSubcategoryItem = ({ item }: { item: { name: string, iconName: string } }) => (
             <Pressable
-                style={styles.subcategoryItem}
+                style={styles.categoryItem}
                 onPress={() => handleSubcategorySelect(item)}
             >
-                <Ionicons name={item.iconName} size={24} color={colors.primary} />
-                <Text style={styles.subcategoryText}>{item.name}</Text>
+                <Ionicons name={item.iconName} size={24} color={darkTheme.colors.primary} />
+                <Text style={styles.categoryText}>{item.name}</Text>
             </Pressable>
         );
 
@@ -274,7 +276,7 @@ export default function AddTransactionScreen() {
                         <View style={styles.selectedCategoryContainer}>
                             <View style={[styles.iconCircle, { backgroundColor: selectedCategory?.color }]}>
                                 {selectedCategory?.iconSet === 'Ionicons' && (
-                                    <Ionicons name={selectedCategory?.iconName as any} size={16} color="white" />
+                                    <Ionicons name={selectedCategory?.iconName as any} size={16} color={darkTheme.colors.text} />
                                 )}
                             </View>
                             <Text style={styles.selectedCategoryText}>{selectedCategory?.name}</Text>
@@ -284,7 +286,6 @@ export default function AddTransactionScreen() {
                             renderItem={renderSubcategoryItem}
                             keyExtractor={(item) => item.name}
                             numColumns={2}
-                            contentContainerStyle={styles.subcategoryGrid}
                         />
                     </View>
                 )}
@@ -399,7 +400,7 @@ export default function AddTransactionScreen() {
                     >
                         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                             {subcategory && (
-                                <View style={[styles.iconCircle, { backgroundColor: findCategoryByName(category)?.color, marginRight: 10 }]}>
+                                <View style={[styles.iconCircle, { backgroundColor: findCategoryByName(category)?.color, marginRight: darkTheme.spacing.m }]}>
                                     <Ionicons
                                         name={
                                             findCategoryByName(category)?.subCategories?.find(
@@ -412,7 +413,7 @@ export default function AddTransactionScreen() {
                                 </View>
                             )}
                             {category && !subcategory && (
-                                <View style={[styles.iconCircle, { backgroundColor: findCategoryByName(category)?.color, marginRight: 10 }]}>
+                                <View style={[styles.iconCircle, { backgroundColor: findCategoryByName(category)?.color, marginRight: darkTheme.spacing.m }]}>
                                     <Ionicons
                                         name={
                                             findCategoryByName(category)?.iconName || "chevron-forward"
@@ -465,6 +466,20 @@ export default function AddTransactionScreen() {
                                 date={transactionDate}
                                 onChange={(params) => handleDateChange(params.date)}
                                 mode="single"
+                                calendarTextStyle={styles.datePicker}
+                                selectedTextStyle={styles.datePicker}
+                                weekDaysTextStyle={styles.datePicker}
+                                monthContainerStyle={styles.monthContainerStyle}
+                                yearContainerStyle={styles.monthContainerStyle}
+                                selectedItemColor={darkTheme.colors.primary}
+                                headerContainerStyle={styles.datePickerHeader}
+                                headerTextStyle={styles.datePickerHeaderText}
+                                dayContainerStyle={styles.datePickerDayContainer}
+                                selectedRangeBackgroundColor={darkTheme.colors.primary}
+                                weekDaysContainerStyle={styles.datePickerDayContainer}
+                                timePickerContainerStyle={styles.datePicker}
+                                buttonNextIcon={<Ionicons name="chevron-forward" size={24} color={darkTheme.colors.primary} />}
+                                buttonPrevIcon={<Ionicons name="chevron-back" size={24} color={darkTheme.colors.primary} />}
                             />
                             <Button mode="outlined" onPress={() => setShowDatePicker(false)} style={styles.closeButton}>
                                 Close
@@ -484,7 +499,7 @@ export default function AddTransactionScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: colors.background,
+        backgroundColor: darkTheme.colors.surface,
     },
     scrollContainer: {
         flexGrow: 1,
@@ -494,15 +509,16 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 24,
         marginBottom: 16,
+        color: darkTheme.colors.text,
     },
     input: {
         height: 50,
-        borderColor: colors.darkGray,
+        borderColor: darkTheme.colors.border,
         borderWidth: 1,
-        borderRadius: 10,
-        marginBottom: 12,
-        paddingHorizontal: 16,
-        backgroundColor: colors.white,
+        borderRadius: darkTheme.borderRadius.m,
+        marginBottom: darkTheme.spacing.m,
+        paddingHorizontal: darkTheme.spacing.m,
+        backgroundColor: darkTheme.colors.surface,
         shadowColor: '#000',
         shadowOffset: {
             width: 0,
@@ -513,10 +529,9 @@ const styles = StyleSheet.create({
         elevation: 1,
     },
     filtersContainer: {
-        backgroundColor: colors.white,
-        borderRadius: 16,
-        marginBottom: 16,
-        paddingVertical: 8,
+        backgroundColor: 'transparent',
+        marginBottom: darkTheme.spacing.m,
+        paddingVertical: darkTheme.spacing.m,
         alignItems: 'center',
     },
     filtersScrollViewContent: {
@@ -525,30 +540,30 @@ const styles = StyleSheet.create({
     filterButton: {
         paddingVertical: 12,
         paddingHorizontal: 20,
-        borderRadius: 16,
-        backgroundColor: colors.lightGray,
+        borderRadius: darkTheme.borderRadius.m,
+        backgroundColor: darkTheme.colors.surface,
         alignItems: 'center',
         justifyContent: 'center',
-        marginRight: 15,
+        marginRight: darkTheme.spacing.m,
         minWidth: 100,
     },
     filterText: {
-        color: colors.text,
+        color: darkTheme.colors.text,
         fontWeight: '600',
         fontSize: 14,
     },
     selectedFilterText: {
-        color: colors.white,
+        color: darkTheme.colors.white,
     },
     label: {
         fontSize: 16,
-        color: colors.text,
-        marginBottom: 4,
+        color: darkTheme.colors.text,
+        marginBottom: darkTheme.spacing.xs,
     },
     button: {
         marginTop: 16,
-        marginBottom: 16,
-        backgroundColor: colors.primary,
+        marginBottom: darkTheme.spacing.m,
+        backgroundColor: darkTheme.colors.primary,
     },
     buttonText: {
         color: "#fff",
@@ -563,65 +578,52 @@ const styles = StyleSheet.create({
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
-        padding: 16,
-        margin: 4,
-        backgroundColor: colors.lightGray,
-        borderRadius: 8,
+        padding: darkTheme.spacing.m,
+        margin: darkTheme.spacing.xs,
+        backgroundColor: darkTheme.colors.surface,
+        borderRadius: darkTheme.borderRadius.m,
+        borderWidth: 1,
+        borderColor: darkTheme.colors.border,
         minWidth: '30%',
     },
     categoryText: {
         marginTop: 8,
         textAlign: 'center',
         fontSize: 12,
-    },
-    subcategoryGrid: {
-        justifyContent: 'space-between',
-    },
-    subcategoryItem: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 16,
-        margin: 4,
-        backgroundColor: colors.lightGray,
-        borderRadius: 8,
-        minWidth: '45%',
-    },
-    subcategoryText: {
-        textAlign: 'center',
-        fontSize: 14,
+        color: darkTheme.colors.text,
     },
     selectedCategoryText: {
         fontSize: 18,
         fontWeight: 'bold',
         marginLeft: 10,
         textAlign: 'center',
+        color: darkTheme.colors.text,
     },
     categoryButton: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        backgroundColor: colors.white,
-        borderRadius: 10,
-        padding: 16,
-        marginBottom: 16,
+        backgroundColor: darkTheme.colors.surface,
+        borderRadius: darkTheme.borderRadius.m,
+        padding: darkTheme.spacing.m,
+        marginBottom: darkTheme.spacing.m,
         borderWidth: 1,
-        borderColor: colors.darkGray,
+        borderColor: darkTheme.colors.border,
     },
     categoryButtonText: {
         fontSize: 16,
-        color: colors.text,
+        color: darkTheme.colors.text,
     },
     modalContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        backgroundColor: darkTheme.colors.elevation[2],
     },
     modalContent: {
-        backgroundColor: colors.white,
-        borderRadius: 10,
-        padding: 20,
+        backgroundColor: darkTheme.colors.surface,
+        borderRadius: darkTheme.borderRadius.m,
+        padding: darkTheme.spacing.m,
         width: '90%',
         maxHeight: '80%',
     },
@@ -629,14 +631,14 @@ const styles = StyleSheet.create({
         marginTop: 16,
     },
     dateButton: {
-        padding: 16,
-        backgroundColor: colors.lightGray,
-        borderRadius: 10,
-        marginBottom: 12,
+        padding: darkTheme.spacing.m,
+        backgroundColor: darkTheme.colors.surface,
+        borderRadius: darkTheme.borderRadius.m,
+        marginBottom: darkTheme.spacing.m,
     },
     dateButtonText: {
         fontSize: 16,
-        color: colors.text,
+        color: darkTheme.colors.text,
     },
     iconCircle: {
         width: 30,
@@ -650,5 +652,26 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: 16,
+    },
+    datePicker: {
+        width: '100%',
+        color: darkTheme.colors.text,
+        textAlign: 'center',
+    },
+    datePickerHeader: {
+        backgroundColor: darkTheme.colors.surface,
+        color: darkTheme.colors.text,
+
+    },
+    datePickerHeaderText: {
+        color: darkTheme.colors.text,  
+    },
+    datePickerDayContainer: {
+        backgroundColor: darkTheme.colors.surface,
+        color: darkTheme.colors.text,
+    },
+    monthContainerStyle: {
+        backgroundColor: darkTheme.colors.surface,
+        color: darkTheme.colors.text,
     },
 });

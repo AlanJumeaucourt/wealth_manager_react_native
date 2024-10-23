@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Dimensions } from "react-native";
 import { LineChart } from 'react-native-gifted-charts';
 import { fetchWealthData } from "./api/bankApi";
+import { darkTheme } from '../constants/theme';
+import sharedStyles from './styles/sharedStyles';
 
 interface DataPoint {
     value: number;
@@ -61,8 +63,7 @@ export default function WealthScreen() {
     if (loading) {
         return (
             <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#0000ff" />
-                <Text>Loading...</Text>
+                <ActivityIndicator size="large" color={darkTheme.colors.primary} />
             </View>
         );
     }
@@ -120,128 +121,146 @@ export default function WealthScreen() {
     
 
     return (
-        <View style={styles.container}>
-            <Text style={styles.title}>Wealth over time</Text>
-            <Text style={styles.subtitle}>from {Object.keys(wealthData)[0]} to {Object.keys(wealthData)[Object.keys(wealthData).length - 1]}</Text>
-            <View style={styles.buttonContainer}>
-                {["1M", "3M", "6M", "1Y", "3Y", "5Y", "Max"].map((range) => (
-                    <TouchableOpacity
-                        key={range}
-                        style={[
-                            styles.button,
-                            selectedRange === range && styles.selectedButton,
-                        ]}
-                        onPress={() => setSelectedRange(range)}
-                    >
-                        <Text style={styles.buttonText}>{range}</Text>
-                    </TouchableOpacity>
-                ))}
+        <View style={[sharedStyles.container]}>
+            <View style={sharedStyles.header}>
+                <Text style={sharedStyles.headerTitle}>Wealth over time</Text>
             </View>
+            <View style={sharedStyles.body}>
+                <Text style={styles.subtitle}>
+                    from {Object.keys(wealthData)[0]} to {Object.keys(wealthData)[Object.keys(wealthData).length - 1]}
+                </Text>
+                
+                <View style={styles.buttonContainer}>
+                    {["1M", "3M", "6M", "1Y", "3Y", "5Y", "Max"].map((range) => (
+                        <TouchableOpacity
+                            key={range}
+                            style={[
+                                styles.button,
+                                selectedRange === range && styles.selectedButton,
+                            ]}
+                            onPress={() => setSelectedRange(range)}
+                        >
+                            <Text style={[
+                                styles.buttonText,
+                                selectedRange === range && styles.selectedButtonText
+                            ]}>
+                                {range}
+                            </Text>
+                        </TouchableOpacity>
+                    ))}
+                </View>
 
-            <View style={styles.graphContainer}>
-                <LineChart
-                    areaChart
-                    data={data}
-                    width={screenWidth - 60}
-                    height={300}
-                    spacing={spacing}
-                    adjustToWidth={true}
-                    color="#007AFF"
-                    thickness={1.5}
-                    startFillColor={'rgba(84,219,234,0.3)'}
-                    endFillColor={'rgba(84,219,234,0.01)'}
-                    startOpacity={0.9}
-                    endOpacity={0.2}
-                    initialSpacing={0}
-                    noOfSections={5}
-                    yAxisOffset={minValue()}
-                    yAxisColor="transparent"
-                    xAxisColor="transparent"
-                    yAxisTextStyle={{ color: 'gray' }}
-                    xAxisTextStyle={{ color: 'gray' }}
-                    hideRules
-                    hideDataPoints
-                    showVerticalLines={false}
-                    xAxisLabelTextStyle={{ color: 'gray', fontSize: 10 }}
-                    yAxisTextNumberOfLines={1}
-                    yAxisLabelSuffix="€"
-                    yAxisLabelPrefix=""
-                    rulesType="solid"
-                    xAxisThickness={0}
-                    rulesColor="rgba(0, 0, 0, 0.1)"
-                    curved
-                    animateOnDataChange
-                    animationDuration={1000}
-                    pointerConfig={{
-                        showPointerStrip: true,
-                        pointerStripWidth: 2,
-                        pointerStripUptoDataPoint: true,
-                        pointerStripColor: 'rgba(0, 0, 0, 0.5)',
-                        width: 10,
-                        height: 10,
-                        color: '#007AFF',
-                        radius: 6,
-                        pointerLabelWidth: 150,
-                        pointerLabelHeight: 90,
-                        activatePointersOnLongPress: false,
-                        autoAdjustPointerLabelPosition: true,
-                        pointerLabelComponent: (items: any) => {
-                            const item = items[0];
-                            return (
-                                <View style={styles.tooltipContainer}>
-                                    <Text style={styles.tooltipValue}>{item.value.toFixed(0)} €</Text>
-                                    <Text style={styles.tooltipDate}>{new Date(item.date).toDateString()}</Text>
-                                </View>
-                            );
-                        },
-                    }}
-                />
+                {loading ? (
+                    <View style={styles.loadingContainer}>
+                        <ActivityIndicator size="large" color={darkTheme.colors.primary} />
+                    </View>
+                ) : (
+                    <View style={styles.graphContainer}>
+                        <LineChart
+                            areaChart
+                            data={data}
+                            width={screenWidth - 60}
+                            height={300}
+                            spacing={spacing}
+                            adjustToWidth={true}
+                            color={darkTheme.colors.primary}
+                            thickness={1.5}
+                            startFillColor={`${darkTheme.colors.primary}40`}
+                            endFillColor={`${darkTheme.colors.primary}10`}
+                            startOpacity={0.9}
+                            endOpacity={0.2}
+                            initialSpacing={0}
+                            noOfSections={5}
+                            yAxisOffset={minValue()}
+                            yAxisColor="transparent"
+                            xAxisColor="transparent"
+                            yAxisTextStyle={{ color: darkTheme.colors.textTertiary }}
+                            xAxisTextStyle={{ color: darkTheme.colors.textTertiary }}
+                            hideRules
+                            hideDataPoints
+                            showVerticalLines={false}
+                            xAxisLabelTextStyle={{ color: darkTheme.colors.textTertiary, fontSize: 10 }}
+                            yAxisTextNumberOfLines={1}
+                            yAxisLabelSuffix="€"
+                            yAxisLabelPrefix=""
+                            rulesType="solid"
+                            xAxisThickness={0}
+                            rulesColor="rgba(0, 0, 0, 0.1)"
+                            curved
+                            animateOnDataChange
+                            animationDuration={1000}
+                            pointerConfig={{
+                                showPointerStrip: true,
+                                pointerStripWidth: 2,
+                                pointerStripUptoDataPoint: true,
+                                pointerStripColor: 'rgba(0, 0, 0, 0.5)',
+                                width: 10,
+                                height: 10,
+                                color: '#007AFF',
+                                radius: 6,
+                                pointerLabelWidth: 150,
+                                pointerLabelHeight: 90,
+                                activatePointersOnLongPress: false,
+                                autoAdjustPointerLabelPosition: true,
+                                pointerLabelComponent: (items: any) => {
+                                    const item = items[0];
+                                    return (
+                                        <View style={styles.tooltipContainer}>
+                                            <Text style={styles.tooltipValue}>{item.value.toFixed(0)} €</Text>
+                                            <Text style={styles.tooltipDate}>{new Date(item.date).toDateString()}</Text>
+                                        </View>
+                                    );
+                                },
+                            }}
+                        />
+                    </View>
+                )}
             </View>
         </View>
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        padding: 20,
-        backgroundColor: '#ffffff',
+    subtitle: {
+        fontSize: 16,
+        color: darkTheme.colors.textSecondary,
+        marginBottom: darkTheme.spacing.m,
+    },
+    buttonContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'center',
+        gap: darkTheme.spacing.s,
+        marginVertical: darkTheme.spacing.m,
+    },
+    button: {
+        paddingVertical: darkTheme.spacing.s,
+        paddingHorizontal: darkTheme.spacing.m,
+        borderRadius: darkTheme.borderRadius.m,
+        backgroundColor: darkTheme.colors.surface,
+    },
+    selectedButton: {
+        backgroundColor: darkTheme.colors.primary,
+    },
+    buttonText: {
+        color: darkTheme.colors.textSecondary,
+        fontSize: 14,
+    },
+    selectedButtonText: {
+        color: darkTheme.colors.background,
+        fontWeight: '600',
     },
     loadingContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
     },
-    title: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        marginBottom: 5,
-    },
-    subtitle: {
-        fontSize: 16,
-        color: '#888',
-        marginBottom: 20,
-    },
-    buttonContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-around',
-        marginVertical: 10,
-    },
-    button: {
-        padding: 10,
-        backgroundColor: '#f0f0f0',
-        borderRadius: 5,
-    },
-    selectedButton: {
-        backgroundColor: '#007bff',
-    },
-    buttonText: {
-        color: '#000',
-    },
     graphContainer: {
-        height: 300,
-        width: '100%',
-        marginVertical: 20,
+        backgroundColor: darkTheme.colors.surface,
+        borderRadius: darkTheme.borderRadius.l,
+        padding: darkTheme.spacing.m,
+        marginVertical: darkTheme.spacing.m,
+        ...darkTheme.shadows.medium,
     },
     tooltipContainer: {
         backgroundColor: 'white',

@@ -23,6 +23,7 @@ import TransactionDetails from './TransactionDetails';
 import LoginScreen from './(auth)/login';
 import RegisterScreen from './(auth)/register';
 import BudgetDetailScreen from './BudgetDetailScreen';
+import { darkTheme } from '../constants/theme';
 
 // Initialize Sentry for error tracking
 Sentry.init({
@@ -188,10 +189,25 @@ function MainTabs() {
           return <Icon name={iconName} size={size} color={color} />;
         },
         headerShown: false,
-        tabBarActiveTintColor: '#6200EE',
-        tabBarInactiveTintColor: 'gray',
+        tabBarActiveTintColor: darkTheme.colors.primary,
+        tabBarInactiveTintColor: darkTheme.colors.textSecondary,
         tabBarStyle: {
-          backgroundColor: '#ffffff',
+          backgroundColor: darkTheme.colors.surface,
+          borderTopColor: darkTheme.colors.border,
+          borderTopWidth: 1,
+          paddingBottom: 8,
+          paddingTop: 8,
+          height: 60,
+          elevation: 0,
+          shadowOpacity: 0,
+        },
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: '500',
+          marginBottom: 4,
+        },
+        tabBarItemStyle: {
+          padding: 4,
         },
       })}
     >
@@ -230,7 +246,7 @@ function Appdd() {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#6200EE" />
+        <ActivityIndicator size="large" color={darkTheme.colors.primary} />
       </View>
     );
   }
@@ -254,9 +270,11 @@ function Appdd() {
 export default function App() {
   return (
     <Provider store={store}>
-      <AuthProvider>
-        <Appdd />
-      </AuthProvider>
+      <PaperProvider> 
+          <AuthProvider>
+            <Appdd />
+        </AuthProvider>
+      </PaperProvider>
     </Provider>
   );
 }
@@ -267,6 +285,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: darkTheme.colors.background,
   },
 });
 

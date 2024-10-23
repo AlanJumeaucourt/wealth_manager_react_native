@@ -11,6 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../constants/colors';
 import { expenseCategories, incomeCategories } from '../../constants/categories';
 import { findCategoryByName } from '@/utils/categoryUtils';
+import { darkTheme } from '../../constants/theme';
 
 interface TransactionListProps {
   accountId?: number;
@@ -204,63 +205,59 @@ const TransactionList: React.FC<TransactionListProps> = ({ accountId }) => {
 };
 
 const styles = StyleSheet.create({
-
   contentTransactionList: {
     flexGrow: 1,
   },
   footer: {
-    padding: 10,
+    padding: darkTheme.spacing.m,
     alignItems: 'center',
   },
   dateGroup: {
-    marginBottom: 20,
+    marginBottom: darkTheme.spacing.m,
   },
   dateHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
-    paddingHorizontal: 10,
+    marginBottom: darkTheme.spacing.s,
+    paddingHorizontal: darkTheme.spacing.m,
   },
   dateHeaderText: {
     fontSize: 16,
     fontWeight: 'bold',
+    color: darkTheme.colors.text,
   },
   dayTotal: {
     fontSize: 16,
     fontWeight: 'bold',
   },
   positiveTotal: {
-    color: '#4CAF50',
+    color: darkTheme.colors.success,
   },
   negativeTotal: {
-    color: '#000000',
+    color: darkTheme.colors.text,
   },
   transactionsContainer: {
-    backgroundColor: 'white',
-    borderRadius: 10,
+    backgroundColor: darkTheme.colors.surface,
+    borderRadius: darkTheme.borderRadius.l,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    ...darkTheme.shadows.medium,
   },
   transactionItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 15,
+    padding: darkTheme.spacing.m,
     borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
+    borderBottomColor: darkTheme.colors.border,
   },
   firstTransaction: {
-    borderTopLeftRadius: 10,
-    borderTopRightRadius: 10,
+    borderTopLeftRadius: darkTheme.borderRadius.l,
+    borderTopRightRadius: darkTheme.borderRadius.l,
   },
   lastTransaction: {
-    borderBottomLeftRadius: 10,
-    borderBottomRightRadius: 10,
+    borderBottomLeftRadius: darkTheme.borderRadius.l,
+    borderBottomRightRadius: darkTheme.borderRadius.l,
     borderBottomWidth: 0,
   },
   transactionDescription: {
@@ -268,21 +265,22 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingBottom: 5,
     fontWeight: 'bold',
+    color: darkTheme.colors.text,
   },
   transactionAmount: {
     fontSize: 14,
     fontWeight: '600',
   },
   expense: {
-    color: '#000000',
+    color: darkTheme.colors.text,
     fontWeight: 'normal',
   },
   income: {
-    color: '#4CAF50',
+    color: darkTheme.colors.success,
     fontWeight: 'normal',
   },
   transfer: {
-    color: '#2196F3',
+    color: darkTheme.colors.info,
     fontWeight: 'normal',
   },
   transactionDetails: {
@@ -290,33 +288,36 @@ const styles = StyleSheet.create({
   },
   transferDetails: {
     fontSize: 14,
-    color: '#2196F3',
+    color: darkTheme.colors.info,
     fontWeight: '300',
   },
   expenseDetails: {
     fontSize: 14,
-    color: '#000000',
+    color: darkTheme.colors.textSecondary,
     fontWeight: '300',
   },
   incomeDetails: {
     fontSize: 14,
-    color: '#000000',
+    color: darkTheme.colors.textSecondary,
     fontWeight: '300',
   },
   categoryDetails: {
     fontSize: 14,
-    color: '#000000',
+    color: darkTheme.colors.textSecondary,
     fontWeight: '300',
   },
   subcategoryDetails: {
     fontSize: 14,
-    color: '#000000',
+    color: darkTheme.colors.textSecondary,
     fontWeight: '300',
   },
   iconCircle: {
-    borderRadius: 16,
-    padding: 8,
-    marginRight: 14,
+    borderRadius: darkTheme.borderRadius.xl,
+    padding: darkTheme.spacing.s,
+    marginRight: darkTheme.spacing.m,
+  },
+  transactionIcon: {
+    marginRight: darkTheme.spacing.s,
   },
 });
 
