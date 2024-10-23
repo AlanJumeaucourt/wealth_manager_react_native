@@ -204,7 +204,7 @@ export default function AddTransactionScreen() {
         }
     };
 
-    const CategorySelector = ({ transactionType, onSelectCategory, onSelectSubcategory }) => {
+    const CategorySelector = ({ transactionType, onSelectCategory, onSelectSubcategory }: { transactionType: string, onSelectCategory: (category: string) => void, onSelectSubcategory: (subcategory: string | null) => void }) => {
         const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
         const [showSubCategories, setShowSubCategories] = useState(false);
 
@@ -263,32 +263,34 @@ export default function AddTransactionScreen() {
 
         return (
             <View style={styles.categoryContainer}>
-                {!showSubCategories ? (
-                    <FlatList
-                        data={categories}
-                        renderItem={renderCategoryItem}
-                        keyExtractor={(item) => item.name}
-                        numColumns={3}
-                        contentContainerStyle={styles.categoryGrid}
-                    />
-                ) : (
-                    <View>
-                        <View style={styles.selectedCategoryContainer}>
-                            <View style={[styles.iconCircle, { backgroundColor: selectedCategory?.color }]}>
-                                {selectedCategory?.iconSet === 'Ionicons' && (
-                                    <Ionicons name={selectedCategory?.iconName as any} size={16} color={darkTheme.colors.text} />
-                                )}
-                            </View>
-                            <Text style={styles.selectedCategoryText}>{selectedCategory?.name}</Text>
-                        </View>
+                <View style={styles.categoryListContainer}>
+                    {!showSubCategories ? (
                         <FlatList
-                            data={selectedCategory?.subCategories}
-                            renderItem={renderSubcategoryItem}
+                            data={categories}
+                            renderItem={renderCategoryItem}
                             keyExtractor={(item) => item.name}
-                            numColumns={2}
+                            numColumns={3}
+                            contentContainerStyle={styles.categoryGrid}
                         />
-                    </View>
-                )}
+                    ) : (
+                        <View>
+                            <View style={styles.selectedCategoryContainer}>
+                                <View style={[styles.iconCircle, { backgroundColor: selectedCategory?.color }]}>
+                                    {selectedCategory?.iconSet === 'Ionicons' && (
+                                        <Ionicons name={selectedCategory?.iconName as any} size={16} color={darkTheme.colors.text} />
+                                    )}
+                                </View>
+                                <Text style={styles.selectedCategoryText}>{selectedCategory?.name}</Text>
+                            </View>
+                            <FlatList
+                                data={selectedCategory?.subCategories}
+                                renderItem={renderSubcategoryItem}
+                                keyExtractor={(item) => item.name}
+                                numColumns={2}
+                            />
+                        </View>
+                    )}
+                </View>
                 <Button
                     mode="outlined"
                     onPress={handleBack}
@@ -462,7 +464,9 @@ export default function AddTransactionScreen() {
 
                     <Text style={styles.label}>Transaction Date</Text>
                     <Pressable onPress={() => setShowDatePicker(true)} style={styles.dateButton}>
-                        <Text style={styles.dateButtonText}>{transactionDate.toLocaleDateString()}</Text>
+                        <Text style={[styles.dateButtonText, { color: darkTheme.colors.textTertiary }]}>
+                            {transactionDate.toLocaleDateString()}
+                        </Text>
                     </Pressable>
 
                     {/* Modal for DatePicker */}
@@ -540,6 +544,7 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 2,
         elevation: 1,
+        color: darkTheme.colors.textTertiary,
     },
     filtersContainer: {
         backgroundColor: 'transparent',
@@ -582,10 +587,18 @@ const styles = StyleSheet.create({
         color: "#fff",
     },
     categoryContainer: {
-        marginBottom: 16,
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        padding: darkTheme.spacing.m,
+    },
+    categoryListContainer: {
+        flex: 1,
+        overflow: 'hidden',
     },
     categoryGrid: {
-        justifyContent: 'space-between',
+        paddingBottom: darkTheme.spacing.m,
     },
     categoryItem: {
         flex: 1,
@@ -625,23 +638,23 @@ const styles = StyleSheet.create({
     },
     categoryButtonText: {
         fontSize: 16,
-        color: darkTheme.colors.text,
+        color: darkTheme.colors.textTertiary,
     },
     modalContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: darkTheme.colors.elevation[2],
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
     },
     modalContent: {
         backgroundColor: darkTheme.colors.surface,
         borderRadius: darkTheme.borderRadius.m,
-        padding: darkTheme.spacing.m,
+        padding: darkTheme.spacing.s,
         width: '90%',
-        maxHeight: '80%',
+        height: "78%",
     },
     closeButton: {
-        marginTop: 16,
+        marginTop: darkTheme.spacing.m,
     },
     dateButton: {
         padding: darkTheme.spacing.m,
@@ -651,7 +664,7 @@ const styles = StyleSheet.create({
     },
     dateButtonText: {
         fontSize: 16,
-        color: darkTheme.colors.text,
+        // Remove the color property here since we're applying it inline
     },
     iconCircle: {
         width: 30,
@@ -668,7 +681,7 @@ const styles = StyleSheet.create({
     },
     datePicker: {
         width: '100%',
-        color: darkTheme.colors.text,
+        color: darkTheme.colors.textSecondary,
         textAlign: 'center',
     },
     datePickerHeader: {

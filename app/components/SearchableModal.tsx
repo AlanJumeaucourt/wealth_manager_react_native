@@ -24,8 +24,8 @@ const SearchableModal: React.FC<SearchableModalProps> = ({ data, onSelect, place
         : data;
 
     return (
-        <View>
-            <Text style={sharedStyles.text}>{label}</Text>
+        <View style={styles.container}>
+            <Text style={styles.label}>{label}</Text>
             <Pressable
                 style={styles.input}
                 onPress={() => setModalVisible(true)}
@@ -104,6 +104,9 @@ const SearchableModal: React.FC<SearchableModalProps> = ({ data, onSelect, place
 };
 
 const styles = StyleSheet.create({
+    container: {
+        marginBottom: darkTheme.spacing.s,
+    },
     label: {
         fontSize: 16,
         color: darkTheme.colors.text,
@@ -142,6 +145,7 @@ const styles = StyleSheet.create({
         width: '100%',
         color: darkTheme.colors.text,
         backgroundColor: darkTheme.colors.surface,
+        
     },
     item: {
         padding: darkTheme.spacing.m,
