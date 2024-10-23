@@ -125,11 +125,7 @@ export default function WealthScreen() {
             <View style={sharedStyles.header}>
                 <Text style={sharedStyles.headerTitle}>Wealth over time</Text>
             </View>
-            <View style={sharedStyles.body}>
-                <Text style={styles.subtitle}>
-                    from {Object.keys(wealthData)[0]} to {Object.keys(wealthData)[Object.keys(wealthData).length - 1]}
-                </Text>
-                
+            <View style={sharedStyles.body}>                
                 <View style={styles.buttonContainer}>
                     {["1M", "3M", "6M", "1Y", "3Y", "5Y", "Max"].map((range) => (
                         <TouchableOpacity
