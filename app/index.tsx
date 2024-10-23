@@ -1,29 +1,28 @@
-import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, View, StyleSheet } from 'react-native';
 import { AuthProvider, useAuth } from '@/context/AuthContext'; // Ensure correct import path
-import { Provider } from 'react-redux';
-import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { PaperProvider } from 'react-native-paper';
 import * as Sentry from "@sentry/react-native";
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { PaperProvider } from 'react-native-paper';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { Provider } from 'react-redux';
 
+import { darkTheme } from '../constants/theme';
 import store from '../store';
-import AccountsScreen from './AccountsScreen';
-import TransactionsScreen from './TransactionsScreen';
-import InvestmentScreen from './InvestmentScreen';
-import BudgetScreen from './BudgetScreen';
-import WealthDashboard from './WealthScreen';
-import AddAccountScreen from './AddAccountScreen';
-import AddTransactionScreen from './AddTransactionScreen';
-import TransactionsScreenAccount from './TransactionsScreenAccount';
-import TransactionDetails from './TransactionDetails';
 import LoginScreen from './(auth)/login';
 import RegisterScreen from './(auth)/register';
+import AccountsScreen from './AccountsScreen';
+import AddAccountScreen from './AddAccountScreen';
+import AddTransactionScreen from './AddTransactionScreen';
 import BudgetDetailScreen from './BudgetDetailScreen';
-import { darkTheme } from '../constants/theme';
+import BudgetScreen from './BudgetScreen';
+import InvestmentScreen from './InvestmentScreen';
+import TransactionDetails from './TransactionDetails';
+import TransactionsScreen from './TransactionsScreen';
+import TransactionsScreenAccount from './TransactionsScreenAccount';
+import WealthDashboard from './WealthScreen';
 
 // Initialize Sentry for error tracking
 Sentry.init({
@@ -270,9 +269,9 @@ function Appdd() {
 export default function App() {
   return (
     <Provider store={store}>
-      <PaperProvider> 
-          <AuthProvider>
-            <Appdd />
+      <PaperProvider>
+        <AuthProvider>
+          <Appdd />
         </AuthProvider>
       </PaperProvider>
     </Provider>
@@ -289,4 +288,5 @@ const styles = StyleSheet.create({
   },
 });
 
-export { MainTabs, AuthStackNavigator as AuthStack };
+export { AuthStackNavigator as AuthStack, MainTabs };
+

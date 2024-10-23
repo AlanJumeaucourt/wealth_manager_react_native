@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, Pressable } from 'react-native';
-import { TextInput, Button, Text } from 'react-native-paper';
-import { useRouter } from 'expo-router';
 import axios from 'axios';
+import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Button, Text, TextInput } from 'react-native-paper';
 import { API_URL } from '../../config';
 export default function RegisterScreen() {
   const [name, setName] = useState('');

@@ -1,8 +1,9 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { Platform } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { darkTheme } from '../constants/theme';
-import { Platform } from 'react-native';
+
 export default function RootLayout() {
   return (
     <SafeAreaProvider>

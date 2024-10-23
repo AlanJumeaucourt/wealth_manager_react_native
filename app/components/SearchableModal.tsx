@@ -1,11 +1,9 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, FlatList, StyleSheet, Pressable, KeyboardAvoidingView } from 'react-native';
-import Modal from 'react-native-modal';
-import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { colors } from '@/constants/colors';
-import { Account } from '@/types/account';
-import { Platform } from 'react-native';
 import { darkTheme } from '@/constants/theme';
+import { Account } from '@/types/account';
+import React, { useState } from 'react';
+import { FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import Modal from 'react-native-modal';
 import sharedStyles from '../styles/sharedStyles';
 
 interface SearchableModalProps {
@@ -47,7 +45,7 @@ const SearchableModal: React.FC<SearchableModalProps> = ({ data, onSelect, place
                     <KeyboardAvoidingView
                         contentContainerStyle={styles.scrollViewContent}
                         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                  >
+                    >
                         {searchable && (
                             <TextInput
                                 style={styles.searchInput}

@@ -1,17 +1,14 @@
-import React, { useMemo, useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, FlatList, ActivityIndicator } from 'react-native';
+import { findCategoryByName } from '@/utils/categoryUtils';
+import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { format, parseISO } from 'date-fns';
-import { Transaction } from '../../types/transaction';
-import { useDispatch, useSelector } from 'react-redux';
-import { Account } from '@/types/account';
-import { fetchAccounts } from '../../actions/accountActions';
-import { fetchTransactions } from '../api/bankApi';
-import { Ionicons } from '@expo/vector-icons';
+import React, { useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useSelector } from 'react-redux';
 import { colors } from '../../constants/colors';
-import { expenseCategories, incomeCategories } from '../../constants/categories';
-import { findCategoryByName } from '@/utils/categoryUtils';
 import { darkTheme } from '../../constants/theme';
+import { Transaction } from '../../types/transaction';
+import { fetchTransactions } from '../api/bankApi';
 
 interface TransactionListProps {
   accountId?: number;
@@ -152,15 +149,15 @@ const TransactionList: React.FC<TransactionListProps> = ({ accountId }) => {
                 >
                   <View style={styles.transactionIcon}>
                     <View style={[styles.iconCircle, { backgroundColor: findCategoryByName(item.category)?.color }, { marginRight: 10 }]}>
-                        <Ionicons
-                            name={
-                                findCategoryByName(item.category)?.subCategories?.find(
-                                    sub => sub.name.toLowerCase() === item.subcategory.toLowerCase()
-                            )?.iconName || "chevron-forward"
+                      <Ionicons
+                        name={
+                          findCategoryByName(item.category)?.subCategories?.find(
+                            sub => sub.name.toLowerCase() === item.subcategory.toLowerCase()
+                          )?.iconName || "chevron-forward"
                         }
                         size={20}
-                        color={colors.white}    
-                        />
+                        color={colors.white}
+                      />
                     </View>
                   </View>
                   <View style={styles.transactionDetails}>
@@ -176,7 +173,7 @@ const TransactionList: React.FC<TransactionListProps> = ({ accountId }) => {
                     {item.type === 'income' && !accountId && (
                       <Text style={styles.incomeDetails}>{accountNameFromId(item.to_account_id)}</Text>
                     )}
-                    {item.category && !item.subcategory && item.type != 'transfer' &&(
+                    {item.category && !item.subcategory && item.type != 'transfer' && (
                       <Text style={styles.categoryDetails}>{item.category}</Text>
                     )}
                     {item.subcategory && item.type != 'transfer' && (

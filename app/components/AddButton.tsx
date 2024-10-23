@@ -1,7 +1,6 @@
-import React from 'react';
-import { colors } from "@/constants/colors";
 import { Ionicons } from "@expo/vector-icons";
-import { Pressable, Alert, StyleSheet, Platform } from "react-native";
+import React from 'react';
+import { Alert, Platform, Pressable, StyleSheet } from "react-native";
 import { Text } from "react-native-paper";
 
 interface AddButtonProps {

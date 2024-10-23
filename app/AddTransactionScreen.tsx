@@ -1,28 +1,28 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, StyleSheet, FlatList, Pressable, ScrollView, Modal, Alert } from 'react-native';
-import { Button } from 'react-native-paper';
-import { Transaction } from '@/types/transaction';
-import { colors } from '@/constants/colors';
-import { Account } from '@/types/account';
-import { createAccount, createTransaction, updateTransaction } from './api/bankApi';
+import { fetchAccounts } from '@/actions/accountActions';
+import { fetchTransactions } from '@/actions/transactionActions';
 import SearchableModal from '@/app/components/SearchableModal';
 import { expenseCategories, incomeCategories } from '@/constants/categories';
-import { Category } from '@/types/category';
-import { Ionicons } from '@expo/vector-icons';
-import { useDispatch, useSelector } from 'react-redux';
+import { colors } from '@/constants/colors';
 import { RootState } from '@/store/store';
-import { fetchAccounts } from '@/actions/accountActions';
-import { BackButton } from './components/BackButton';
-import DatePicker from 'react-native-ui-datepicker';
-import { fetchTransactions } from '@/actions/transactionActions';
+import { Account } from '@/types/account';
+import { Category } from '@/types/category';
+import { Transaction } from '@/types/transaction';
+import { Ionicons } from '@expo/vector-icons';
 import { useRoute } from '@react-navigation/native';
-import { findCategoryByName } from '../utils/categoryUtils'; // Import the utility function
-import sharedStyles from './styles/sharedStyles';
+import React, { useEffect, useState } from 'react';
+import { Alert, FlatList, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Button } from 'react-native-paper';
+import DatePicker from 'react-native-ui-datepicker';
+import { useDispatch, useSelector } from 'react-redux';
 import { darkTheme } from '../constants/theme';
+import { findCategoryByName } from '../utils/categoryUtils'; // Import the utility function
+import { createAccount, createTransaction, updateTransaction } from './api/bankApi';
+import { BackButton } from './components/BackButton';
+import sharedStyles from './styles/sharedStyles';
 
 const accountNameFromId = (accountId: number, accounts: Account[]) => {
     if (!accounts || !Array.isArray(accounts)) {
-      return accountId.toString();
+        return accountId.toString();
     }
     const account = accounts.find(a => a.id === accountId);
     return account ? account.name : accountId.toString();
@@ -35,7 +35,7 @@ export default function AddTransactionScreen() {
     const accounts = useSelector((state: RootState) => state.accounts.accounts);
 
     console.log('route.params : ', route.params);
-    
+
     const [amount, setAmount] = useState(transaction ? transaction.amount.toString() : '');
     const [description, setDescription] = useState(transaction ? transaction.description : '');
     const [transactionType, setTransactionType] = useState(transaction ? transaction.type : 'expense');
@@ -101,14 +101,14 @@ export default function AddTransactionScreen() {
             category,
             subcategory: subcategory || null,
         };
-        
+
         try {
             // Handle Account Creation if Necessary
             if (selectedFromAccountName && !fromAccountId && transactionType === 'income') {
                 const newAccount = await createNewAccount(selectedFromAccountName, 'income', setFromAccountId);
                 setFromAccountId(newAccount.id);
             }
-            
+
             console.log(selectedToAccountName, toAccountId, transactionType);
             if (selectedToAccountName && !toAccountId && transactionType === 'expense') {
                 const newAccount = await createNewAccount(selectedToAccountName, 'expense', setToAccountId);
@@ -405,10 +405,10 @@ export default function AddTransactionScreen() {
                                         name={
                                             findCategoryByName(category)?.subCategories?.find(
                                                 sub => sub.name.toLowerCase() === subcategory.toLowerCase()
-                                        )?.iconName || "chevron-forward"
+                                            )?.iconName || "chevron-forward"
                                         }
                                         size={20}
-                                        color={colors.white}    
+                                        color={colors.white}
                                     />
                                 </View>
                             )}
@@ -419,7 +419,7 @@ export default function AddTransactionScreen() {
                                             findCategoryByName(category)?.iconName || "chevron-forward"
                                         }
                                         size={20}
-                                        color={colors.white}    
+                                        color={colors.white}
                                     />
                                 </View>
                             )}
@@ -664,7 +664,7 @@ const styles = StyleSheet.create({
 
     },
     datePickerHeaderText: {
-        color: darkTheme.colors.text,  
+        color: darkTheme.colors.text,
     },
     datePickerDayContainer: {
         backgroundColor: darkTheme.colors.surface,

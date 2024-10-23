@@ -1,21 +1,21 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, Alert, Pressable } from 'react-native';
-import { Button, Icon, Card, Text, Divider } from 'react-native-elements';
-import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
+import { fetchTransactions } from '@/actions/transactionActions';
+import { BackButton } from '@/app/components/BackButton';
+import { expenseCategories, incomeCategories } from '@/constants/categories';
+import { colors } from '@/constants/colors';
+import { darkTheme } from '@/constants/theme';
+import { Account } from '@/types/account';
+import { Ionicons } from '@expo/vector-icons';
+import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { format, parseISO } from 'date-fns';
+import React, { useState } from 'react';
+import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Icon, Text } from 'react-native-elements';
+import { Menu } from 'react-native-paper';
+import { useDispatch, useSelector } from 'react-redux';
 import { RootStackParamList } from '../types/navigation';
 import { Transaction } from '../types/transaction';
-import { useDispatch, useSelector } from 'react-redux';
-import { Account } from '@/types/account';
-import { colors } from '@/constants/colors';
-import { BackButton } from '@/app/components/BackButton';
-import { fetchTransactions } from '@/actions/transactionActions';
 import { deleteTransaction } from './api/bankApi';
 import sharedStyles from './styles/sharedStyles';
-import { Menu } from 'react-native-paper';
-import { Ionicons } from '@expo/vector-icons';
-import { expenseCategories, incomeCategories } from '@/constants/categories';
-import { darkTheme } from '@/constants/theme';
 
 type TransactionDetailsRouteProp = RouteProp<RootStackParamList, 'TransactionDetails'>;
 
@@ -184,7 +184,7 @@ export default function TransactionDetailsScreen() {
 interface DetailRowProps {
   icon: string;
   label: string;
-  value: string;transactionIcon
+  value: string; transactionIcon
 }
 
 const DetailRow: React.FC<DetailRowProps> = ({ icon, label, value }) => (

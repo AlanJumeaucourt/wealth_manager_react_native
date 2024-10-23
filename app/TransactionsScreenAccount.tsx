@@ -1,16 +1,16 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, Alert } from 'react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
-import TransactionList from './components/TransactionList'; // Import the TransactionList component
-import { Account } from '@/types/account';
-import { useDispatch } from 'react-redux';
-import { BackButton } from './components/BackButton';
-import { deleteAccount } from './api/bankApi';
 import { fetchAccounts } from '@/actions/accountActions';
-import sharedStyles from './styles/sharedStyles';
+import { Account } from '@/types/account';
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import React, { useState } from 'react';
+import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Menu } from 'react-native-paper';
+import { useDispatch } from 'react-redux';
 import { darkTheme } from '../constants/theme';
+import { deleteAccount } from './api/bankApi';
+import { BackButton } from './components/BackButton';
+import TransactionList from './components/TransactionList'; // Import the TransactionList component
+import sharedStyles from './styles/sharedStyles';
 
 type RouteParams = {
   account: Account;
@@ -71,7 +71,7 @@ export default function TransactionsScreen() {
             <Pressable style={styles.menuButton} onPress={openMenu}>
               <Ionicons name="ellipsis-vertical" size={24} color={darkTheme.colors.text} />
             </Pressable>
-          
+
           }
         >
           <Menu.Item onPress={handleEditAccount} title="Edit Account" />
@@ -85,7 +85,7 @@ export default function TransactionsScreen() {
             {account.balance.toLocaleString()} €
           </Text>
         </View>
-        <View style={styles.transactionsContainer}> 
+        <View style={styles.transactionsContainer}>
           <TransactionList accountId={account.id} />
         </View>
       </View>

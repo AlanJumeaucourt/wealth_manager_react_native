@@ -1,8 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import { View, TextInput, Button, Alert } from 'react-native';
 import { RouteProp, useRoute } from '@react-navigation/native';
+import React, { useEffect, useState } from 'react';
+import { Alert, Button, TextInput, View } from 'react-native';
 import { createTransaction } from './api/bankApi'; // Import your API function
-import { Transaction } from '../types/transaction';
 
 type AddTransactionRouteProp = RouteProp<RootStackParamList, 'AddTransaction'>;
 

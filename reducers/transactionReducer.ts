@@ -1,5 +1,5 @@
 import { Action } from 'redux';
-import { FETCH_TRANSACTIONS_REQUEST, FETCH_TRANSACTIONS_SUCCESS, FETCH_TRANSACTIONS_FAILURE, ADD_TRANSACTION_REQUEST, ADD_TRANSACTION_SUCCESS, ADD_TRANSACTION_FAILURE } from '../actions/transactionActions';
+import { FETCH_TRANSACTIONS_FAILURE, FETCH_TRANSACTIONS_REQUEST, FETCH_TRANSACTIONS_SUCCESS } from '../actions/transactionActions';
 
 const initialState = {
     transactions: [],

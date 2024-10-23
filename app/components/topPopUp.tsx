@@ -1,7 +1,6 @@
-import { Animated } from "react-native";
-import { Text } from "react-native-paper";
-import { StyleSheet } from "react-native";
 import { useRef } from "react";
+import { Animated, StyleSheet } from "react-native";
+import { Text } from "react-native-paper";
 
 export const TopPopUp = ({ popupMessage }: { popupMessage: string }) => {
     const popupAnim = useRef(new Animated.Value(0)).current;

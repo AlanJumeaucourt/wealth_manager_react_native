@@ -1,9 +1,9 @@
-import {StyleSheet, View} from 'react-native';
+import { darkTheme } from '@/constants/theme';
+import { Canvas, Path, SkFont, Skia, Text } from '@shopify/react-native-skia';
 import React from 'react';
-import {SharedValue, useDerivedValue} from 'react-native-reanimated';
-import {Canvas, Path, SkFont, Skia, Text} from '@shopify/react-native-skia';
+import { StyleSheet, View } from 'react-native';
+import { SharedValue } from 'react-native-reanimated';
 import DonutPath from './DonutPath';
-import {darkTheme} from '@/constants/theme';
 
 type Props = {
   n: number;
@@ -32,17 +32,17 @@ const DonutChart = ({
   smallFont,
   totalText,
 }: Props) => {
-  const array = Array.from({length: n});
+  const array = Array.from({ length: n });
   const innerRadius = radius - outerStrokeWidth / 2;
 
   const path = Skia.Path.Make();
   path.addCircle(radius, radius, innerRadius);
 
   const targetText = Math.round(totalValue).toString()
-    
+
   return (
     <View style={styles.container}>
-      <Canvas style={{width: radius * 2, height: radius * 2}}>
+      <Canvas style={{ width: radius * 2, height: radius * 2 }}>
         <Path
           path={path}
           color="#f4f7fc"

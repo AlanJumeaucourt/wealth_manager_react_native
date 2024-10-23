@@ -1,26 +1,21 @@
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView, FlatList, Modal, Dimensions } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { LineChart } from 'react-native-gifted-charts'; // Import the LineChart component
-import { Menu, Button as PaperButton } from 'react-native-paper';
-import { useNavigation } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import { Button } from 'react-native-paper';
+import { fetchWealthData } from '@/app/api/bankApi'; // Import the new API function
 import { Account } from '@/types/account';
 import { Bank } from '@/types/bank';
+import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNavigation } from '@react-navigation/native';
+import { createStackNavigator, StackNavigationProp } from '@react-navigation/stack';
+import { useRouter } from 'expo-router';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Dimensions, FlatList, Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { LineChart } from 'react-native-gifted-charts'; // Import the LineChart component
+import { ActivityIndicator, Button, Menu, Button as PaperButton } from 'react-native-paper';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchAccounts } from '../actions/accountActions';
 import { fetchBanks } from '../actions/bankActions';
 import { colors } from '../constants/colors';
-import { createStackNavigator } from '@react-navigation/stack';
-import sharedStyles from './styles/sharedStyles';
-import { fetchWealthData } from '@/app/api/bankApi'; // Import the new API function
-import { ActivityIndicator } from 'react-native-paper';
 import { darkTheme } from '../constants/theme';
-import { Image } from 'react-native';
+import sharedStyles from './styles/sharedStyles';
 
 interface DataPoint {
   date: Date;

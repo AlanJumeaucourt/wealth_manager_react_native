@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
+import { FlatList, Text, View } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchAccounts } from '../actions/accountActions';
-import { View, Text, FlatList } from 'react-native';
 
 const AccountList = () => {
     const dispatch = useDispatch();

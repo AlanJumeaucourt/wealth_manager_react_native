@@ -1,21 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, ScrollView, View, Platform, TouchableOpacity, Pressable, Alert } from 'react-native';
-import { TextInput, Button } from 'react-native-paper';
-import { Picker } from '@react-native-picker/picker';
-import { createBank, createAccount } from './api/bankApi';
+import { Account } from '@/types/account';
 import { Bank } from '@/types/bank';
-import { ActionSheetIOS } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import React, { useEffect, useState } from 'react';
+import { ActionSheetIOS, Alert, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Button, TextInput } from 'react-native-paper';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchBanks } from '../actions/bankActions';
 import { fetchAccounts } from '../actions/accountActions';
+import { fetchBanks } from '../actions/bankActions';
+import { darkTheme } from '../constants/theme';
+import { createAccount, createBank, deleteBank, updateAccount } from './api/bankApi';
+import { AddButton } from './components/AddButton';
 import { BackButton } from './components/BackButton';
 import { DeleteButton } from './components/DeleteButton';
-import { deleteBank } from './api/bankApi';
-import { updateAccount } from './api/bankApi';
-import { AddButton } from './components/AddButton';
-import { useNavigation, useRoute } from '@react-navigation/native';
-import { Account } from '@/types/account';
-import { darkTheme } from '../constants/theme';
 import sharedStyles from './styles/sharedStyles';
 
 export default function AddAccountScreen() {
@@ -24,7 +21,7 @@ export default function AddAccountScreen() {
     const dispatch = useDispatch();
     const { banks } = useSelector((state: any) => state.banks);
     console.log('banks in AddAccountScreen : ', banks);
-    
+
     const account = route.params?.account as Account;
     const [formData, setFormData] = useState({
         AccountName: account ? account.name : '',
@@ -94,13 +91,13 @@ export default function AddAccountScreen() {
         try {
             if (account) {
                 // Update existing account logic here
-                await updateAccount(account.id, accountData); 
+                await updateAccount(account.id, accountData);
                 Alert.alert('Account updated successfully!');
                 navigation.goBack();
             } else {
                 await createAccount(accountData);
                 Alert.alert('Account created successfully!');
-                navigation.goBack();    
+                navigation.goBack();
             }
             dispatch(fetchAccounts());
         } catch (error) {
@@ -266,7 +263,7 @@ export default function AddAccountScreen() {
             </View>
             <Text style={sharedStyles.headerTitle}>{account ? `Edit Account` : 'Add New Account'}</Text>
             <ScrollView contentContainerStyle={styles.scrollContainer}>
-            <Text style={styles.label}>Account Name</Text>
+                <Text style={styles.label}>Account Name</Text>
                 <TextInput
                     style={styles.input}
                     placeholder="Enter account name"

@@ -1,15 +1,14 @@
 /* eslint-disable react-native/no-inline-styles */
-import React, {useState, useEffect} from 'react';
-import {ScrollView, StyleSheet, Text, View, Pressable, Switch, Image} from 'react-native';
-import {useNavigation} from '@react-navigation/native';
-import DonutChart from './components/DonutChart';
-import {useFont} from '@shopify/react-native-skia';
-import {useSharedValue} from 'react-native-reanimated';
-import {SafeAreaView} from 'react-native-safe-area-context';
-import {fetchBudgetSummary} from './api/bankApi';
-import {Ionicons} from '@expo/vector-icons';
-import {expenseCategories, incomeCategories} from '../constants/categories';
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import { useFont } from '@shopify/react-native-skia';
+import React, { useEffect, useState } from 'react';
+import { Image, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { useSharedValue } from 'react-native-reanimated';
+import { expenseCategories, incomeCategories } from '../constants/categories';
 import { darkTheme } from '../constants/theme';
+import { fetchBudgetSummary } from './api/bankApi';
+import DonutChart from './components/DonutChart';
 import sharedStyles from './styles/sharedStyles';
 
 interface Data {
@@ -144,8 +143,8 @@ export default function BudgetScreen() {
             transactionIds: item.transactions_related,
             type: type,
           };
-        });    
-        
+        });
+
         const significantSegments = generatePercentages.filter(item => item.percentage >= 3);
         const otherSegments = generatePercentages.filter(item => item.percentage < 3);
 
@@ -194,7 +193,7 @@ export default function BudgetScreen() {
   }, [currentDate, periodType, filterType]);
 
   const formatPeriod = (date: Date, type: PeriodType) => {
-    const options: Intl.DateTimeFormatOptions = {year: 'numeric'};
+    const options: Intl.DateTimeFormatOptions = { year: 'numeric' };
     switch (type) {
       case 'month':
         options.month = 'long';
@@ -244,9 +243,9 @@ export default function BudgetScreen() {
     <View style={[sharedStyles.container]}>
       <View style={sharedStyles.header}>
         <View style={styles.headerContent}>
-          <Image 
-            source={require('./../assets/images/logo-removebg-white.png')} 
-            style={{width: 30, height: 30}}
+          <Image
+            source={require('./../assets/images/logo-removebg-white.png')}
+            style={{ width: 30, height: 30 }}
             resizeMode="contain"
           />
           <View style={sharedStyles.headerTitleContainer}>
@@ -304,50 +303,50 @@ export default function BudgetScreen() {
       {data.length === 0 ? <NoBudget /> : (
         <ScrollView
           contentContainerStyle={styles.scrollViewContent}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.chartContainer}>
-          <DonutChart
-            radius={RADIUS}
-            gap={GAP}
-            strokeWidth={STROKE_WIDTH}
-            outerStrokeWidth={OUTER_STROKE_WIDTH}
-            font={font}
-            smallFont={smallFont}
-            totalValue={totalValue}
-            n={data.length}
-            decimals={decimals}
-            colors={data.map(item => item.color)}
-            totalText={filterType === 'Income' ? 'Total Income' : 'Total Expense'}
-          />
-        </View>
-        {data.map((item, index) => (
-          <Pressable
-            key={index}
-            style={styles.legendItem}
-            onPress={() =>
-              navigation.navigate('BudgetDetail', {
-                category: item.category,
-                subcategory: item.subcategory,
-                transactionIds: item.transactionIds,
-              })
-            }
-          >
-            <View style={[styles.iconCircle, {backgroundColor: item.color}]}>
-              {item.iconSet === 'Ionicons' && (
-                <Ionicons name={item.iconName as any} size={16} color={darkTheme.colors.surface} />
-              )}
-            </View>
-            <View style={styles.legendLabelContainer}>
-              <Text style={styles.legendLabel} numberOfLines={1} ellipsizeMode="tail">
-                {item.category}
-              </Text>
-              {item.subcategory && (
-                <Text style={styles.subCategoryLabel}>{item.subcategory}</Text>
-              )}
-            </View>
-            <Text style={styles.legendValue}>{item.value.toLocaleString()} €</Text>
-          </Pressable>
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.chartContainer}>
+            <DonutChart
+              radius={RADIUS}
+              gap={GAP}
+              strokeWidth={STROKE_WIDTH}
+              outerStrokeWidth={OUTER_STROKE_WIDTH}
+              font={font}
+              smallFont={smallFont}
+              totalValue={totalValue}
+              n={data.length}
+              decimals={decimals}
+              colors={data.map(item => item.color)}
+              totalText={filterType === 'Income' ? 'Total Income' : 'Total Expense'}
+            />
+          </View>
+          {data.map((item, index) => (
+            <Pressable
+              key={index}
+              style={styles.legendItem}
+              onPress={() =>
+                navigation.navigate('BudgetDetail', {
+                  category: item.category,
+                  subcategory: item.subcategory,
+                  transactionIds: item.transactionIds,
+                })
+              }
+            >
+              <View style={[styles.iconCircle, { backgroundColor: item.color }]}>
+                {item.iconSet === 'Ionicons' && (
+                  <Ionicons name={item.iconName as any} size={16} color={darkTheme.colors.surface} />
+                )}
+              </View>
+              <View style={styles.legendLabelContainer}>
+                <Text style={styles.legendLabel} numberOfLines={1} ellipsizeMode="tail">
+                  {item.category}
+                </Text>
+                {item.subcategory && (
+                  <Text style={styles.subCategoryLabel}>{item.subcategory}</Text>
+                )}
+              </View>
+              <Text style={styles.legendValue}>{item.value.toLocaleString()} €</Text>
+            </Pressable>
           ))}
         </ScrollView>
       )}

@@ -101,7 +101,7 @@ export const expenseCategories: Category[] = [
       { name: "Cosmétique", iconName: "color-palette-outline", iconSet: "Ionicons" },
       { name: "Esthétique", iconName: "flower-outline", iconSet: "Ionicons" },
       { name: "Esthétique & Soins - Autres", iconName: "ellipsis-horizontal", iconSet: "Ionicons" },
-      { name: "Spa & Massage", iconName: "water-outline", iconSet: "Ionicons" }   
+      { name: "Spa & Massage", iconName: "water-outline", iconSet: "Ionicons" }
     ]
   },
   {

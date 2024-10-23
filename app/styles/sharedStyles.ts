@@ -1,5 +1,5 @@
-import { StyleSheet, Platform } from 'react-native';
 import { darkTheme } from '@/constants/theme';
+import { Platform, StyleSheet } from 'react-native';
 
 export const sharedStyles = StyleSheet.create({
     container: {

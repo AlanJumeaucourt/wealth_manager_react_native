@@ -1,6 +1,6 @@
-import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '@/config';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
 
 // Create an instance of Axios
 const apiClient = axios.create({

@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useRoute } from '@react-navigation/native';
+import React, { useEffect, useState } from 'react';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { fetchTransactionsForCategory } from './api/bankApi'; // Assume this function fetches transactions
 
 export default function BudgetDetailScreen() {

@@ -1,8 +1,8 @@
-import React from 'react';
 import { Ionicons } from "@expo/vector-icons";
-import { Pressable, Alert, StyleSheet, Platform } from "react-native";
-import { Text } from "react-native-paper";
 import { useNavigation } from '@react-navigation/native';
+import React from 'react';
+import { Alert, Platform, Pressable, StyleSheet } from "react-native";
+import { Text } from "react-native-paper";
 
 interface EditButtonProps {
     editText: string;

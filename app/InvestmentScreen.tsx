@@ -1,12 +1,11 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Image } from 'react-native';
-import { VictoryPie, VictoryLine, VictoryChart, VictoryTheme, VictoryAxis, VictoryScatter } from 'victory-native';
-import { Ionicons } from '@expo/vector-icons';
-import { createStackNavigator } from '@react-navigation/stack';
 import { useNavigation } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
+import React, { useState } from 'react';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { VictoryAxis, VictoryChart, VictoryLine, VictoryScatter, VictoryTheme } from 'victory-native';
 
-import sharedStyles from './styles/sharedStyles';
 import { darkTheme } from '@/constants/theme';
+import sharedStyles from './styles/sharedStyles';
 
 // Types
 type Asset = {

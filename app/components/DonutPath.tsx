@@ -1,5 +1,5 @@
+import { Path, Skia } from '@shopify/react-native-skia';
 import React from 'react';
-import {Path, Skia} from '@shopify/react-native-skia';
 import {
   SharedValue,
   useDerivedValue,
@@ -48,7 +48,7 @@ const DonutPath = ({
 
   const end = useDerivedValue(() => {
     if (index === decimals.value.length - 1) {
-      return withTiming(1, {duration: 1000});
+      return withTiming(1, { duration: 1000 });
     }
 
     const decimal = decimals.value.slice(0, index + 1);

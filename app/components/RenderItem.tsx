@@ -1,6 +1,6 @@
-import {StyleSheet, Text, View, useWindowDimensions} from 'react-native';
 import React from 'react';
-import Animated, {FadeInDown, FadeOutDown} from 'react-native-reanimated';
+import { StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import Animated, { FadeInDown, FadeOutDown } from 'react-native-reanimated';
 
 interface Data {
   value: number;
@@ -13,15 +13,15 @@ type Props = {
   index: number;
 };
 
-const RenderItem = ({item, index}: Props) => {
-  const {width} = useWindowDimensions();
+const RenderItem = ({ item, index }: Props) => {
+  const { width } = useWindowDimensions();
   return (
     <Animated.View
-      style={[styles.container, {width: width * 0.9}]}
+      style={[styles.container, { width: width * 0.9 }]}
       entering={FadeInDown.delay(index * 200)}
       exiting={FadeOutDown}>
       <View style={styles.contentContainer}>
-        <View style={[styles.color, {backgroundColor: item.color}]} />
+        <View style={[styles.color, { backgroundColor: item.color }]} />
         <Text style={styles.text}>{item.percentage}%</Text>
         <Text style={styles.text}>${item.value}</Text>
       </View>

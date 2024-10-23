@@ -1,11 +1,10 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, Pressable } from 'react-native';
-import { TextInput, Button, Text } from 'react-native-paper';
-import { useRouter } from 'expo-router'; // Use only useRouter
-import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { API_URL } from '../../config';
 import * as Sentry from "@sentry/browser";
+import axios from 'axios';
+import { useRouter } from 'expo-router'; // Use only useRouter
+import React, { useState } from 'react';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Button, Text, TextInput } from 'react-native-paper';
+import { API_URL } from '../../config';
 import { useAuth } from '../../context/AuthContext'; // Ensure this does not import components that depend on it
 
 export default function LoginScreen() {

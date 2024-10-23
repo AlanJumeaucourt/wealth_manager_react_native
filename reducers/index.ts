@@ -1,6 +1,6 @@
 import { combineReducers } from 'redux';
-import apiReducer from './apiReducer';
 import accountReducer from './accountReducer';
+import apiReducer from './apiReducer';
 import bankReducer from './bankReducer';
 import transactionReducer from './transactionReducer';
 

@@ -1,14 +1,12 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
-import TransactionList from './components/TransactionList';
-import { fetchTransactions } from '../actions/transactionActions';
+import React, { useEffect } from 'react';
+import { Image, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator } from 'react-native-paper';
 import { useDispatch, useSelector } from 'react-redux';
-import { RootState } from '../store'; // Assuming you have a root state type defined
+import { fetchTransactions } from '../actions/transactionActions';
 import { darkTheme } from '../constants/theme';
-import { ActivityIndicator, Menu } from 'react-native-paper';
+import { RootState } from '../store'; // Assuming you have a root state type defined
+import TransactionList from './components/TransactionList';
 import sharedStyles from './styles/sharedStyles';
-import { Image } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 
 const TransactionContent = ({
   transactions,

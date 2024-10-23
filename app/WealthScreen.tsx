@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Dimensions } from "react-native";
+import { ActivityIndicator, Dimensions, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { LineChart } from 'react-native-gifted-charts';
-import { fetchWealthData } from "./api/bankApi";
 import { darkTheme } from '../constants/theme';
+import { fetchWealthData } from "./api/bankApi";
 import sharedStyles from './styles/sharedStyles';
-import { Image } from 'react-native';
 
 interface DataPoint {
     value: number;
@@ -96,7 +95,7 @@ export default function WealthScreen() {
     };
 
     const data = reduceDataPoints(formatData());
-    
+
     const minValue = () => {
         const maxValue = Math.max(...data.map(point => point.value));
         const minValue = Math.min(...data.map(point => point.value));
@@ -115,11 +114,11 @@ export default function WealthScreen() {
         const maxSpacing = 10; // Maximum spacing
         const calculatedSpacing = Math.max(minSpacing, Math.min(maxSpacing, (width - 60) / (dataLength + 1))); // Adjusted width calculation
         return calculatedSpacing;
-      };
-    
+    };
+
     // Update the spacing calculation
     const spacing = calculateSpacing(screenWidth, data.length); // Calculate spacing based on width and data length
-    
+
 
     return (
         <View style={[sharedStyles.container]}>
@@ -133,7 +132,7 @@ export default function WealthScreen() {
                     <Text style={sharedStyles.headerTitle}>Wealth over time</Text>
                 </View>
             </View>
-            <View style={sharedStyles.body}>                
+            <View style={sharedStyles.body}>
                 <View style={styles.buttonContainer}>
                     {["1M", "3M", "6M", "1Y", "3Y", "5Y", "Max"].map((range) => (
                         <TouchableOpacity

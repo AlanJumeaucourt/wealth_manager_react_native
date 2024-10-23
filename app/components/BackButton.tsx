@@ -1,10 +1,7 @@
-import { colors } from "@/constants/colors";
-import { Ionicons } from "@expo/vector-icons";
-import { Pressable } from "react-native";
-import { StyleSheet, Platform } from "react-native";
-import { Text } from "react-native-paper";
 import { useNavigation } from "@react-navigation/native";
+import { Pressable, StyleSheet } from "react-native";
 import { Icon } from "react-native-elements";
+import { Text } from "react-native-paper";
 
 export const BackButton = () => {
     const navigation = useNavigation();
