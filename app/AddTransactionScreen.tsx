@@ -171,10 +171,7 @@ export default function AddTransactionScreen() {
                 ]}
                 onPress={() => setTransactionType(item)}
             >
-                <Text style={[
-                    styles.filterText,
-                    transactionType === item && styles.selectedFilterText
-                ]}>
+                <Text style={[sharedStyles.text, transactionType === item && sharedStyles.textBold]}>
                     {item.charAt(0).toUpperCase() + item.slice(1)}
                 </Text>
             </Pressable>
@@ -569,7 +566,7 @@ const styles = StyleSheet.create({
         fontSize: 14,
     },
     selectedFilterText: {
-        color: '#FFFFFF',  // Using direct color value instead of theme color
+        color: darkTheme.colors.white,
     },
     label: {
         fontSize: 16,
