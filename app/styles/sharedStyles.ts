@@ -19,6 +19,11 @@ export const sharedStyles = StyleSheet.create({
         paddingBottom: darkTheme.spacing.m,
         backgroundColor: darkTheme.colors.surface,
     },
+    headerTitleContainer: {
+        flex: 1,
+        alignItems: 'center',
+        marginRight: 30, // This offsets the logo width to ensure true center alignment
+    },
     headerTitle: {
         fontSize: 20,
         fontWeight: 'bold',

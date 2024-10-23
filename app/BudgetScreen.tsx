@@ -1,6 +1,6 @@
 /* eslint-disable react-native/no-inline-styles */
 import React, {useState, useEffect} from 'react';
-import {ScrollView, StyleSheet, Text, View, Pressable, Switch} from 'react-native';
+import {ScrollView, StyleSheet, Text, View, Pressable, Switch, Image} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import DonutChart from './components/DonutChart';
 import {useFont} from '@shopify/react-native-skia';
@@ -243,7 +243,16 @@ export default function BudgetScreen() {
   return (
     <View style={[sharedStyles.container]}>
       <View style={sharedStyles.header}>
-        <Text style={sharedStyles.headerTitle}>Budget</Text>
+        <View style={styles.headerContent}>
+          <Image 
+            source={require('./../assets/images/logo-removebg-white.png')} 
+            style={{width: 30, height: 30}}
+            resizeMode="contain"
+          />
+          <View style={sharedStyles.headerTitleContainer}>
+            <Text style={sharedStyles.headerTitle}>Budget</Text>
+          </View>
+        </View>
       </View>
       <View style={styles.periodSelector}>
         <Pressable onPress={() => changePeriod(-1)} style={styles.arrowButton}>
@@ -454,5 +463,14 @@ const styles = StyleSheet.create({
     color: darkTheme.colors.textSecondary,
     textAlign: 'center',
     marginTop: darkTheme.spacing.m,
+  },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+  },
+  logo: {
+    width: 30,
+    height: 30,
   },
 });

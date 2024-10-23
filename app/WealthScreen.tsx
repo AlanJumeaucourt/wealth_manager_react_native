@@ -4,6 +4,7 @@ import { LineChart } from 'react-native-gifted-charts';
 import { fetchWealthData } from "./api/bankApi";
 import { darkTheme } from '../constants/theme';
 import sharedStyles from './styles/sharedStyles';
+import { Image } from 'react-native';
 
 interface DataPoint {
     value: number;
@@ -123,7 +124,14 @@ export default function WealthScreen() {
     return (
         <View style={[sharedStyles.container]}>
             <View style={sharedStyles.header}>
-                <Text style={sharedStyles.headerTitle}>Wealth over time</Text>
+                <Image
+                    source={require('./../assets/images/logo-removebg-white.png')}
+                    style={{ width: 30, height: 30 }}
+                    resizeMode="contain"
+                />
+                <View style={sharedStyles.headerTitleContainer}>
+                    <Text style={sharedStyles.headerTitle}>Wealth over time</Text>
+                </View>
             </View>
             <View style={sharedStyles.body}>                
                 <View style={styles.buttonContainer}>

@@ -20,6 +20,7 @@ import sharedStyles from './styles/sharedStyles';
 import { fetchWealthData } from '@/app/api/bankApi'; // Import the new API function
 import { ActivityIndicator } from 'react-native-paper';
 import { darkTheme } from '../constants/theme';
+import { Image } from 'react-native';
 
 interface DataPoint {
   date: Date;
@@ -232,8 +233,8 @@ export default function AccountsScreen() {
 
   const formatData = (): DataPoint[] => {
     return Object.entries(wealthData).map(([date, value]) => ({
-        value: parseFloat(value.toFixed(2)),
-        date
+      value: parseFloat(value.toFixed(2)),
+      date
     }));
   };
 
@@ -243,8 +244,8 @@ export default function AccountsScreen() {
     const decayFactor = 0.0005; // Decay factor
 
     return Math.max(
-        Math.floor(baseMax * Math.exp(-decayFactor * dataLength)),
-        minMax
+      Math.floor(baseMax * Math.exp(-decayFactor * dataLength)),
+      minMax
     );
   };
 
@@ -259,7 +260,7 @@ export default function AccountsScreen() {
 
   const minValue = () => {
     console.log("max value ", Math.max(...data.map(point => point.value)));
-    
+
     const minValue = Math.min(...data.map(point => point.value));
     const valueRange = Math.max(...data.map(point => point.value)) - minValue;
     if (minValue < 0) {
@@ -304,7 +305,7 @@ export default function AccountsScreen() {
   // Update the spacing calculation
   const spacing = calculateSpacing(chartWidth, data.length); // Calculate spacing based on width and data length
 
-  
+
   const [visible, setVisible] = useState(false);
   const openMenu = () => setVisible(true);
   const closeMenu = () => {
@@ -312,22 +313,26 @@ export default function AccountsScreen() {
   };
 
   return (
-    <View style={[sharedStyles.container, { backgroundColor: darkTheme.colors.background }]}>
-      <StatusBar style="light" backgroundColor={darkTheme.colors.background} />
+    <View style={[sharedStyles.container]}>
       <View style={sharedStyles.header}>
+        <Image
+          source={require('./../assets/images/logo-removebg-white.png')}
+          style={{ width: 30, height: 30 }}
+          resizeMode="contain"
+        />
         <Text style={sharedStyles.headerTitle}>Accounts</Text>
         <Menu
           visible={visible}
-            onDismiss={closeMenu}
-            anchor={
-              <Pressable style={styles.menuButton} onPress={openMenu}>
-                <Ionicons name="ellipsis-vertical" size={24} color={darkTheme.colors.text} />
-              </Pressable>
-            }
-          >
-            <Menu.Item onPress={handleLogout} title="Logout" />
-          </Menu>
-        </View>
+          onDismiss={closeMenu}
+          anchor={
+            <Pressable style={styles.menuButton} onPress={openMenu}>
+              <Ionicons name="ellipsis-vertical" size={24} color={darkTheme.colors.text} />
+            </Pressable>
+          }
+        >
+          <Menu.Item onPress={handleLogout} title="Logout" />
+        </Menu>
+      </View>
       <View style={sharedStyles.body}>
         <ScrollView
           contentContainerStyle={styles.scrollViewContent}
@@ -348,83 +353,83 @@ export default function AccountsScreen() {
           )}
           {data.length > 0 && (
             <View style={styles.graphContainer}>
-                <LineChart
-                    areaChart
-                    data={data} // Use the prepared data
-                    width={chartWidth} // Use the dynamic width
-                    height={100}
-                    spacing={spacing} // Use the calculated spacing
-                    adjustToWidth={true}
-                    color={darkTheme.colors.primary}
-                    startFillColor={`${darkTheme.colors.primary}40`} // 40 pour 25% d'opacité
-                    endFillColor={`${darkTheme.colors.primary}10`} // 10 pour 6% d'opacité
-                    thickness={1.5}
-                    startOpacity={0.9}
-                    endOpacity={0.2}
-                    initialSpacing={0}
-                    noOfSections={2}
+              <LineChart
+                areaChart
+                data={data} // Use the prepared data
+                width={chartWidth} // Use the dynamic width
+                height={100}
+                spacing={spacing} // Use the calculated spacing
+                adjustToWidth={true}
+                color={darkTheme.colors.primary}
+                startFillColor={`${darkTheme.colors.primary}40`} // 40 pour 25% d'opacité
+                endFillColor={`${darkTheme.colors.primary}10`} // 10 pour 6% d'opacité
+                thickness={1.5}
+                startOpacity={0.9}
+                endOpacity={0.2}
+                initialSpacing={0}
+                noOfSections={2}
 
-                    yAxisOffset={minValue()}
-                    yAxisColor="transparent"
-                    xAxisColor="transparent"
-                    yAxisTextStyle={{ color: darkTheme.colors.textTertiary }}
-                    xAxisTextStyle={{ color: darkTheme.colors.textTertiary }}
-                    hideRules
-                    hideDataPoints
-                    showVerticalLines={false}
-                    xAxisLabelTextStyle={{ color: darkTheme.colors.textTertiary, fontSize: 10 }}
-                    yAxisTextNumberOfLines={1}
-                    yAxisLabelSuffix="€"
-                    yAxisLabelPrefix=""
-                    rulesType="solid"
-                    xAxisThickness={0}
-                    rulesColor="rgba(0, 0, 0, 0.1)"
-                    curved
-                    animateOnDataChange
-                    animationDuration={1000}
-                    pointerConfig={{
-                        showPointerStrip: true,
-                        pointerStripWidth: 2,
-                        pointerStripUptoDataPoint: true,
-                        pointerStripColor: darkTheme.colors.textSecondary,
-                        width: 10,
-                        height: 10,
-                        color: darkTheme.colors.primary,
-                        radius: 6,
-                        pointerLabelWidth: 150,
-                        pointerLabelHeight: 10,
-                        activatePointersOnLongPress: false,
-                        autoAdjustPointerLabelPosition: true,
-                        
-                        pointerLabelComponent: (items: any) => {
-                            const item = items[0];
-                            return (
-                                <View style={[{
-                                    backgroundColor: darkTheme.colors.surface,
-                                    padding: darkTheme.spacing.m,
-                                    borderRadius: darkTheme.borderRadius.m,
-                                    shadowColor: '#000',
-                                    shadowOffset: { width: 0, height: 4 },
-                                    shadowOpacity: 0.3,
-                                    shadowRadius: 8,
-                                    elevation: 5,
-                                }, { marginTop: 20 }]}>
-                                    <Text style={{
-                                        fontSize: 16,
-                                        fontWeight: '700',
-                                        color: darkTheme.colors.text,
-                                        marginBottom: 4,
-                                    }}>{item.value.toFixed(0)} €</Text>
-                                    <Text style={{
-                                        fontSize: 12,
-                                        color: darkTheme.colors.textSecondary,
-                                        textAlign: 'center',
-                                    }}>{new Date(item.date).toDateString()}</Text>
-                                </View>
-                            );
-                        },
-                    }}
-                />
+                yAxisOffset={minValue()}
+                yAxisColor="transparent"
+                xAxisColor="transparent"
+                yAxisTextStyle={{ color: darkTheme.colors.textTertiary }}
+                xAxisTextStyle={{ color: darkTheme.colors.textTertiary }}
+                hideRules
+                hideDataPoints
+                showVerticalLines={false}
+                xAxisLabelTextStyle={{ color: darkTheme.colors.textTertiary, fontSize: 10 }}
+                yAxisTextNumberOfLines={1}
+                yAxisLabelSuffix="€"
+                yAxisLabelPrefix=""
+                rulesType="solid"
+                xAxisThickness={0}
+                rulesColor="rgba(0, 0, 0, 0.1)"
+                curved
+                animateOnDataChange
+                animationDuration={1000}
+                pointerConfig={{
+                  showPointerStrip: true,
+                  pointerStripWidth: 2,
+                  pointerStripUptoDataPoint: true,
+                  pointerStripColor: darkTheme.colors.textSecondary,
+                  width: 10,
+                  height: 10,
+                  color: darkTheme.colors.primary,
+                  radius: 6,
+                  pointerLabelWidth: 150,
+                  pointerLabelHeight: 10,
+                  activatePointersOnLongPress: false,
+                  autoAdjustPointerLabelPosition: true,
+
+                  pointerLabelComponent: (items: any) => {
+                    const item = items[0];
+                    return (
+                      <View style={[{
+                        backgroundColor: darkTheme.colors.surface,
+                        padding: darkTheme.spacing.m,
+                        borderRadius: darkTheme.borderRadius.m,
+                        shadowColor: '#000',
+                        shadowOffset: { width: 0, height: 4 },
+                        shadowOpacity: 0.3,
+                        shadowRadius: 8,
+                        elevation: 5,
+                      }, { marginTop: 20 }]}>
+                        <Text style={{
+                          fontSize: 16,
+                          fontWeight: '700',
+                          color: darkTheme.colors.text,
+                          marginBottom: 4,
+                        }}>{item.value.toFixed(0)} €</Text>
+                        <Text style={{
+                          fontSize: 12,
+                          color: darkTheme.colors.textSecondary,
+                          textAlign: 'center',
+                        }}>{new Date(item.date).toDateString()}</Text>
+                      </View>
+                    );
+                  },
+                }}
+              />
             </View>
           )}
 

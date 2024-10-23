@@ -1,12 +1,14 @@
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import TransactionList from './components/TransactionList';
 import { fetchTransactions } from '../actions/transactionActions';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../store'; // Assuming you have a root state type defined
 import { darkTheme } from '../constants/theme';
-import { ActivityIndicator } from 'react-native-paper';
+import { ActivityIndicator, Menu } from 'react-native-paper';
 import sharedStyles from './styles/sharedStyles';
+import { Image } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 const TransactionContent = ({
   transactions,
@@ -42,12 +44,19 @@ export default function TransactionsScreen() {
 
   useEffect(() => {
     dispatch(fetchTransactions());
-  }, [dispatch]);
+  }, []);
 
   return (
     <View style={[sharedStyles.container]}>
       <View style={sharedStyles.header}>
-        <Text style={sharedStyles.headerTitle}>All Transactions</Text>
+        <Image
+          source={require('./../assets/images/logo-removebg-white.png')}
+          style={{ width: 30, height: 30 }}
+          resizeMode="contain"
+        />
+        <View style={sharedStyles.headerTitleContainer}>
+          <Text style={sharedStyles.headerTitle}>All Transactions</Text>
+        </View>
       </View>
       <View style={sharedStyles.body}>
         <TransactionContent
