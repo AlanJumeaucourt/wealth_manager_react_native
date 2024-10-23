@@ -3,6 +3,7 @@ import { Transaction } from '@/types/transaction';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios, { AxiosError } from 'axios';
 import apiClient from './axiosConfig';
+import { InvestmentTransaction } from '@/types/investment';
 
 const handleApiError = async (error: unknown, message: string) => {
   if (axios.isAxiosError(error)) {
@@ -213,3 +214,87 @@ export const fetchBudgetSummary = async (startDate: string, endDate: string) => 
   }
 };
 
+// Investment API calls
+export const fetchInvestmentTransactions = async (perPage: number, page: number, accountId?: number) => {
+  try {
+    const response = await apiClient.get(`/investments?per_page=${perPage}&page=${page}${accountId ? `&account_id=${accountId}` : ''}`);
+    console.log('Investment transactions response:', response.data);
+    return response.data;
+  } catch (error) {
+    return handleApiError(error, 'Error fetching investment transactions');
+  }
+};
+
+export const createInvestmentTransaction = async (transactionData: {
+  account_id: number;
+  asset_symbol: string;
+  asset_name: string;
+  activity_type: 'buy' | 'sell' | 'deposit' | 'withdrawal';
+  date: string;
+  quantity: number;
+  unit_price: number;
+  fee: number;
+  tax: number;
+  transaction_related_id?: number;
+}) => {
+  try {
+    const response = await apiClient.post('/investments', transactionData);
+    return response.data;
+  } catch (error) {
+    return handleApiError(error, 'Error creating investment transaction');
+  }
+};
+
+export const updateInvestmentTransaction = async (transactionId: number, transactionData: Partial<InvestmentTransaction>) => {
+  try {
+    const response = await apiClient.put(`/investments/${transactionId}`, transactionData);
+    return response.data;
+  } catch (error) {
+    return handleApiError(error, 'Error updating investment transaction');
+  }
+};
+
+export const deleteInvestmentTransaction = async (transactionId: number) => {
+  try {
+    const response = await apiClient.delete(`/investments/${transactionId}`);
+    return response.data;
+  } catch (error) {
+    return handleApiError(error, 'Error deleting investment transaction');
+  }
+};
+
+export const getPortfolioSummary = async (accountId?: number) => {
+  try {
+    const response = await apiClient.get(`/investments/portfolio${accountId ? `?account_id=${accountId}` : ''}`);
+    return response.data;
+  } catch (error) {
+    return handleApiError(error, 'Error fetching portfolio summary');
+  }
+};
+
+export const searchStocks = async (query: string) => {
+    try {
+        const response = await apiClient.get(`/stocks/search?q=${encodeURIComponent(query)}`);
+        return response.data;
+    } catch (error) {
+        return handleApiError(error, 'Error searching stocks');
+    }
+};
+
+export const getStockInfo = async (symbol: string) => {
+    try {
+        const response = await apiClient.get(`/stocks/${encodeURIComponent(symbol)}`);
+        return response.data;
+    } catch (error) {
+        return handleApiError(error, 'Error fetching stock info');
+    }
+};
+
+export const getStockHistory = async (symbol: string, period: string = '1y') => {
+    try {
+        const response = await apiClient.get(`/stocks/${encodeURIComponent(symbol)}/history?period=${period}`);
+        return response.data;
+    } catch (error) {
+        return handleApiError(error, 'Error fetching stock history');
+    }
+};

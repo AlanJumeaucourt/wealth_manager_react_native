@@ -11,10 +11,10 @@ export const darkTheme = {
     textSecondary: 'rgba(255, 255, 255, 0.7)', // Secondary text
     textTertiary: 'rgba(255, 255, 255, 0.5)', // Disabled text
     border: 'rgba(255, 255, 255, 0.12)', // Border color
-    success: '#00C853', // Success states
-    error: '#CF6679', // Error states
-    warning: '#FB8C00', // Warning states
-    info: '#2196F3', // Information states
+    success: '#4CAF50',  // Green
+    error: '#F44336',    // Red
+    warning: '#FF9800',  // Orange
+    info: '#2196F3',     // Blue
     white: '#FFFFFF',
     chart: {
       primary: '#BB86FC',

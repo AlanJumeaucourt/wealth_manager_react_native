@@ -8,20 +8,41 @@ import sharedStyles from '../styles/sharedStyles';
 
 interface SearchableModalProps {
     data: Account[];
-    onSelect: (id: number | string) => void; // Allow string for new values
+    onSelect: (id: number | string) => void;
     placeholder: string;
     label: string;
-    allowCustomValue?: boolean; // New prop to allow custom values
-    searchable?: boolean; // New prop to enable/disable search
+    allowCustomValue?: boolean;
+    searchable?: boolean;
+    onSearch?: (query: string) => void;
+    renderCustomItem?: (item: any) => React.ReactNode;
 }
 
-const SearchableModal: React.FC<SearchableModalProps> = ({ data, onSelect, placeholder, label, allowCustomValue = false, searchable = true }) => {
+const SearchableModal: React.FC<SearchableModalProps> = ({ 
+    data, 
+    onSelect, 
+    placeholder, 
+    label, 
+    allowCustomValue = false, 
+    searchable = true,
+    onSearch,
+    renderCustomItem 
+}) => {
     const [modalVisible, setModalVisible] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
 
-    const filteredData = searchable
-        ? data.filter(item => item.name.toLowerCase().includes(searchQuery.toLowerCase()))
-        : data;
+    // Only filter locally if no onSearch prop is provided
+    const filteredData = onSearch 
+        ? data 
+        : (searchable ? data.filter(item => 
+            item.name.toLowerCase().includes(searchQuery.toLowerCase())
+          ) : data);
+
+    const handleSearchChange = (text: string) => {
+        setSearchQuery(text);
+        if (onSearch) {
+            onSearch(text);
+        }
+    };
 
     return (
         <View style={styles.container}>
@@ -52,7 +73,7 @@ const SearchableModal: React.FC<SearchableModalProps> = ({ data, onSelect, place
                                 placeholder="Search..."
                                 placeholderTextColor={colors.lightText}
                                 value={searchQuery}
-                                onChangeText={setSearchQuery}
+                                onChangeText={handleSearchChange}
                             />
                         )}
                         <FlatList
@@ -67,12 +88,16 @@ const SearchableModal: React.FC<SearchableModalProps> = ({ data, onSelect, place
                                         setModalVisible(false);
                                     }}
                                 >
-                                    <View style={styles.itemRow}>
-                                        <Text style={styles.itemText}>{item.name}</Text>
-                                        {item.type !== 'expense' && item.type !== 'income' && (
-                                            <Text style={styles.balanceText}>{item.balance.toFixed(2)} €</Text>
-                                        )}
-                                    </View>
+                                    {renderCustomItem ? (
+                                        renderCustomItem(item)
+                                    ) : (
+                                        <View style={styles.itemRow}>
+                                            <Text style={styles.itemText}>{item.name}</Text>
+                                            {item.type !== 'expense' && item.type !== 'income' && (
+                                                <Text style={styles.balanceText}>{item.balance.toFixed(2)} €</Text>
+                                            )}
+                                        </View>
+                                    )}
                                 </Pressable>
                             )}
                             showsVerticalScrollIndicator={true}

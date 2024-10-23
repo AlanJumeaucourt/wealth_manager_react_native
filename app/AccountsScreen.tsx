@@ -264,32 +264,6 @@ export default function AccountsScreen() {
     return Math.round(minValue - 0.125 * valueRange);
   };
 
-  const tooltipContainer = {
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: colors.white,
-    borderRadius: 12,
-    padding: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 6,
-  };
-
-  const tooltipValue = {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.text,
-    marginBottom: 4,
-  };
-
-  const tooltipDate = {
-    fontSize: 12,
-    color: colors.lightText,
-    textAlign: 'center',
-  };
-
   const calculateSpacing = (width: number, dataLength: number): number => {
     const minSpacing = 1; // Minimum spacing
     const maxSpacing = 10; // Maximum spacing
@@ -368,7 +342,6 @@ export default function AccountsScreen() {
                 yAxisColor="transparent"
                 xAxisColor="transparent"
                 yAxisTextStyle={{ color: darkTheme.colors.textTertiary }}
-                xAxisTextStyle={{ color: darkTheme.colors.textTertiary }}
                 hideRules
                 hideDataPoints
                 showVerticalLines={false}
@@ -397,12 +370,13 @@ export default function AccountsScreen() {
                   pointerLabelComponent: (items: any) => {
                     const item = items[0];
                     return (
-                        <View style={styles.tooltipContainer}>
-                            <Text style={styles.tooltipValue}>{item.value.toFixed(0)} €</Text>
-                            <Text style={styles.tooltipDate}>{new Date(item.date).toDateString()}</Text>
-                        </View>
+                      <View style={styles.tooltipContainer}>
+                        <Text style={styles.tooltipValue}>{item.value.toFixed(0)} €</Text>
+                        <Text style={styles.tooltipDate}>{new Date(item.date).toDateString()}</Text>
+                      </View>
                     );
-                },                }}
+                  },
+                }}
               />
             </View>
           )}
@@ -694,15 +668,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderColor: darkTheme.colors.primary,
     borderWidth: 1,
-},
-tooltipValue: {
+  },
+  tooltipValue: {
     fontSize: 14,
     fontWeight: 'bold',
     color: darkTheme.colors.primary,
-},
-tooltipDate: {
+  },
+  tooltipDate: {
     fontSize: 10,
     color: 'gray',
     marginTop: 2,
-},
+  },
 });

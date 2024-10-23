@@ -3,10 +3,12 @@ import { createStackNavigator } from '@react-navigation/stack';
 import React, { useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { VictoryAxis, VictoryChart, VictoryLine, VictoryScatter, VictoryTheme } from 'victory-native';
+import Ionicons from '@expo/vector-icons/Ionicons';
 
 import { darkTheme } from '@/constants/theme';
 import sharedStyles from './styles/sharedStyles';
-
+import { Menu } from 'react-native-paper';
+import AddInvestmentTransactionScreen from './AddInvestmentTransactionScreen';
 // Types
 type Asset = {
   name: string;
@@ -255,10 +257,16 @@ const StockPositionItem = ({ position }) => {
 };
 
 const InvestmentOverview = () => {
+  const navigation = useNavigation();
   const [selectedPeriod, setSelectedPeriod] = useState('1M');
 
   const totalValue = investmentAssets.reduce((sum, asset) => sum + asset.value, 0);
   const overallPerformance = investmentAssets.reduce((sum, asset) => sum + (asset.performance * asset.allocation / 100), 0);
+
+  const [visible, setVisible] = useState(false);
+
+  const openMenu = () => setVisible(true);
+  const closeMenu = () => setVisible(false);
 
   return (
     <View style={[sharedStyles.container]}>
@@ -268,9 +276,19 @@ const InvestmentOverview = () => {
           style={{ width: 30, height: 30 }}
           resizeMode="contain"
         />
-        <View style={sharedStyles.headerTitleContainer}>
-          <Text style={sharedStyles.headerTitle}>Investissements</Text>
-        </View>
+        <Text style={sharedStyles.headerTitle}>Investissements</Text>
+        <Menu
+          visible={visible}
+          onDismiss={closeMenu}
+          anchor={
+            <Pressable style={styles.menuButton} onPress={openMenu}>
+              <Ionicons name="ellipsis-vertical" size={24} color={darkTheme.colors.text} />
+            </Pressable>
+          }
+        >
+          <Menu.Item onPress={() => navigation.navigate('AddInvestmentTransaction')} title="Add investment transaction" />
+          <Menu.Item onPress={() => { }} title="Show list investments" />
+        </Menu>
       </View>
       <View style={sharedStyles.body}>
         <ScrollView style={styles.container}>
@@ -384,6 +402,11 @@ export default function InvestmentScreen() {
         name="StockDetail"
         component={StockDetail}
         options={({ route }) => ({ title: route.params.position.symbol })}
+      />
+      <Stack.Screen
+        name="AddInvestmentTransaction"
+        component={AddInvestmentTransactionScreen}
+        options={{ headerShown: false }}
       />
     </Stack.Navigator>
   );
@@ -573,5 +596,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginBottom: 3,
     color: darkTheme.colors.text,
+  },
+  menuButton: {
+    marginRight: 16,
   },
 });

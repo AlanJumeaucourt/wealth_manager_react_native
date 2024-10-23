@@ -45,17 +45,17 @@ export default function AddTransactionScreen() {
     const [selectedToAccountName, setSelectedToAccountName] = useState<string>(transaction ? accountNameFromId(transaction.to_account_id, accounts) : '');
     const [category, setCategory] = useState(transaction ? transaction.category : '');
     const [subcategory, setSubcategory] = useState<string | null>(transaction ? transaction.subcategory : null);
+    const [originalCategory, setOriginalCategory] = useState<string | null>(transaction ? transaction.category : null);
     const [isCategoryModalVisible, setIsCategoryModalVisible] = useState(false);
     const [transactionDate, setTransactionDate] = useState(transaction ? new Date(transaction.date) : new Date());
     const [showDatePicker, setShowDatePicker] = useState(false);
+    const [accountabilityDate, setAccountabilityDate] = useState(transaction ? new Date(transaction.date_accountability) : new Date());
+    const [showAccountabilityDatePicker, setShowAccountabilityDatePicker] = useState(false);
 
 
     useEffect(() => {
         if (transactionType === 'transfer') {
             setCategory("Virements internes");
-            setSubcategory(null);
-        } else {
-            setCategory('');
             setSubcategory(null);
         }
     }, [transactionType]);
@@ -93,6 +93,7 @@ export default function AddTransactionScreen() {
 
         const transactionData: Transaction = {
             date: transactionDate.toISOString().split('T')[0],
+            date_accountability: accountabilityDate.toISOString().split('T')[0],
             description,
             amount: parsedAmount,
             type: transactionType,
@@ -320,6 +321,12 @@ export default function AddTransactionScreen() {
         setShowDatePicker(false); // Close the date picker
     };
 
+    // Add handler for accountability date
+    const handleAccountabilityDateChange = (date: string) => {
+        setAccountabilityDate(new Date(date));
+        setShowAccountabilityDatePicker(false);
+    };
+
     return (
         <View style={sharedStyles.container}>
             <View style={sharedStyles.header}>
@@ -451,7 +458,7 @@ export default function AddTransactionScreen() {
                         onRequestClose={() => setIsCategoryModalVisible(false)}
                     >
                         <View style={styles.modalContainer}>
-                            <View style={styles.modalContent}>
+                            <View style={[styles.modalContent, { height: "78%" }]}>
                                 <Text style={styles.label}>Select Category</Text>
                                 <CategorySelector
                                     transactionType={transactionType}
@@ -469,7 +476,6 @@ export default function AddTransactionScreen() {
                         </Text>
                     </Pressable>
 
-                    {/* Modal for DatePicker */}
                     <Modal
                         visible={showDatePicker}
                         animationType="slide"
@@ -498,6 +504,50 @@ export default function AddTransactionScreen() {
                                     buttonPrevIcon={<Ionicons name="chevron-back" size={24} color={darkTheme.colors.primary} />}
                                 />
                                 <Button mode="outlined" onPress={() => setShowDatePicker(false)} style={styles.closeButton}>
+                                    Close
+                                </Button>
+                            </View>
+                        </View>
+                    </Modal>
+
+
+
+                    <Text style={styles.label}>Accountability Date</Text>
+                    <Pressable onPress={() => setShowAccountabilityDatePicker(true)} style={styles.dateButton}>
+                        <Text style={[styles.dateButtonText, { color: darkTheme.colors.textTertiary }]}>
+                            {accountabilityDate.toLocaleDateString()}
+                        </Text>
+                    </Pressable>
+
+                    {/* Add new Modal for Accountability DatePicker */}
+                    <Modal
+                        visible={showAccountabilityDatePicker}
+                        animationType="slide"
+                        transparent={true}
+                        onRequestClose={() => setShowAccountabilityDatePicker(false)}
+                    >
+                        <View style={styles.modalContainer}>
+                            <View style={styles.modalContent}>
+                                <DatePicker
+                                    date={accountabilityDate}
+                                    onChange={(params) => handleAccountabilityDateChange(params.date)}
+                                    mode="single"
+                                    calendarTextStyle={styles.datePicker}
+                                    selectedTextStyle={styles.datePicker}
+                                    weekDaysTextStyle={styles.datePicker}
+                                    monthContainerStyle={styles.monthContainerStyle}
+                                    yearContainerStyle={styles.monthContainerStyle}
+                                    selectedItemColor={darkTheme.colors.primary}
+                                    headerContainerStyle={styles.datePickerHeader}
+                                    headerTextStyle={styles.datePickerHeaderText}
+                                    dayContainerStyle={styles.datePickerDayContainer}
+                                    selectedRangeBackgroundColor={darkTheme.colors.primary}
+                                    weekDaysContainerStyle={styles.datePickerDayContainer}
+                                    timePickerContainerStyle={styles.datePicker}
+                                    buttonNextIcon={<Ionicons name="chevron-forward" size={24} color={darkTheme.colors.primary} />}
+                                    buttonPrevIcon={<Ionicons name="chevron-back" size={24} color={darkTheme.colors.primary} />}
+                                />
+                                <Button mode="outlined" onPress={() => setShowAccountabilityDatePicker(false)} style={styles.closeButton}>
                                     Close
                                 </Button>
                             </View>
@@ -651,7 +701,6 @@ const styles = StyleSheet.create({
         borderRadius: darkTheme.borderRadius.m,
         padding: darkTheme.spacing.s,
         width: '90%',
-        height: "78%",
     },
     closeButton: {
         marginTop: darkTheme.spacing.m,

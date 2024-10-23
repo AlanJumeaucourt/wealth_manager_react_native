@@ -1,6 +1,7 @@
 export interface Transaction {
   id: number;
   date: string;
+  date_accountability: string;
   description: string;
   amount: number;
   type: string;
