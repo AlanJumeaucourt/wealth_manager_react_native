@@ -15,25 +15,45 @@ import sharedStyles from './styles/sharedStyles';
 import Modal from 'react-native-modal';
 import StockSearchModal from './components/StockSearchModal';
 
+interface InvestmentTransaction {
+    id: number;
+    account_id: number;
+    asset_symbol: string;
+    asset_name: string;
+    activity_type: 'buy' | 'sell' | 'deposit' | 'withdrawal';
+    date: string;
+    quantity: number;
+    unit_price: number;
+    fee: number;
+    tax: number;
+}
+
 export default function AddInvestmentTransactionScreen() {
     const navigation = useNavigation();
     const route = useRoute();
+    const transaction = route.params?.transaction as InvestmentTransaction | undefined;
     const accounts = useSelector((state: RootState) => 
         state.accounts.accounts.filter(account => account.type === 'investment')
     );
 
-    const [accountId, setAccountId] = useState<number | null>(null);
-    const [selectedAccountName, setSelectedAccountName] = useState<string>('');
-    const [assetSymbol, setAssetSymbol] = useState('');
-    const [assetName, setAssetName] = useState('');
-    const [activityType, setActivityType] = useState<'buy' | 'sell' | 'deposit' | 'withdrawal'>('buy');
-    const [transactionDate, setTransactionDate] = useState(new Date());
-    const [quantity, setQuantity] = useState('');
-    const [unitPrice, setUnitPrice] = useState('');
-    const [fee, setFee] = useState('');
-    const [tax, setTax] = useState('');
+    // Initialize state with transaction data if editing
+    const [accountId, setAccountId] = useState<number | null>(transaction ? transaction.account_id : null);
+    const [selectedAccountName, setSelectedAccountName] = useState<string>(
+        transaction ? accounts.find(acc => acc.id === transaction.account_id)?.name || '' : ''
+    );
+    const [assetSymbol, setAssetSymbol] = useState(transaction ? transaction.asset_symbol : '');
+    const [assetName, setAssetName] = useState(transaction ? transaction.asset_name : '');
+    const [activityType, setActivityType] = useState<'buy' | 'sell' | 'deposit' | 'withdrawal'>(
+        transaction ? transaction.activity_type : 'buy'
+    );
+    const [transactionDate, setTransactionDate] = useState(
+        transaction ? new Date(transaction.date) : new Date()
+    );
+    const [quantity, setQuantity] = useState(transaction ? transaction.quantity.toString() : '');
+    const [unitPrice, setUnitPrice] = useState(transaction ? transaction.unit_price.toString() : '');
+    const [fee, setFee] = useState(transaction ? transaction.fee ? transaction.fee.toString() : '0' : '0');
+    const [tax, setTax] = useState(transaction ? transaction.tax ? transaction.tax.toString() : '0' : '0');
     const [showDatePicker, setShowDatePicker] = useState(false);
-    const [showStockSearch, setShowStockSearch] = useState(false);
 
     const handleDateChange = (date: string) => {
         setTransactionDate(new Date(date));
@@ -59,12 +79,19 @@ export default function AddInvestmentTransactionScreen() {
         };
 
         try {
-            await createInvestmentTransaction(transactionData);
-            Alert.alert('Success', 'Investment transaction created successfully!');
+            if (transaction) {
+                // Update existing transaction
+                await updateInvestmentTransaction(transaction.id, transactionData);
+                Alert.alert('Success', 'Investment transaction updated successfully!');
+            } else {
+                // Create new transaction
+                await createInvestmentTransaction(transactionData);
+                Alert.alert('Success', 'Investment transaction created successfully!');
+            }
             navigation.goBack();
         } catch (error) {
-            console.error('Error creating investment transaction:', error);
-            Alert.alert('Error', 'Failed to create investment transaction');
+            console.error('Error saving investment transaction:', error);
+            Alert.alert('Error', `Failed to ${transaction ? 'update' : 'create'} investment transaction`);
         }
     };
 
@@ -87,7 +114,9 @@ export default function AddInvestmentTransactionScreen() {
         <View style={sharedStyles.container}>
             <View style={sharedStyles.header}>
                 <BackButton />
-                <Text style={styles.title}>Add Investment Transaction</Text>
+                <Text style={styles.title}>
+                    {transaction ? 'Edit Investment Transaction' : 'Add Investment Transaction'}
+                </Text>
             </View>
 
             <ScrollView style={styles.scrollContainer}>
@@ -185,8 +214,12 @@ export default function AddInvestmentTransactionScreen() {
                         style={styles.input}
                     />
 
-                    <Button mode="contained" onPress={handleSubmit} style={styles.submitButton}>
-                        Create Transaction
+                    <Button 
+                        mode="contained" 
+                        onPress={handleSubmit} 
+                        style={styles.submitButton}
+                    >
+                        {transaction ? 'Update Transaction' : 'Create Transaction'}
                     </Button>
                 </View>
             </ScrollView>
@@ -242,10 +275,11 @@ const styles = StyleSheet.create({
         padding: 16,
     },
     title: {
-        fontSize: 24,
+        fontSize: 20,
         fontWeight: 'bold',
         color: darkTheme.colors.text,
-        marginBottom: 20,
+        flex: 1,
+        textAlign: 'center',
     },
     form: {
         gap: 16,

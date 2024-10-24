@@ -298,3 +298,12 @@ export const getStockHistory = async (symbol: string, period: string = '1y') => 
         return handleApiError(error, 'Error fetching stock history');
     }
 };
+
+export const getInvestmentTransactions = async () => {
+    try {
+        const response = await apiClient.get('/investments');
+        return response.data;
+    } catch (error) {
+        return handleApiError(error, 'Error fetching investment transactions');
+    }
+};

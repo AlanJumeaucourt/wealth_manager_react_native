@@ -9,6 +9,7 @@ import { darkTheme } from '@/constants/theme';
 import sharedStyles from './styles/sharedStyles';
 import { Menu } from 'react-native-paper';
 import AddInvestmentTransactionScreen from './AddInvestmentTransactionScreen';
+import InvestmentTransactionListScreen from './InvestmentTransactionListScreen';
 // Types
 type Asset = {
   name: string;
@@ -287,7 +288,7 @@ const InvestmentOverview = () => {
           }
         >
           <Menu.Item onPress={() => navigation.navigate('AddInvestmentTransaction')} title="Add investment transaction" />
-          <Menu.Item onPress={() => { }} title="Show list investments" />
+          <Menu.Item onPress={() => navigation.navigate('InvestmentTransactionList')} title="Show list investments" />
         </Menu>
       </View>
       <View style={sharedStyles.body}>
@@ -402,6 +403,11 @@ export default function InvestmentScreen() {
         name="StockDetail"
         component={StockDetail}
         options={({ route }) => ({ title: route.params.position.symbol })}
+      />
+      <Stack.Screen
+        name="InvestmentTransactionList"
+        component={InvestmentTransactionListScreen}
+        options={{ headerShown: false }}
       />
       <Stack.Screen
         name="AddInvestmentTransaction"
