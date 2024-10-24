@@ -3,7 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useFont } from '@shopify/react-native-skia';
 import React, { useEffect, useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Switch, Text, View, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { useSharedValue } from 'react-native-reanimated';
 import { expenseCategories, incomeCategories } from '../constants/categories';
 import { darkTheme } from '../constants/theme';
@@ -49,9 +49,15 @@ export default function BudgetScreen() {
   const decimals = useSharedValue<number[]>([]);
   const navigation = useNavigation<NavigationProp>();
   const [allData, setAllData] = useState<Data[]>([]); // {{ edit: Add allData state }}
+  // Add loading state
+  const [isLoading, setIsLoading] = useState(true);
+  // Add states to track data availability
+  const [hasIncomeData, setHasIncomeData] = useState(false);
+  const [hasExpenseData, setHasExpenseData] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
+      setIsLoading(true);
       try {
         let startDate, endDate;
 
@@ -183,10 +189,16 @@ export default function BudgetScreen() {
 
         decimals.value = [...normalizedDecimals];
 
+        // Update data availability states
+        setHasIncomeData(categorizedBudgetSummary.some(item => item.type === 'income'));
+        setHasExpenseData(categorizedBudgetSummary.some(item => item.type === 'expense'));
+
         setData(significantSegments);
         setTotalValue(total)
       } catch (error) {
         console.error('Error fetching data:', error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -231,11 +243,25 @@ export default function BudgetScreen() {
     return <View />;
   }
 
-  function NoBudget() {
+  function NoBudget({ type, hasOtherData }: { type: 'Income' | 'Expense'; hasOtherData: boolean }) {
     return (
       <View style={styles.noBudgetContainer}>
-        <Ionicons name="wallet-outline" size={64} color={darkTheme.colors.textSecondary} />
-        <Text style={styles.noBudgetText}>No budget data available for this period</Text>
+        <Ionicons
+          name={type === 'Income' ? 'cash-outline' : 'wallet-outline'}
+          size={64}
+          color={darkTheme.colors.textSecondary}
+        />
+        <Text style={styles.noBudgetText}>
+          No <Text style={{ fontWeight: 'bold' }}>{type.toLowerCase()}</Text> data available for this period
+        </Text>
+        {hasOtherData && (
+          <TouchableOpacity onPress={() => setFilterType(type === 'Income' ? 'Expense' : 'Income')}>
+            <Text style={styles.otherDataText}>
+              But {type === 'Income' ? 'Expense' : 'Income'} data is available for this period.{'\n'}
+            </Text>
+
+          </TouchableOpacity>
+        )}
       </View>
     );
   }
@@ -301,55 +327,68 @@ export default function BudgetScreen() {
         <Text style={styles.filterLabel}>Income</Text>
       </View>
 
-      {data.length === 0 ? <NoBudget /> : (
-        <ScrollView
-          contentContainerStyle={styles.scrollViewContent}
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={styles.chartContainer}>
-            <DonutChart
-              radius={RADIUS}
-              gap={GAP}
-              strokeWidth={STROKE_WIDTH}
-              outerStrokeWidth={OUTER_STROKE_WIDTH}
-              font={font}
-              smallFont={smallFont}
-              totalValue={totalValue}
-              n={data.length}
-              decimals={decimals}
-              colors={data.map(item => item.color)}
-              totalText={filterType === 'Income' ? 'Total Income' : 'Total Expense'}
-            />
-          </View>
-          {data.map((item, index) => (
-            <Pressable
-              key={index}
-              style={styles.legendItem}
-              onPress={() =>
-                navigation.navigate('BudgetDetail', {
-                  category: item.category,
-                  subcategory: item.subcategory,
-                  transactionIds: item.transactionIds,
-                })
-              }
-            >
-              <View style={[styles.iconCircle, { backgroundColor: item.color }]}>
-                {item.iconSet === 'Ionicons' && (
-                  <Ionicons name={item.iconName as any} size={16} color={darkTheme.colors.surface} />
-                )}
-              </View>
-              <View style={styles.legendLabelContainer}>
-                <Text style={styles.legendLabel} numberOfLines={1} ellipsizeMode="tail">
-                  {item.category}
-                </Text>
-                {item.subcategory && (
-                  <Text style={styles.subCategoryLabel}>{item.subcategory}</Text>
-                )}
-              </View>
-              <Text style={styles.legendValue}>{item.value.toLocaleString()} €</Text>
-            </Pressable>
-          ))}
-        </ScrollView>
+      {!isLoading && (
+        filterType === 'Income' && !hasIncomeData ? (
+          <NoBudget type="Income" hasOtherData={hasExpenseData} />
+        ) : filterType === 'Expense' && !hasExpenseData ? (
+          <NoBudget type="Expense" hasOtherData={hasIncomeData} />
+        ) : (
+          <ScrollView
+            contentContainerStyle={styles.scrollViewContent}
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={styles.chartContainer}>
+              <DonutChart
+                radius={RADIUS}
+                gap={GAP}
+                strokeWidth={STROKE_WIDTH}
+                outerStrokeWidth={OUTER_STROKE_WIDTH}
+                font={font}
+                smallFont={smallFont}
+                totalValue={totalValue}
+                n={data.length}
+                decimals={decimals}
+                colors={data.map(item => item.color)}
+                totalText={filterType === 'Income' ? 'Total Income' : 'Total Expense'}
+              />
+            </View>
+            {data.map((item, index) => (
+              <Pressable
+                key={index}
+                style={styles.legendItem}
+                onPress={() =>
+                  navigation.navigate('BudgetDetail', {
+                    category: item.category,
+                    subcategory: item.subcategory,
+                    transactionIds: item.transactionIds,
+                  })
+                }
+              >
+                <View style={[styles.iconCircle, { backgroundColor: item.color }]}>
+                  {item.iconSet === 'Ionicons' && (
+                    <Ionicons name={item.iconName as any} size={16} color={darkTheme.colors.surface} />
+                  )}
+                </View>
+                <View style={styles.legendLabelContainer}>
+                  <Text style={styles.legendLabel} numberOfLines={1} ellipsizeMode="tail">
+                    {item.category}
+                  </Text>
+                  {item.subcategory && (
+                    <Text style={styles.subCategoryLabel}>{item.subcategory}</Text>
+                  )}
+                </View>
+                <Text style={styles.legendValue}>{item.value.toLocaleString()} €</Text>
+              </Pressable>
+            ))}
+          </ScrollView>
+        )
+      )}
+
+      {isLoading && (
+        <View style={styles.loadingContainer}>
+          {/* Add your loading indicator here */}
+          <ActivityIndicator size="large" color={darkTheme.colors.primary} />
+        </View>
       )}
     </View>
   );
@@ -472,5 +511,16 @@ const styles = StyleSheet.create({
   logo: {
     width: 30,
     height: 30,
+  },
+  otherDataText: {
+    fontSize: 14,
+    color: darkTheme.colors.primary,
+    textAlign: 'center',
+    marginTop: darkTheme.spacing.m,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
