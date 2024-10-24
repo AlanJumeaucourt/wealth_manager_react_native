@@ -347,18 +347,58 @@ const StockDetail: React.FC<StockDetailProps> = ({ route }) => {
                     </Text>
                 </View>
                 <View style={styles.transactionList}>
-                    <Text style={styles.transactionTitle}>Purchases:</Text>
-                    {transactions.buys.map((purchase, index) => (
-                        <Text key={`purchase-${index}`} style={styles.transactionItem}>
-                            {purchase.date}: {purchase.quantity} shares at {purchase.price}€
-                        </Text>
-                    ))}
-                    <Text style={styles.transactionTitle}>Sells:</Text>
-                    {transactions.sells.map((sell, index) => (
-                        <Text key={`sell-${index}`} style={styles.transactionItem}>
-                            {sell.date}: {sell.quantity} shares at {sell.price}€
-                        </Text>
-                    ))}
+                    <Text style={styles.transactionTitle}>Transactions</Text>
+                    {[...transactions.buys, ...transactions.sells]
+                        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                        .map((transaction, index, array) => {
+                            const isBuy = transactions.buys.includes(transaction);
+                            return (
+                                <View key={`transaction-${index}`}>
+                                    <View style={styles.transactionItem}>
+                                        <View style={styles.transactionIconContainer}>
+                                            <View style={[styles.transactionIcon, isBuy ? styles.buyIcon : styles.sellIcon]}>
+                                                <Ionicons 
+                                                    name={isBuy ? "arrow-down" : "arrow-up"} 
+                                                    size={14} 
+                                                    color={darkTheme.colors.surface} 
+                                                />
+                                            </View>
+                                        </View>
+                                        <View style={styles.transactionContent}>
+                                            <View style={styles.transactionRow}>
+                                                <Text style={styles.transactionQuantity}>
+                                                    {isBuy ? '+' : '-'}{transaction.quantity} shares
+                                                </Text>
+                                                <Text style={styles.transactionPrice}>
+                                                    {transaction.price.toLocaleString()}€
+                                                </Text>
+                                            </View>
+                                            <View style={styles.transactionDetails}>
+                                                <Text style={styles.transactionDate}>
+                                                    {new Date(transaction.date).toLocaleDateString(undefined, { 
+                                                        month: 'short', 
+                                                        day: '2-digit',
+                                                        year: 'numeric'
+                                                    })}
+                                                </Text>
+                                                <Text style={styles.transactionAccount}>
+                                                    {transaction.account_name}
+                                                </Text>
+                                            </View>
+                                            <View style={styles.transactionFooter}>
+                                                <Text style={styles.transactionFee}>
+                                                    Fee: {transaction.fee.toLocaleString()}€
+                                                </Text>
+                                                <Text style={styles.transactionTotal}>
+                                                    Total: {((transaction.quantity * transaction.price) + (isBuy ? 1 : -1) * transaction.fee).toLocaleString()}€
+                                                </Text>
+                                            </View>
+                                        </View>
+                                    </View>
+                                    {index < array.length - 1 && <View style={styles.transactionSeparator} />}
+                                </View>
+                            );
+                    })}
                 </View>
             </ScrollView>
         </View>
@@ -896,17 +936,71 @@ const styles = StyleSheet.create({
     },
     transactionList: {
         marginTop: darkTheme.spacing.l,
+        backgroundColor: darkTheme.colors.surface,
+        borderRadius: darkTheme.borderRadius.m,
+        paddingVertical: darkTheme.spacing.s,
+        shadowColor: "#000",
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
+        elevation: 3,
     },
     transactionTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        marginBottom: darkTheme.spacing.s,
-        color: darkTheme.colors.text,
+        fontSize: 16,
+        fontWeight: '600',
+        paddingHorizontal: darkTheme.spacing.m,
+        paddingTop: darkTheme.spacing.m,
+        paddingBottom: darkTheme.spacing.s,
+        color: darkTheme.colors.textSecondary,
     },
     transactionItem: {
-        fontSize: 14,
-        marginBottom: 3,
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: darkTheme.spacing.m,
+        paddingVertical: darkTheme.spacing.m, // Increased padding
+        backgroundColor: darkTheme.colors.surface,
+    },
+    transactionIconContainer: {
+        marginRight: darkTheme.spacing.m,
+    },
+    transactionIcon: {
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    buyIcon: {
+        backgroundColor: darkTheme.colors.success,
+    },
+    sellIcon: {
+        backgroundColor: darkTheme.colors.error,
+    },
+    transactionContent: {
+        flex: 1,
+    },
+    transactionRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    transactionQuantity: {
+        fontSize: 15,
+        fontWeight: '500',
         color: darkTheme.colors.text,
+    },
+    transactionPrice: {
+        fontSize: 15,
+        fontWeight: '600',
+        color: darkTheme.colors.text,
+    },
+    transactionDate: {
+        fontSize: 13,
+        color: darkTheme.colors.textTertiary,
+        marginTop: 2,
     },
     menuButton: {
         marginRight: 16,
@@ -984,5 +1078,39 @@ const styles = StyleSheet.create({
         color: darkTheme.colors.surface,
         fontSize: 12,
         fontWeight: 'bold',
+    },
+    transactionDetails: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginTop: 2,
+    },
+    transactionAccount: {
+        fontSize: 13,
+        color: darkTheme.colors.primary,
+        fontWeight: '500',
+    },
+    transactionFooter: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginTop: 4,
+        paddingTop: 4,
+        borderTopWidth: StyleSheet.hairlineWidth,
+        borderTopColor: darkTheme.colors.border,
+    },
+    transactionFee: {
+        fontSize: 13,
+        color: darkTheme.colors.textTertiary,
+    },
+    transactionTotal: {
+        fontSize: 13,
+        fontWeight: '600',
+        color: darkTheme.colors.text,
+    },
+    transactionSeparator: {
+        height: StyleSheet.hairlineWidth,
+        backgroundColor: darkTheme.colors.border,
+        marginHorizontal: darkTheme.spacing.m,
     },
 });
