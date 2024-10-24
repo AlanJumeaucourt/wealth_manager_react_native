@@ -255,9 +255,7 @@ const StockDetail: React.FC<StockDetailProps> = ({ route }) => {
             </View>
 
             <ScrollView contentContainerStyle={styles.modalContent}>
-                <View style={styles.modalHeader}>
-                    <Text style={styles.modalTitle}>{name} ({symbol})</Text>
-                </View>
+
                 
                 {chartData.length > 0 ? (
                     <View style={styles.chartContainer}>
