@@ -51,8 +51,8 @@ export default function AddInvestmentTransactionScreen() {
     );
     const [quantity, setQuantity] = useState(transaction ? transaction.quantity.toString() : '');
     const [unitPrice, setUnitPrice] = useState(transaction ? transaction.unit_price.toString() : '');
-    const [fee, setFee] = useState(transaction ? transaction.fee ? transaction.fee.toString() : '0' : '0');
-    const [tax, setTax] = useState(transaction ? transaction.tax ? transaction.tax.toString() : '0' : '0');
+    const [fee, setFee] = useState(transaction ? transaction.fee.toString() : '0');
+    const [tax, setTax] = useState(transaction ? transaction.tax.toString() : '0');
     const [showDatePicker, setShowDatePicker] = useState(false);
 
     const handleDateChange = (date: string) => {

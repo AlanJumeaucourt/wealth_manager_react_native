@@ -1,15 +1,32 @@
 import { useNavigation } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import React, { useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View, ActivityIndicator } from 'react-native';
 import { VictoryAxis, VictoryChart, VictoryLine, VictoryScatter, VictoryTheme } from 'victory-native';
-import Ionicons from '@expo/vector-icons/Ionicons';
+import Ionicons from '@expo/vector-icons/Ionicons'
+import { Button } from 'react-native-paper';
+import { LineChart } from 'react-native-gifted-charts';
+import { Dimensions } from 'react-native';
 
 import { darkTheme } from '@/constants/theme';
 import sharedStyles from './styles/sharedStyles';
 import { Menu } from 'react-native-paper';
 import AddInvestmentTransactionScreen from './AddInvestmentTransactionScreen';
 import InvestmentTransactionListScreen from './InvestmentTransactionListScreen';
+import { getPortfolioSummary, getPortfolioPerformance, getAssetTransactions, getStockPrices } from './api/bankApi';
+import { 
+    InvestmentStackParamList,
+    StockDetailProps,
+    StockPositionItemProps,
+    PortfolioPosition,
+    PerformanceData,
+    AssetTransactions
+} from '@/types/investment';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { InvestmentSkeleton } from './components/InvestmentSkeleton';
+
+type InvestmentScreenNavigationProp = StackNavigationProp<InvestmentStackParamList>;
+
 // Types
 type Asset = {
   name: string;
@@ -111,499 +128,861 @@ const stockHistoricalData: { [key: string]: StockHistoricalData[] } = {
 
 const Stack = createStackNavigator();
 
-const StockDetail = ({ route }) => {
-  const { position } = route.params;
-  const historicalData = stockHistoricalData[position.symbol] || [];
+const StockDetail: React.FC<StockDetailProps> = ({ route }) => {
+    const { symbol, name } = route.params;
+    const [transactions, setTransactions] = useState<AssetTransactions | null>(null);
+    const [historicalPrices, setHistoricalPrices] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [chartWidth, setChartWidth] = useState(Dimensions.get('window').width - 40);
 
-  const allDataPoints = [
-    ...historicalData.map(point => ({ ...point, type: 'price' })),
-    ...position.purchases.map(purchase => ({ date: purchase.date, price: purchase.price, type: 'purchase' })),
-    ...position.sells.map(sell => ({ date: sell.date, price: sell.price, type: 'sell' }))
-  ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    useEffect(() => {
+        const handleResize = () => {
+            setChartWidth(Dimensions.get('window').width - 40);
+        };
 
-  return (
+        const subscription = Dimensions.addEventListener('change', handleResize);
 
+        return () => {
+            subscription?.remove();
+        };
+    }, []);
 
-    <View style={[sharedStyles.container]}>
+    const calculateSpacing = (width: number, dataLength: number): number => {
+        const minSpacing = 1;
+        const maxSpacing = 10;
+        const calculatedSpacing = Math.max(minSpacing, Math.min(maxSpacing, (width - 60) / (dataLength + 1)));
+        return calculatedSpacing;
+    };
 
-      <View style={sharedStyles.header}>
-        <Image
-          source={require('./../assets/images/logo-removebg-white.png')}
-          style={{ width: 30, height: 30 }}
-          resizeMode="contain"
-        />
-        <View style={sharedStyles.headerTitleContainer}>
-          <Text style={sharedStyles.headerTitle}>{position.name} ({position.symbol})</Text>
+    useEffect(() => {
+        const fetchData = async () => {
+            setLoading(true);
+            try {
+                const [transactionsData, pricesData] = await Promise.all([
+                    getAssetTransactions(symbol),
+                    getStockPrices(symbol, '1Y')
+                ]);
+                
+                setTransactions(transactionsData);
+                setHistoricalPrices(pricesData.prices || []);
+            } catch (error) {
+                console.error('Error fetching data:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchData();
+    }, [symbol]);
+
+    if (loading || !transactions) {
+        return (
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color={darkTheme.colors.primary} />
+            </View>
+        );
+    }
+
+    // Format data for the chart
+    const formatChartData = () => {
+        // First, create the price line data
+        const priceData = historicalPrices.map(point => ({
+            value: point.close,
+            date: point.date,
+            dataPointText: '',
+            showDataPoint: false
+        }));
+
+        // Add buy points
+        const buyPoints = transactions?.buys.map(buy => ({
+            value: buy.price,
+            date: buy.date,
+            dataPointText: `↑\n${buy.quantity}`,
+            showDataPoint: true,
+            dataPointColor: darkTheme.colors.success,
+            customDataPoint: () => (
+                <View style={[styles.transactionPoint, { backgroundColor: darkTheme.colors.success }]}>
+                    <Text style={styles.transactionPointText}>B</Text>
+                </View>
+            )
+        })) || [];
+
+        // Add sell points
+        const sellPoints = transactions?.sells.map(sell => ({
+            value: sell.price,
+            date: sell.date,
+            dataPointText: `↓\n${sell.quantity}`,
+            showDataPoint: true,
+            dataPointColor: darkTheme.colors.error,
+            customDataPoint: () => (
+                <View style={[styles.transactionPoint, { backgroundColor: darkTheme.colors.error }]}>
+                    <Text style={styles.transactionPointText}>S</Text>
+                </View>
+            )
+        })) || [];
+
+        // Combine all data points and sort by date
+        return [...priceData, ...buyPoints, ...sellPoints]
+            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    };
+
+    const chartData = formatChartData();
+
+    const formatDateLabels = (data: any[]) => {
+        if (data.length <= 8) return data;
+        const step = Math.floor(data.length / 8);
+        return data.map((item, index) => ({
+            ...item,
+            showLabel: index % step === 0 && index < data.length - step/2
+        }));
+    };
+
+    const minValue = (data: any[]) => {
+        return Math.min(...data.map(item => item.value)) - 0.2 * Math.min(...data.map(item => item.value));
+    };
+
+    return (
+        <View style={[sharedStyles.container]}>
+            <View style={sharedStyles.header}>
+                <Image
+                    source={require('./../assets/images/logo-removebg-white.png')}
+                    style={{ width: 30, height: 30 }}
+                    resizeMode="contain"
+                />
+                <View style={sharedStyles.headerTitleContainer}>
+                    <Text style={sharedStyles.headerTitle}>{name} ({symbol})</Text>
+                </View>
+            </View>
+
+            <ScrollView contentContainerStyle={styles.modalContent}>
+                <View style={styles.modalHeader}>
+                    <Text style={styles.modalTitle}>{name} ({symbol})</Text>
+                </View>
+                
+                {chartData.length > 0 ? (
+                    <View style={styles.chartContainer}>
+                        <LineChart
+                            areaChart
+                            data={formatDateLabels(chartData)}
+                            width={chartWidth}
+                            height={200}
+                            spacing={calculateSpacing(chartWidth, chartData.length)}
+                            color={darkTheme.colors.primary}
+                            startFillColor={`${darkTheme.colors.primary}40`}
+                            endFillColor={`${darkTheme.colors.primary}10`}
+                            thickness={1.4}
+                            startOpacity={0.9}
+                            endOpacity={0.2}
+                            initialSpacing={0}
+                            noOfSections={4}
+                            yAxisColor="transparent"
+                            xAxisColor="transparent"
+                            yAxisTextStyle={{ color: darkTheme.colors.textTertiary }}
+                            hideRules
+                            showVerticalLines={false}
+                            xAxisLabelTextStyle={{ 
+                                color: darkTheme.colors.textTertiary, 
+                                fontSize: 10,
+                                width: 60,
+                                textAlign: 'center'
+                            }}
+                            yAxisTextNumberOfLines={1}
+                            yAxisLabelSuffix="€"
+                            yAxisLabelPrefix=""
+                            rulesType="solid"
+                            xAxisThickness={0}
+                            rulesColor="rgba(0, 0, 0, 0.1)"
+                            curved
+                            animateOnDataChange
+                            yAxisOffset={minValue(chartData)}
+                            animationDuration={1000}
+                            xAxisLabelsVerticalShift={20}
+                            getLabel={(item) => item.showLabel ? new Date(item.date).toLocaleDateString('fr-FR', {
+                                month: 'short',
+                                year: '2-digit'
+                            }) : ''}
+                            pointerConfig={{
+                                showPointerStrip: true,
+                                pointerStripWidth: 2,
+                                pointerStripUptoDataPoint: true,
+                                pointerStripColor: 'rgba(0, 0, 0, 0.5)',
+                                width: 10,
+                                height: 10,
+                                radius: 6,
+                                pointerLabelWidth: 120,
+                                pointerLabelHeight: 90,
+                                activatePointersOnLongPress: false,
+                                autoAdjustPointerLabelPosition: true,
+                                pointerLabelComponent: (items: any) => {
+                                    const item = items[0];
+                                    return (
+                                        <View style={styles.tooltipContainer}>
+                                            <Text style={styles.tooltipValue}>
+                                                {item.value.toLocaleString()} €
+                                            </Text>
+                                            <Text style={styles.tooltipDate}>
+                                                {new Date(item.date).toLocaleDateString()}
+                                            </Text>
+                                        </View>
+                                    );
+                                },
+                            }}
+                        />
+                    </View>
+                ) : (
+                    <View style={styles.noDataContainer}>
+                        <Text style={styles.noDataText}>No price data available</Text>
+                    </View>
+                )}
+
+                <View style={styles.legendContainer}>
+                    <Text style={styles.legendText}>
+                        <View style={[styles.legendDot, { backgroundColor: "#c43a31" }]} /> Stock Price
+                    </Text>
+                    <Text style={styles.legendText}>
+                        <View style={[styles.legendDot, { backgroundColor: "green" }]} /> Purchase Points
+                    </Text>
+                    <Text style={styles.legendText}>
+                        <View style={[styles.legendDot, { backgroundColor: "red" }]} /> Sell Points
+                    </Text>
+                </View>
+                <View style={styles.transactionList}>
+                    <Text style={styles.transactionTitle}>Purchases:</Text>
+                    {transactions.buys.map((purchase, index) => (
+                        <Text key={`purchase-${index}`} style={styles.transactionItem}>
+                            {purchase.date}: {purchase.quantity} shares at {purchase.price}€
+                        </Text>
+                    ))}
+                    <Text style={styles.transactionTitle}>Sells:</Text>
+                    {transactions.sells.map((sell, index) => (
+                        <Text key={`sell-${index}`} style={styles.transactionItem}>
+                            {sell.date}: {sell.quantity} shares at {sell.price}€
+                        </Text>
+                    ))}
+                </View>
+            </ScrollView>
         </View>
-      </View>
-
-      <ScrollView contentContainerStyle={styles.modalContent}>
-        <View style={styles.modalHeader}>
-          <Text style={styles.modalTitle}>{position.name} ({position.symbol})</Text>
-        </View>
-        <VictoryChart
-          theme={{
-            ...VictoryTheme.material,
-            axis: {
-              ...VictoryTheme.material.axis,
-              style: {
-                ...VictoryTheme.material.axis.style,
-                grid: {
-                  ...VictoryTheme.material.axis.style.grid,
-                  stroke: darkTheme.colors.border,
-                },
-                tickLabels: {
-                  ...VictoryTheme.material.axis.style.tickLabels,
-                  fill: darkTheme.colors.text,
-                },
-              },
-            },
-          }}
-          domainPadding={20}
-          scale={{ x: "time" }}
-        >
-          <VictoryLine
-            data={allDataPoints}
-            x="date"
-            y="price"
-            style={{
-              data: { stroke: "#c43a31" },
-            }}
-          />
-          <VictoryScatter
-            data={allDataPoints}
-            x="date"
-            y="price"
-            size={5}
-            style={{
-              data: {
-                fill: ({ datum }) => {
-                  switch (datum.type) {
-                    case 'purchase': return "green";
-                    case 'sell': return "red";
-                    default: return "transparent";
-                  }
-                }
-              }
-            }}
-          />
-          <VictoryAxis
-            tickFormat={(date) => {
-              const d = new Date(date);
-              return `${d.getMonth() + 1}/${d.getFullYear().toString().substr(-2)}`;
-            }}
-            style={{
-              tickLabels: { fontSize: 10, padding: 5, angle: -45, textAnchor: 'end' }
-            }}
-          />
-          <VictoryAxis dependentAxis
-            tickFormat={(t) => `${t}€`}
-            style={{
-              tickLabels: { fontSize: 10, padding: 5 }
-            }}
-          />
-        </VictoryChart>
-        <View style={styles.legendContainer}>
-          <Text style={styles.legendText}>
-            <View style={[styles.legendDot, { backgroundColor: "#c43a31" }]} /> Stock Price
-          </Text>
-          <Text style={styles.legendText}>
-            <View style={[styles.legendDot, { backgroundColor: "green" }]} /> Purchase Points
-          </Text>
-          <Text style={styles.legendText}>
-            <View style={[styles.legendDot, { backgroundColor: "red" }]} /> Sell Points
-          </Text>
-        </View>
-        <View style={styles.transactionList}>
-          <Text style={styles.transactionTitle}>Purchases:</Text>
-          {position.purchases.map((purchase, index) => (
-            <Text key={`purchase-${index}`} style={styles.transactionItem}>
-              {purchase.date}: {purchase.quantity} shares at {purchase.price}€
-            </Text>
-          ))}
-          <Text style={styles.transactionTitle}>Sells:</Text>
-          {position.sells.map((sell, index) => (
-            <Text key={`sell-${index}`} style={styles.transactionItem}>
-              {sell.date}: {sell.quantity} shares at {sell.price}€
-            </Text>
-          ))}
-        </View>
-      </ScrollView>
-    </View>
-
-  );
+    );
 };
 
-const StockPositionItem = ({ position }) => {
-  const navigation = useNavigation();
-  const totalQuantity = position.purchases.reduce((sum, purchase) => sum + purchase.quantity, 0);
-  const averagePurchasePrice = position.purchases.reduce((sum, purchase) => sum + purchase.price * purchase.quantity, 0) / totalQuantity;
-  const totalInvestment = averagePurchasePrice * totalQuantity;
-  const currentValue = position.currentPrice * totalQuantity;
-  const performancePercentage = ((currentValue - totalInvestment) / totalInvestment) * 100;
-
-  return (
-    <Pressable onPress={() => navigation.navigate('StockDetail', { position })} style={styles.stockPositionItem}>
-      <Text style={styles.stockSymbol}>{position.symbol}</Text>
-      <Text style={styles.stockName}>{position.name}</Text>
-      <Text style={styles.stockDetails}>Quantité totale: {totalQuantity}</Text>
-      <Text style={styles.stockDetails}>Prix moyen d'achat: {averagePurchasePrice.toFixed(2)} €</Text>
-      <Text style={styles.stockDetails}>Prix actuel: {position.currentPrice.toFixed(2)} €</Text>
-      <Text style={[styles.stockPerformance, performancePercentage >= 0 ? styles.positivePerformance : styles.negativePerformance]}>
-        Performance: {performancePercentage.toFixed(2)}%
-      </Text>
-      <Text style={styles.stockValue}>Valeur actuelle: {currentValue.toFixed(2)} €</Text>
-    </Pressable>
-  );
-};
-
-const InvestmentOverview = () => {
-  const navigation = useNavigation();
-  const [selectedPeriod, setSelectedPeriod] = useState('1M');
-
-  const totalValue = investmentAssets.reduce((sum, asset) => sum + asset.value, 0);
-  const overallPerformance = investmentAssets.reduce((sum, asset) => sum + (asset.performance * asset.allocation / 100), 0);
-
-  const [visible, setVisible] = useState(false);
-
-  const openMenu = () => setVisible(true);
-  const closeMenu = () => setVisible(false);
-
-  return (
-    <View style={[sharedStyles.container]}>
-      <View style={sharedStyles.header}>
-        <Image
-          source={require('./../assets/images/logo-removebg-white.png')}
-          style={{ width: 30, height: 30 }}
-          resizeMode="contain"
-        />
-        <Text style={sharedStyles.headerTitle}>Investissements</Text>
-        <Menu
-          visible={visible}
-          onDismiss={closeMenu}
-          anchor={
-            <Pressable style={styles.menuButton} onPress={openMenu}>
-              <Ionicons name="ellipsis-vertical" size={24} color={darkTheme.colors.text} />
-            </Pressable>
-          }
-        >
-          <Menu.Item onPress={() => navigation.navigate('AddInvestmentTransaction')} title="Add investment transaction" />
-          <Menu.Item onPress={() => navigation.navigate('InvestmentTransactionList')} title="Show list investments" />
-        </Menu>
-      </View>
-      <View style={sharedStyles.body}>
-        <ScrollView style={styles.container}>
-          <View style={styles.header}>
-            <Text style={styles.title}>Investissements</Text>
-            <Text style={styles.totalValue}>{totalValue.toLocaleString()} €</Text>
-            <Text style={styles.performanceText}>
-              Performance globale: {overallPerformance.toFixed(2)}%
+const StockPositionItem: React.FC<StockPositionItemProps> = ({ position, onPress }) => {
+    return (
+        <Pressable onPress={onPress} style={styles.stockPositionItem}>
+            <Text style={styles.stockSymbol}>{position.asset_symbol}</Text>
+            <Text style={styles.stockName}>{position.asset_name}</Text>
+            <Text style={styles.stockDetails}>
+                Quantity: {position.total_quantity.toLocaleString()}
             </Text>
-          </View>
-
-          {/* <View style={styles.chartContainer}>
-        <VictoryPie
-          data={investmentAssets}
-          x="name"
-          y="allocation"
-          colorScale={['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0']}
-          radius={({ datum }) => 100 + datum.allocation}
-          innerRadius={70}
-          labelRadius={({ innerRadius }) => (innerRadius as number) + 30}
-          style={{ labels: { fill: 'white', fontSize: 14, fontWeight: 'bold' } }}
-        />
-      </View> */}
-
-          <View style={styles.periodSelector}>
-            {['1M', '3M', '6M', '1A', 'Max'].map((period) => (
-              <Pressable
-                key={period}
-                style={[styles.periodButton, selectedPeriod === period && styles.selectedPeriod]}
-                onPress={() => setSelectedPeriod(period)}
-              >
-                <Text style={[styles.periodButtonText, selectedPeriod === period && styles.selectedPeriodText]}>
-                  {period}
+            <Text style={styles.stockDetails}>
+                Average Price: {position.average_price.toLocaleString()} €
+            </Text>
+            <Text style={styles.stockDetails}>
+                Current Price: {position.current_price.toLocaleString()} €
+            </Text>
+            <Text style={[
+                styles.stockPerformance, 
+                position.performance >= 0 ? styles.positivePerformance : styles.negativePerformance
+            ]}>
+                Performance: {position.performance.toFixed(2)}%
+            </Text>
+            <View style={styles.valueContainer}>
+                <Text style={styles.stockValue}>
+                    Total Value: {position.total_value.toLocaleString()} €
                 </Text>
-              </Pressable>
-            ))}
-          </View>
+                <Text style={[
+                    styles.gainLoss,
+                    position.unrealized_gain >= 0 ? styles.positivePerformance : styles.negativePerformance
+                ]}>
+                    {position.unrealized_gain >= 0 ? '+' : ''}{position.unrealized_gain.toLocaleString()} €
+                </Text>
+            </View>
+        </Pressable>
+    );
+};
 
-          <View style={styles.chartContainer}>
-            <VictoryChart theme={VictoryTheme.material}>
-              <VictoryLine
-                data={historicalPerformance}
-                x="date"
-                y="value"
-                style={{
-                  data: { stroke: "#c43a31" },
-                  parent: { border: "1px solid #ccc" }
-                }}
-              />
-              <VictoryAxis
-                tickFormat={(t) => t.split('-')[1]}
-                style={{
-                  tickLabels: { fontSize: 10, padding: 5 }
-                }}
-              />
-              <VictoryAxis dependentAxis
-                tickFormat={(t) => `${t / 1000}k€`}
-                style={{
-                  tickLabels: { fontSize: 10, padding: 5 }
-                }}
-              />
-            </VictoryChart>
-          </View>
+const InvestmentOverview: React.FC = () => {
+    const navigation = useNavigation<InvestmentScreenNavigationProp>();
+    const [selectedPeriod, setSelectedPeriod] = useState('1Y');
+    const [positions, setPositions] = useState<PortfolioPosition[]>([]);
+    const [performanceData, setPerformanceData] = useState<PerformanceData[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [visible, setVisible] = useState(false);
+    const [totalValue, setTotalValue] = useState(0);
+    const [totalGain, setTotalGain] = useState(0);
+    const [totalPerformance, setTotalPerformance] = useState(0);
+    const [error, setError] = useState<string | null>(null);
+    const [chartWidth, setChartWidth] = useState(Dimensions.get('window').width - 40);
 
-          <View style={styles.assetList}>
-            <Text style={styles.assetListTitle}>Répartition des actifs</Text>
-            {investmentAssets.map((asset, index) => (
-              <View key={index} style={styles.assetItem}>
-                <View style={styles.assetInfo}>
-                  <Text style={styles.assetName}>{asset.name}</Text>
-                  <Text style={styles.assetAllocation}>{asset.allocation}%</Text>
-                </View>
-                <View style={styles.assetInfo}>
-                  <Text style={styles.assetValue}>{asset.value.toLocaleString()} €</Text>
-                  <Text style={[styles.assetPerformance, asset.performance >= 0 ? styles.positivePerformance : styles.negativePerformance]}>
-                    {asset.performance >= 0 ? '+' : ''}{asset.performance.toFixed(2)}%
-                  </Text>
-                </View>
-              </View>
-            ))}
-          </View>
+    // Add resize handler
+    useEffect(() => {
+        const handleResize = () => {
+            setChartWidth(Dimensions.get('window').width - 40);
+        };
 
-          <View style={styles.stockPositionsContainer}>
-            <Text style={styles.sectionTitle}>Positions sur actions</Text>
-            {stockPositions.map((position, index) => (
-              <StockPositionItem
-                key={index}
-                position={position}
-              />
-            ))}
-          </View>
-        </ScrollView>
-      </View>
-    </View>
-  );
+        const subscription = Dimensions.addEventListener('change', handleResize);
+
+        return () => {
+            subscription?.remove();
+        };
+    }, []);
+
+    // Add spacing calculation
+    const calculateSpacing = (width: number, dataLength: number): number => {
+        const minSpacing = 1;
+        const maxSpacing = 10;
+        const calculatedSpacing = Math.max(minSpacing, Math.min(maxSpacing, (width - 60) / (dataLength + 1)));
+        return calculatedSpacing;
+    };
+
+    const fetchData = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const [summaryResponse, performanceResponse] = await Promise.all([
+                getPortfolioSummary(),
+                getPortfolioPerformance(selectedPeriod)
+            ]);
+
+            if (!summaryResponse || !summaryResponse.positions) {
+                throw new Error('Invalid response from server');
+            }
+
+            setPositions(summaryResponse.positions);
+            setPerformanceData(performanceResponse?.performance_data || []);
+
+            // Update total values with safe defaults
+            setTotalValue(summaryResponse.total_value || 0);
+            setTotalGain(summaryResponse.total_gain || 0);
+            if (summaryResponse.total_invested && summaryResponse.total_invested !== 0) {
+                setTotalPerformance((summaryResponse.total_gain / Math.abs(summaryResponse.total_invested)) * 100);
+            } else {
+                setTotalPerformance(0);
+            }
+
+        } catch (error) {
+            console.error('Error fetching investment data:', error);
+            setError('Failed to load investment data');
+            setPositions([]);
+            setPerformanceData([]);
+            setTotalValue(0);
+            setTotalGain(0);
+            setTotalPerformance(0);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchData();
+    }, [selectedPeriod]);
+
+    if (loading) {
+        return <InvestmentSkeleton />;
+    }
+
+    if (error) {
+        return (
+            <View style={[sharedStyles.container, styles.centerContainer]}>
+                <Text style={styles.errorText}>{error}</Text>
+                <Button mode="contained" onPress={fetchData} style={styles.retryButton}>
+                    Retry
+                </Button>
+            </View>
+        );
+    }
+
+    const openMenu = () => setVisible(true);
+    const closeMenu = () => setVisible(false);
+
+    const formatDateLabels = (data: PerformanceData[]) => {
+        if (data.length <= 8) return data;
+
+        // Calculate step size to get approximately 8 points
+        const step = Math.floor(data.length / 8);
+        
+        // Mark points for label display
+        return data.map((item, index) => ({
+            ...item,
+            showLabel: index % step === 0 && index < data.length - step/2 // Avoid label at the very end
+        }));
+    };
+
+    return (
+        <View style={[sharedStyles.container]}>
+            <View style={sharedStyles.header}>
+                <Image
+                    source={require('./../assets/images/logo-removebg-white.png')}
+                    style={{ width: 30, height: 30 }}
+                    resizeMode="contain"
+                />
+                <Text style={sharedStyles.headerTitle}>Investissements</Text>
+                <Menu
+                    visible={visible}
+                    onDismiss={closeMenu}
+                    anchor={
+                        <Pressable style={styles.menuButton} onPress={openMenu}>
+                            <Ionicons name="ellipsis-vertical" size={24} color={darkTheme.colors.text} />
+                        </Pressable>
+                    }
+                >
+                    <Menu.Item onPress={() => navigation.navigate('AddInvestmentTransaction')} title="Add investment transaction" />
+                    <Menu.Item onPress={() => navigation.navigate('InvestmentTransactionList')} title="Show list investments" />
+                </Menu>
+            </View>
+            <View style={sharedStyles.body}>
+                <ScrollView style={styles.container}>
+                    <View style={styles.header}>
+                        <Text style={styles.title}>Investissements</Text>
+                        <Text style={styles.totalValue}>
+                            {totalValue.toLocaleString()} €
+                        </Text>
+                        <Text style={[
+                            styles.totalGain,
+                            totalGain >= 0 ? styles.positivePerformance : styles.negativePerformance
+                        ]}>
+                            {totalGain >= 0 ? '+' : ''}{totalGain.toLocaleString()} € 
+                            ({totalPerformance.toFixed(2)}%)
+                        </Text>
+                    </View>
+
+                    <View style={styles.periodSelector}>
+                        {['1M', '3M', '6M', '1A', 'Max'].map((period) => (
+                            <Pressable
+                                key={period}
+                                style={[styles.periodButton, selectedPeriod === period && styles.selectedPeriod]}
+                                onPress={() => setSelectedPeriod(period)}
+                            >
+                                <Text style={[styles.periodButtonText, selectedPeriod === period && styles.selectedPeriodText]}>
+                                    {period}
+                                </Text>
+                            </Pressable>
+                        ))}
+                    </View>
+
+                    {performanceData.length > 0 ? (
+                        <View style={styles.chartContainer}>
+                            <LineChart
+                                areaChart
+                                data={formatDateLabels(performanceData).map(item => ({
+                                    value: item.cumulative_value,
+                                    date: item.date,
+                                    showLabel: item.showLabel
+                                }))}
+                                width={chartWidth}
+                                height={200}
+                                spacing={calculateSpacing(chartWidth, performanceData.length)}
+                                adjustToWidth={true}
+                                color={darkTheme.colors.primary}
+                                startFillColor={`${darkTheme.colors.primary}40`}
+                                endFillColor={`${darkTheme.colors.primary}10`}
+                                thickness={1.5}
+                                startOpacity={0.9}
+                                endOpacity={0.2}
+                                initialSpacing={0}
+                                noOfSections={4}
+                                maxVisiblePoints={8} // Add this line
+                                yAxisColor="transparent"
+                                xAxisColor="transparent"
+                                yAxisTextStyle={{ color: darkTheme.colors.textTertiary }}
+                                hideRules
+                                hideDataPoints
+                                showVerticalLines={false}
+                                xAxisLabelTextStyle={{ 
+                                    color: darkTheme.colors.textTertiary, 
+                                    fontSize: 10,
+                                    width: 60, // Add fixed width for labels
+                                    textAlign: 'center'
+                                }}
+                                yAxisTextNumberOfLines={1}
+                                yAxisLabelSuffix="€"
+                                yAxisLabelPrefix=""
+                                rulesType="solid"
+                                xAxisThickness={0}
+                                rulesColor="rgba(0, 0, 0, 0.1)"
+                                curved
+                                animateOnDataChange
+                                animationDuration={1000}
+                                xAxisLabelsVerticalShift={20}
+                                getLabel={(item) => item.showLabel ? new Date(item.date).toLocaleDateString('fr-FR', {
+                                    month: 'short',
+                                    year: '2-digit'
+                                }) : ''}
+                                pointerConfig={{
+                                    showPointerStrip: true,
+                                    pointerStripWidth: 2,
+                                    pointerStripUptoDataPoint: true,
+                                    pointerStripColor: 'rgba(0, 0, 0, 0.5)',
+                                    width: 10,
+                                    height: 10,
+                                    radius: 6,
+                                    pointerLabelWidth: 120,
+                                    pointerLabelHeight: 90,
+                                    activatePointersOnLongPress: false,
+                                    autoAdjustPointerLabelPosition: true,
+                                    pointerLabelComponent: (items: any) => {
+                                        const item = items[0];
+                                        return (
+                                            <View style={styles.tooltipContainer}>
+                                                <Text style={styles.tooltipValue}>
+                                                    {item.value.toLocaleString()} €
+                                                </Text>
+                                                <Text style={styles.tooltipDate}>
+                                                    {new Date(item.date).toLocaleDateString()}
+                                                </Text>
+                                            </View>
+                                        );
+                                    },
+                                }}
+                            />
+                        </View>
+                    ) : (
+                        <View style={styles.noDataContainer}>
+                            <Text style={styles.noDataText}>No performance data available</Text>
+                        </View>
+                    )}
+
+                    <View style={styles.assetList}>
+                        <Text style={styles.assetListTitle}>Répartition des actifs</Text>
+                        {investmentAssets.map((asset, index) => (
+                            <View key={index} style={styles.assetItem}>
+                                <View style={styles.assetInfo}>
+                                    <Text style={styles.assetName}>{asset.name}</Text>
+                                    <Text style={styles.assetAllocation}>{asset.allocation}%</Text>
+                                </View>
+                                <View style={styles.assetInfo}>
+                                    <Text style={styles.assetValue}>{asset.value.toLocaleString()} €</Text>
+                                    <Text style={[styles.assetPerformance, asset.performance >= 0 ? styles.positivePerformance : styles.negativePerformance]}>
+                                        {asset.performance >= 0 ? '+' : ''}{asset.performance.toFixed(2)}%
+                                    </Text>
+                                </View>
+                            </View>
+                        ))}
+                    </View>
+
+                    <View style={styles.stockPositionsContainer}>
+                        <Text style={styles.sectionTitle}>Portfolio Positions</Text>
+                        {positions.length > 0 ? (
+                            positions.map((position, index) => (
+                                <StockPositionItem
+                                    key={index}
+                                    position={position}
+                                    onPress={() => navigation.navigate('StockDetail', { 
+                                        symbol: position.asset_symbol,
+                                        name: position.asset_name 
+                                    })}
+                                />
+                            ))
+                        ) : (
+                            <View style={styles.noDataContainer}>
+                                <Text style={styles.noDataText}>No positions available</Text>
+                            </View>
+                        )}
+                    </View>
+                </ScrollView>
+            </View>
+        </View>
+    );
 };
 
 export default function InvestmentScreen() {
-  return (
-    <Stack.Navigator
-      screenOptions={{
-        headerShown: false,
-      }}
-    >
-      <Stack.Screen
-        name="InvestmentOverview"
-        component={InvestmentOverview}
-        options={{ headerShown: false }}
-      />
-      <Stack.Screen
-        name="StockDetail"
-        component={StockDetail}
-        options={({ route }) => ({ title: route.params.position.symbol })}
-      />
-      <Stack.Screen
-        name="InvestmentTransactionList"
-        component={InvestmentTransactionListScreen}
-        options={{ headerShown: false }}
-      />
-      <Stack.Screen
-        name="AddInvestmentTransaction"
-        component={AddInvestmentTransactionScreen}
-        options={{ headerShown: false }}
-      />
-    </Stack.Navigator>
-  );
+    return (
+        <Stack.Navigator
+            screenOptions={{
+                headerShown: false,
+            }}
+        >
+            <Stack.Screen
+                name="InvestmentOverview"
+                component={InvestmentOverview}
+                options={{ headerShown: false }}
+            />
+            <Stack.Screen
+                name="StockDetail"
+                component={StockDetail}
+                options={({ route }) => ({ title: route.params.symbol })}
+            />
+            <Stack.Screen
+                name="InvestmentTransactionList"
+                component={InvestmentTransactionListScreen}
+                options={{ headerShown: false }}
+            />
+            <Stack.Screen
+                name="AddInvestmentTransaction"
+                component={AddInvestmentTransactionScreen}
+                options={{ headerShown: false }}
+            />
+        </Stack.Navigator>
+    );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: darkTheme.colors.background,
-  },
-  container: {
-    flex: 1,
-  },
-  header: {
-    padding: darkTheme.spacing.l,
-    backgroundColor: darkTheme.colors.surface,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: darkTheme.spacing.m,
-    color: darkTheme.colors.text,
-  },
-  totalValue: {
-    fontSize: 36,
-    fontWeight: 'bold',
-    color: darkTheme.colors.text,
-  },
-  performanceText: {
-    fontSize: 16,
-    color: darkTheme.colors.textSecondary,
-  },
-  chartContainer: {
-    alignItems: 'center',
-    marginVertical: darkTheme.spacing.l,
-  },
-  periodSelector: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    backgroundColor: darkTheme.colors.surface,
-    padding: darkTheme.spacing.m,
-    marginBottom: darkTheme.spacing.l,
-  },
-  periodButton: {
-    paddingVertical: darkTheme.spacing.s,
-    paddingHorizontal: darkTheme.spacing.m,
-    borderRadius: darkTheme.borderRadius.l,
-  },
-  selectedPeriod: {
-    backgroundColor: darkTheme.colors.primary,
-  },
-  periodButtonText: {
-    color: darkTheme.colors.textSecondary,
-  },
-  selectedPeriodText: {
-    color: darkTheme.colors.surface,
-  },
-  assetList: {
-    backgroundColor: darkTheme.colors.surface,
-    padding: darkTheme.spacing.l,
-  },
-  assetListTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: darkTheme.spacing.m,
-    color: darkTheme.colors.text,
-  },
-  assetItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: darkTheme.spacing.m,
-    borderBottomWidth: 1,
-    borderBottomColor: darkTheme.colors.border,
-  },
-  assetInfo: {
-    flexDirection: 'column',
-  },
-  assetName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: darkTheme.colors.text,
-  },
-  assetAllocation: {
-    fontSize: 14,
-    color: darkTheme.colors.textSecondary,
-  },
-  assetValue: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    textAlign: 'right',
-    color: darkTheme.colors.text,
-  },
-  assetPerformance: {
-    fontSize: 14,
-    textAlign: 'right',
-  },
-  positivePerformance: {
-    color: darkTheme.colors.success,
-  },
-  negativePerformance: {
-    color: darkTheme.colors.error,
-  },
-  stockPositionsContainer: {
-    backgroundColor: darkTheme.colors.surface,
-    padding: darkTheme.spacing.l,
-    marginTop: darkTheme.spacing.l,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: darkTheme.spacing.m,
-    color: darkTheme.colors.text,
-  },
-  stockPositionItem: {
-    borderBottomWidth: 1,
-    borderBottomColor: darkTheme.colors.border,
-    paddingVertical: darkTheme.spacing.m,
-  },
-  stockSymbol: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: darkTheme.colors.text,
-  },
-  stockName: {
-    fontSize: 16,
-    color: darkTheme.colors.textSecondary,
-    marginBottom: darkTheme.spacing.s,
-  },
-  stockDetails: {
-    fontSize: 14,
-    marginBottom: 2,
-    color: darkTheme.colors.text,
-  },
-  stockPerformance: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginTop: darkTheme.spacing.s,
-  },
-  stockValue: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginTop: darkTheme.spacing.s,
-    color: darkTheme.colors.text,
-  },
-  modalContent: {
-    padding: darkTheme.spacing.l,
-    backgroundColor: darkTheme.colors.surface,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: darkTheme.spacing.l,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: darkTheme.colors.text,
-  },
-  legendContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginTop: darkTheme.spacing.m,
-  },
-  legendText: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    color: darkTheme.colors.text,
-  },
-  legendDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    marginRight: darkTheme.spacing.s,
-  },
-  transactionList: {
-    marginTop: darkTheme.spacing.l,
-  },
-  transactionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: darkTheme.spacing.s,
-    color: darkTheme.colors.text,
-  },
-  transactionItem: {
-    fontSize: 14,
-    marginBottom: 3,
-    color: darkTheme.colors.text,
-  },
-  menuButton: {
-    marginRight: 16,
-  },
+    safeArea: {
+        flex: 1,
+        backgroundColor: darkTheme.colors.background,
+    },
+    container: {
+        flex: 1,
+    },
+    header: {
+        padding: darkTheme.spacing.l,
+        backgroundColor: darkTheme.colors.surface,
+    },
+    title: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        marginBottom: darkTheme.spacing.m,
+        color: darkTheme.colors.text,
+    },
+    totalValue: {
+        fontSize: 36,
+        fontWeight: 'bold',
+        color: darkTheme.colors.text,
+    },
+    performanceText: {
+        fontSize: 16,
+        color: darkTheme.colors.textSecondary,
+    },
+    chartContainer: {
+        backgroundColor: darkTheme.colors.surface,
+        padding: darkTheme.spacing.m,
+        marginHorizontal: darkTheme.spacing.m,
+        marginBottom: darkTheme.spacing.l,
+        borderRadius: darkTheme.borderRadius.l,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+        elevation: 5,
+    },
+    periodSelector: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        backgroundColor: darkTheme.colors.surface,
+        padding: darkTheme.spacing.m,
+        marginBottom: darkTheme.spacing.l,
+    },
+    periodButton: {
+        paddingVertical: darkTheme.spacing.s,
+        paddingHorizontal: darkTheme.spacing.m,
+        borderRadius: darkTheme.borderRadius.l,
+    },
+    selectedPeriod: {
+        backgroundColor: darkTheme.colors.primary,
+    },
+    periodButtonText: {
+        color: darkTheme.colors.textSecondary,
+    },
+    selectedPeriodText: {
+        color: darkTheme.colors.surface,
+    },
+    assetList: {
+        backgroundColor: darkTheme.colors.surface,
+        padding: darkTheme.spacing.l,
+    },
+    assetListTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: darkTheme.spacing.m,
+        color: darkTheme.colors.text,
+    },
+    assetItem: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingVertical: darkTheme.spacing.m,
+        borderBottomWidth: 1,
+        borderBottomColor: darkTheme.colors.border,
+    },
+    assetInfo: {
+        flexDirection: 'column',
+    },
+    assetName: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: darkTheme.colors.text,
+    },
+    assetAllocation: {
+        fontSize: 14,
+        color: darkTheme.colors.textSecondary,
+    },
+    assetValue: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        textAlign: 'right',
+        color: darkTheme.colors.text,
+    },
+    assetPerformance: {
+        fontSize: 14,
+        textAlign: 'right',
+    },
+    positivePerformance: {
+        color: darkTheme.colors.success,
+    },
+    negativePerformance: {
+        color: darkTheme.colors.error,
+    },
+    stockPositionsContainer: {
+        backgroundColor: darkTheme.colors.surface,
+        padding: darkTheme.spacing.l,
+        marginTop: darkTheme.spacing.l,
+    },
+    sectionTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        marginBottom: darkTheme.spacing.m,
+        color: darkTheme.colors.text,
+    },
+    stockPositionItem: {
+        borderBottomWidth: 1,
+        borderBottomColor: darkTheme.colors.border,
+        paddingVertical: darkTheme.spacing.m,
+    },
+    stockSymbol: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: darkTheme.colors.text,
+    },
+    stockName: {
+        fontSize: 16,
+        color: darkTheme.colors.textSecondary,
+        marginBottom: darkTheme.spacing.s,
+    },
+    stockDetails: {
+        fontSize: 14,
+        marginBottom: 2,
+        color: darkTheme.colors.text,
+    },
+    stockPerformance: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginTop: darkTheme.spacing.s,
+    },
+    stockValue: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginTop: darkTheme.spacing.s,
+        color: darkTheme.colors.text,
+    },
+    modalContent: {
+        padding: darkTheme.spacing.l,
+        backgroundColor: darkTheme.colors.surface,
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: darkTheme.spacing.l,
+    },
+    modalTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: darkTheme.colors.text,
+    },
+    legendContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        marginTop: darkTheme.spacing.m,
+    },
+    legendText: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        color: darkTheme.colors.text,
+    },
+    legendDot: {
+        width: 10,
+        height: 10,
+        borderRadius: 5,
+        marginRight: darkTheme.spacing.s,
+    },
+    transactionList: {
+        marginTop: darkTheme.spacing.l,
+    },
+    transactionTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: darkTheme.spacing.s,
+        color: darkTheme.colors.text,
+    },
+    transactionItem: {
+        fontSize: 14,
+        marginBottom: 3,
+        color: darkTheme.colors.text,
+    },
+    menuButton: {
+        marginRight: 16,
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    noDataContainer: {
+        padding: darkTheme.spacing.l,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    noDataText: {
+        color: darkTheme.colors.textSecondary,
+        fontSize: 16,
+    },
+    valueContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginTop: darkTheme.spacing.s,
+    },
+    gainLoss: {
+        fontSize: 14,
+        fontWeight: 'bold',
+    },
+    totalGain: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginTop: darkTheme.spacing.xs,
+    },
+    centerContainer: {
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    errorText: {
+        color: darkTheme.colors.error,
+        fontSize: 16,
+        marginBottom: darkTheme.spacing.m,
+    },
+    retryButton: {
+        marginTop: darkTheme.spacing.m,
+    },
+    tooltipContainer: {
+        backgroundColor: darkTheme.colors.surface,
+        padding: 8,
+        borderRadius: 4,
+        borderWidth: 1,
+        borderColor: darkTheme.colors.primary,
+    },
+    tooltipValue: {
+        fontSize: 14,
+        fontWeight: 'bold',
+        color: darkTheme.colors.primary,
+        textAlign: 'center',
+    },
+    tooltipDate: {
+        fontSize: 12,
+        color: darkTheme.colors.textSecondary,
+        marginTop: 4,
+        textAlign: 'center',
+    },
+    transactionPoint: {
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 2,
+        borderColor: darkTheme.colors.surface,
+    },
+    transactionPointText: {
+        color: darkTheme.colors.surface,
+        fontSize: 12,
+        fontWeight: 'bold',
+    },
 });

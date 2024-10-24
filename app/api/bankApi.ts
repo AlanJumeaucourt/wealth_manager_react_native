@@ -4,6 +4,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios, { AxiosError } from 'axios';
 import apiClient from './axiosConfig';
 import { InvestmentTransaction } from '@/types/investment';
+import { 
+    PortfolioSummaryResponse, 
+    PortfolioPerformanceResponse, 
+    AssetTransactionsResponse,
+} from '@/types/investment';
 
 const handleApiError = async (error: unknown, message: string) => {
   if (axios.isAxiosError(error)) {
@@ -225,33 +230,25 @@ export const fetchInvestmentTransactions = async (perPage: number, page: number,
   }
 };
 
-export const createInvestmentTransaction = async (transactionData: {
-  account_id: number;
-  asset_symbol: string;
-  asset_name: string;
-  activity_type: 'buy' | 'sell' | 'deposit' | 'withdrawal';
-  date: string;
-  quantity: number;
-  unit_price: number;
-  fee: number;
-  tax: number;
-  transaction_related_id?: number;
-}) => {
-  try {
-    const response = await apiClient.post('/investments', transactionData);
-    return response.data;
-  } catch (error) {
-    return handleApiError(error, 'Error creating investment transaction');
-  }
+export const createInvestmentTransaction = async (transactionData: Omit<InvestmentTransaction, 'id' | 'user_id'>) => {
+    try {
+        const response = await apiClient.post('/investments', transactionData);
+        return response.data;
+    } catch (error) {
+        return handleApiError(error, 'Error creating investment transaction');
+    }
 };
 
-export const updateInvestmentTransaction = async (transactionId: number, transactionData: Partial<InvestmentTransaction>) => {
-  try {
-    const response = await apiClient.put(`/investments/${transactionId}`, transactionData);
-    return response.data;
-  } catch (error) {
-    return handleApiError(error, 'Error updating investment transaction');
-  }
+export const updateInvestmentTransaction = async (
+    transactionId: number, 
+    transactionData: Partial<Omit<InvestmentTransaction, 'id' | 'user_id'>>
+) => {
+    try {
+        const response = await apiClient.put(`/investments/${transactionId}`, transactionData);
+        return response.data;
+    } catch (error) {
+        return handleApiError(error, 'Error updating investment transaction');
+    }
 };
 
 export const deleteInvestmentTransaction = async (transactionId: number) => {
@@ -263,13 +260,32 @@ export const deleteInvestmentTransaction = async (transactionId: number) => {
   }
 };
 
-export const getPortfolioSummary = async (accountId?: number) => {
-  try {
-    const response = await apiClient.get(`/investments/portfolio${accountId ? `?account_id=${accountId}` : ''}`);
-    return response.data;
-  } catch (error) {
-    return handleApiError(error, 'Error fetching portfolio summary');
-  }
+// Investment Portfolio API calls
+export const getPortfolioSummary = async (): Promise<PortfolioSummaryResponse> => {
+    try {
+        const response = await apiClient.get('/investments/portfolio/summary');
+        return response.data;
+    } catch (error) {
+        return handleApiError(error, 'Error fetching portfolio summary');
+    }
+};
+
+export const getPortfolioPerformance = async (period: string = '1Y'): Promise<PortfolioPerformanceResponse> => {
+    try {
+        const response = await apiClient.get(`/investments/portfolio/performance?period=${period}`);
+        return response.data;
+    } catch (error) {
+        return handleApiError(error, 'Error fetching portfolio performance');
+    }
+};
+
+export const getAssetTransactions = async (symbol: string): Promise<AssetTransactionsResponse> => {
+    try {
+        const response = await apiClient.get(`/investments/assets/${symbol}/transactions`);
+        return response.data;
+    } catch (error) {
+        return handleApiError(error, 'Error fetching asset transactions');
+    }
 };
 
 export const searchStocks = async (query: string) => {
@@ -305,5 +321,23 @@ export const getInvestmentTransactions = async () => {
         return response.data;
     } catch (error) {
         return handleApiError(error, 'Error fetching investment transactions');
+    }
+};
+
+export const getStockPrices = async (symbol: string, period: string = '1Y') => {
+    try {
+        const response = await apiClient.get(`/stocks/${encodeURIComponent(symbol)}/prices?period=${period}`);
+        return response.data;
+    } catch (error) {
+        return handleApiError(error, 'Error fetching stock prices');
+    }
+};
+
+export const getCurrentStockPrice = async (symbol: string) => {
+    try {
+        const response = await apiClient.get(`/stocks/${encodeURIComponent(symbol)}/price`);
+        return response.data.price;
+    } catch (error) {
+        return handleApiError(error, 'Error fetching current stock price');
     }
 };
